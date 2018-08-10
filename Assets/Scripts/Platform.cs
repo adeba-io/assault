@@ -18,6 +18,9 @@ public class Platform : MonoBehaviour
         public bool checkedThisFrame;
     }
 
+    public enum PlatformType { Standard, OneWay }
+
+    [SerializeField] PlatformType _platformType = PlatformType.Standard;
     [SerializeField] PhysicsMaterial2D _physicsMaterial;
     [SerializeField] [Range(-90f, 90f)] float _slopeAngle;
 
@@ -27,6 +30,7 @@ public class Platform : MonoBehaviour
     public float slopeAngle { get { return _slopeAngle; } }
     public float friction { get { return _physicsMaterial.friction; } }
     public float bounciness { get { return _physicsMaterial.bounciness; } }
+    public PlatformType platformType { get { return _platformType; } }
 
     private void Awake()
     {
@@ -37,5 +41,8 @@ public class Platform : MonoBehaviour
 
         if (!_physicsMaterial)
             _physicsMaterial = _collider2D.sharedMaterial;
+
+        if (_platformType == PlatformType.OneWay)
+            transform.localScale = new Vector2(transform.localScale.x, 0.05f);
     }
 }

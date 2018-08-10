@@ -23,6 +23,7 @@ public class PhysicsObject : MonoBehaviour
         public bool above, below;
         public bool left, right;
 
+        public bool hitCeiling;
         public bool groundedLastFrame, groundedThisFrame;
         public Platform groundPlatform;
 
@@ -32,7 +33,7 @@ public class PhysicsObject : MonoBehaviour
         public void Reset()
         {
             groundedLastFrame = below;
-            above = below = left = right = groundedThisFrame = false;
+            above = below = left = right = hitCeiling = groundedThisFrame = false;
             groundPlatform = null;
         }
 
@@ -74,6 +75,9 @@ public class PhysicsObject : MonoBehaviour
     AnimationCurve _slopeSpeedModifier =
         new AnimationCurve(new Keyframe(-90f, 1.5f), new Keyframe(0f, 1f), new Keyframe(90f, 0f));
     bool _onSlope = false;
+    // Used to mark the case where we are travelling up a slope and _deltaMovement.y is modified
+    // If true : we can make adjustments when the end of the slope is reached to stay grounded
+    bool _goingUpSlope = false;
 
     // Raycasts
     RaycastOrigins _rayOrigins;
@@ -117,6 +121,8 @@ public class PhysicsObject : MonoBehaviour
         }
     }
 
+    const float k_skinWidthFudgeFactor = 0.001f;
+
     #endregion
 
     #region Monobehaviour
@@ -151,11 +157,22 @@ public class PhysicsObject : MonoBehaviour
         _currPosition = _prevPosition + (_velocity * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
 
+        if (_deltaMovement.y != 0)
+            MoveVertical();
+
         if (_deltaMovement.x != 0)
             MoveHorizontal();
 
-        if (_deltaMovement.y != 0)
-            MoveVertical();
+        _currPosition = _prevPosition + _deltaMovement;
+        _rigidbody2D.MovePosition(_currPosition);
+
+        if (isGrounded)
+        {
+            _velocity.y = 0;
+        }
+
+        if (!_collisionState.groundedLastFrame && _collisionState.below)
+            _collisionState.groundedThisFrame = true;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -179,6 +196,11 @@ public class PhysicsObject : MonoBehaviour
     #endregion
 
     #region Public
+
+    public void MoveRigidbody(Vector2 move)
+    {
+        _velocity += move * Time.deltaTime;
+    }
 
     /// <summary>
     /// Should be called anytime the BoxCollider2D is modified
@@ -215,7 +237,98 @@ public class PhysicsObject : MonoBehaviour
 
     void MoveHorizontal()
     {
+        bool goingRight = _deltaMovement.x > 0;
 
+        Vector2 raycastStart, raycastDirection;
+        float raycastDistance;
+        RaycastHit2D raycastHit;
+
+        // Right Check
+        raycastStart = _rayOrigins.bottomRight;
+        raycastStart.y += _deltaMovement.y;
+
+        raycastDirection = Vector2.right;
+
+        raycastDistance = _skinWidth + _deltaMovement.x;
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
+
+        for (int i = 0; i < _totalHoriRays; i++)
+        {
+            if (i != 0) raycastStart.y += _vertDistanceBetweenRays;
+
+            DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
+            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+            if (raycastHit)
+            {
+                _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+                raycastDistance = Mathf.Abs(_deltaMovement.y);
+
+                _deltaMovement.x -= _skinWidth;
+                _collisionState.right = true;
+
+                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (potentialWall)
+                {
+                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
+                        _collisionState.right = false;
+                }
+                else
+                {
+                    _collisionState.right = false;
+                }
+
+                _raycastHitsThisFrame.Add(raycastHit);
+
+                // If true : direct impact, so bail
+                if (raycastDistance < _skinWidth + k_skinWidthFudgeFactor)
+                    break;
+            }
+        }
+
+        // Left Check
+        raycastStart = _rayOrigins.bottomLeft;
+        raycastStart.y += _deltaMovement.y;
+
+        raycastDirection = Vector2.left;
+
+        raycastDistance = Mathf.Abs(_deltaMovement.x - _skinWidth);
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
+
+        for (int i = 0; i < _totalHoriRays; i++)
+        {
+            if (i != 0) raycastStart.y += _vertDistanceBetweenRays;
+
+            DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
+            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+            if (raycastHit)
+            {
+                _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+
+                _deltaMovement.x += _skinWidth;
+                _collisionState.left = true;
+
+                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (potentialWall)
+                {
+                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
+                        _collisionState.left = false;
+                }
+                else
+                {
+                    _collisionState.left = false;
+                }
+
+                _raycastHitsThisFrame.Add(raycastHit);
+
+                if (_collisionState.left && _collisionState.right)
+                {
+                    _deltaMovement.x = 0;
+                    break;
+                }
+            }
+        }
     }
 
     void MoveVertical()
@@ -223,71 +336,112 @@ public class PhysicsObject : MonoBehaviour
         bool goingUp = _deltaMovement.y > 0;
 
         Vector2 raycastStart, raycastDirection;
-        float raycastDistanceTop, raycastDistanceBottom;
         float raycastDistance;
         RaycastHit2D raycastHit;
-
-        // Initial Distance Setup
-        raycastDistanceTop = _skinWidth + _deltaMovement.y;
-        raycastDistanceBottom = Mathf.Abs(_deltaMovement.y - _skinWidth);
-        //Adjust for max and min
-        if (raycastDistanceTop < _skinWidth) raycastDistanceTop = _skinWidth;
-        else if (raycastDistanceTop > _maxRaycastDistanceY) raycastDistanceTop = _maxRaycastDistanceY;
-
-        if (raycastDistanceBottom < _skinWidth) raycastDistanceBottom = _skinWidth;
-        else if (raycastDistanceBottom > _maxRaycastDistanceY) raycastDistanceBottom = _skinWidth;
         
-        // Initial raycastStart Setup
-        Vector2 initialRayOriginTop = _rayOrigins.topLeft, initialRayOriginBottom = _rayOrigins.bottomLeft;
+        // Below Check
+        raycastStart = _rayOrigins.bottomLeft;
 
-        initialRayOriginTop.y += _skinWidth - raycastDistanceTop;
-        initialRayOriginBottom.y -= _skinWidth + raycastDistanceBottom;
+        raycastDirection = Vector2.down;
 
-        // Add _deltaMovement.x as it has already been adjusted
-        initialRayOriginTop.x += _deltaMovement.x;
-        initialRayOriginBottom.x += _deltaMovement.x;
+        raycastDistance = Mathf.Abs(_deltaMovement.y - _skinWidth);
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+        //else if (raycastDistance > _maxRaycastDistanceY) raycastDistance = _maxRaycastDistanceY;
 
-        int top = 0, bottom = 0;
-        for (int i = 0; i < _totalVertRays * 2; i++)
+        for (int i = 0; i < _totalVertRays; i++)
         {
-            bool checkBelow = i % 2 == 0;
-            
-            if (checkBelow)
-            {
-                // Checking Bottom
-                raycastStart = new Vector2(initialRayOriginBottom.x + (bottom * _horiDistanceBetweenRays), initialRayOriginBottom.y);
-                raycastDirection = Vector2.down;
-                raycastDistance = Mathf.Abs(_deltaMovement.y - _skinWidth);
-                bottom++;
-            }
-            else
-            {
-                // Checking Above
-                raycastStart = new Vector2(initialRayOriginTop.x + (top * _horiDistanceBetweenRays), initialRayOriginTop.y);
-                raycastDirection = Vector2.up;
-                raycastDistance = _skinWidth + _deltaMovement.y;
-                top++;
-            }
-
-            if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-            else if (raycastDistance > _maxRaycastDistanceY) raycastDistance = _maxRaycastDistanceY;
+            if (i != 0) raycastStart.x += _horiDistanceBetweenRays;
 
             DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
-
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
-                float hitDist = raycastHit.distance;
+                _deltaMovement.y = raycastHit.point.y - raycastStart.y;
+                raycastDistance = Mathf.Abs(_deltaMovement.y);
 
-                if (checkBelow)
+                _deltaMovement.y += _skinWidth;
+                _collisionState.below = true;
+
+                Platform currPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (currPlatform)
                 {
-                    _deltaMovement.y += hitDist;
-                    
+                    if (Mathf.Abs(currPlatform.slopeAngle) < _slopeLimit)
+                    {
+                        _collisionState.groundPlatform = currPlatform;
+                    }
+                    else
+                    {
+                        _collisionState.below = false;
+                    }
                 }
                 else
                 {
-                    _deltaMovement.y -= hitDist;
+                    _collisionState.below = false;
                 }
+
+                _raycastHitsThisFrame.Add(raycastHit);
+
+                // Deals with the top of slopes
+                if (!goingUp && _deltaMovement.y > 0.00001f)
+                    _goingUpSlope = true;
+
+                // If true : direct impact, so bail
+                if (raycastDistance < _skinWidth + k_skinWidthFudgeFactor)
+                    break;
+            }
+        }
+
+        // Above Check
+        raycastStart = _rayOrigins.topLeft;
+
+        raycastDirection = Vector2.up;
+
+        raycastDistance = _skinWidth + _deltaMovement.y;
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+        //else if (raycastDistance > _maxRaycastDistanceY) raycastDistance = _maxRaycastDistanceY;
+
+        for (int i = 0; i < _totalVertRays; i++)
+        {
+            if (i != 0) raycastStart.x += _horiDistanceBetweenRays;
+
+            DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
+            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+            if (raycastHit)
+            {
+                _deltaMovement.y = raycastHit.point.y - raycastStart.y;
+                raycastDistance = Mathf.Abs(_deltaMovement.y);
+
+                _deltaMovement.y -= _skinWidth;
+                _collisionState.above = true;
+
+                Platform currPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (currPlatform)
+                {
+                    if (Mathf.Abs(currPlatform.slopeAngle) < _slopeLimit)
+                    {
+                        _collisionState.hitCeiling = true;
+                    }
+                    else
+                    {
+                        _collisionState.above = false;
+                    }
+                }
+                else
+                {
+                    _collisionState.above = false;
+                }
+
+                _raycastHitsThisFrame.Add(raycastHit);
+
+                if (_collisionState.above && _collisionState.below)
+                {
+                    _deltaMovement.y = 0;
+                    break;
+                }
+
+                // If true : direct impact, so bail
+                if (raycastDistance < _skinWidth + k_skinWidthFudgeFactor)
+                    break;
             }
         }
     }
@@ -305,7 +459,7 @@ public class PhysicsObject : MonoBehaviour
     #region DEBUG
 #if COLLISION_RAYS
 
-    Color vertRayColor = Color.blue, horiRayColor = Color.red, slopeRayColor = Color.yellow;
+    Color vertRayColor = Color.red, horiRayColor = Color.red, slopeRayColor = Color.yellow;
 
     void DrawRay(Vector2 start, Vector2 dir, Color color)
     {
