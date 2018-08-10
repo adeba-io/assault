@@ -157,11 +157,11 @@ public class PhysicsObject : MonoBehaviour
         _currPosition = _prevPosition + (_velocity * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
 
-        if (_deltaMovement.y != 0)
-            MoveVertical();
+        //if (_deltaMovement.y != 0)
+            AdjustVertical();
 
-        if (_deltaMovement.x != 0)
-            MoveHorizontal();
+        //if (_deltaMovement.x != 0)
+            AdjustHorizontal();
 
         _currPosition = _prevPosition + _deltaMovement;
         _rigidbody2D.MovePosition(_currPosition);
@@ -235,110 +235,14 @@ public class PhysicsObject : MonoBehaviour
 
     #region Movement
 
-    void MoveHorizontal()
-    {
-        bool goingRight = _deltaMovement.x > 0;
-
-        Vector2 raycastStart, raycastDirection;
-        float raycastDistance;
-        RaycastHit2D raycastHit;
-
-        // Right Check
-        raycastStart = _rayOrigins.bottomRight;
-        raycastStart.y += _deltaMovement.y;
-
-        raycastDirection = Vector2.right;
-
-        raycastDistance = _skinWidth + _deltaMovement.x;
-        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
-
-        for (int i = 0; i < _totalHoriRays; i++)
-        {
-            if (i != 0) raycastStart.y += _vertDistanceBetweenRays;
-
-            DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
-            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-            if (raycastHit)
-            {
-                _deltaMovement.x = raycastHit.point.x - raycastStart.x;
-                raycastDistance = Mathf.Abs(_deltaMovement.y);
-
-                _deltaMovement.x -= _skinWidth;
-                _collisionState.right = true;
-
-                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
-                if (potentialWall)
-                {
-                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
-                        _collisionState.right = false;
-                }
-                else
-                {
-                    _collisionState.right = false;
-                }
-
-                _raycastHitsThisFrame.Add(raycastHit);
-
-                // If true : direct impact, so bail
-                if (raycastDistance < _skinWidth + k_skinWidthFudgeFactor)
-                    break;
-            }
-        }
-
-        // Left Check
-        raycastStart = _rayOrigins.bottomLeft;
-        raycastStart.y += _deltaMovement.y;
-
-        raycastDirection = Vector2.left;
-
-        raycastDistance = Mathf.Abs(_deltaMovement.x - _skinWidth);
-        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
-
-        for (int i = 0; i < _totalHoriRays; i++)
-        {
-            if (i != 0) raycastStart.y += _vertDistanceBetweenRays;
-
-            DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
-            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-            if (raycastHit)
-            {
-                _deltaMovement.x = raycastHit.point.x - raycastStart.x;
-
-                _deltaMovement.x += _skinWidth;
-                _collisionState.left = true;
-
-                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
-                if (potentialWall)
-                {
-                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
-                        _collisionState.left = false;
-                }
-                else
-                {
-                    _collisionState.left = false;
-                }
-
-                _raycastHitsThisFrame.Add(raycastHit);
-
-                if (_collisionState.left && _collisionState.right)
-                {
-                    _deltaMovement.x = 0;
-                    break;
-                }
-            }
-        }
-    }
-
-    void MoveVertical()
+    void AdjustVertical()
     {
         bool goingUp = _deltaMovement.y > 0;
 
         Vector2 raycastStart, raycastDirection;
         float raycastDistance;
         RaycastHit2D raycastHit;
-        
+
         // Below Check
         raycastStart = _rayOrigins.bottomLeft;
 
@@ -356,10 +260,6 @@ public class PhysicsObject : MonoBehaviour
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
-                _deltaMovement.y = raycastHit.point.y - raycastStart.y;
-                raycastDistance = Mathf.Abs(_deltaMovement.y);
-
-                _deltaMovement.y += _skinWidth;
                 _collisionState.below = true;
 
                 Platform currPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
@@ -377,6 +277,14 @@ public class PhysicsObject : MonoBehaviour
                 else
                 {
                     _collisionState.below = false;
+                }
+
+                if (_collisionState.below)
+                {
+                    _deltaMovement.y = raycastHit.point.y - raycastStart.y;
+                    raycastDistance = Mathf.Abs(_deltaMovement.y);
+
+                    _deltaMovement.y += _skinWidth;
                 }
 
                 _raycastHitsThisFrame.Add(raycastHit);
@@ -408,10 +316,6 @@ public class PhysicsObject : MonoBehaviour
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
-                _deltaMovement.y = raycastHit.point.y - raycastStart.y;
-                raycastDistance = Mathf.Abs(_deltaMovement.y);
-
-                _deltaMovement.y -= _skinWidth;
                 _collisionState.above = true;
 
                 Platform currPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
@@ -431,6 +335,14 @@ public class PhysicsObject : MonoBehaviour
                     _collisionState.above = false;
                 }
 
+                if (_collisionState.above)
+                {
+                    _deltaMovement.y = raycastHit.point.y - raycastStart.y;
+                    raycastDistance = Mathf.Abs(_deltaMovement.y);
+
+                    _deltaMovement.y -= _skinWidth;
+                }
+
                 _raycastHitsThisFrame.Add(raycastHit);
 
                 if (_collisionState.above && _collisionState.below)
@@ -446,12 +358,118 @@ public class PhysicsObject : MonoBehaviour
         }
     }
 
+    void AdjustHorizontal()
+    {
+        bool goingRight = _deltaMovement.x > 0;
+
+        Vector2 raycastStart, raycastDirection;
+        float raycastDistance;
+        RaycastHit2D raycastHit;
+
+        // Right Check
+        raycastStart = _rayOrigins.bottomRight;
+        raycastStart.y += _deltaMovement.y;
+
+        raycastDirection = Vector2.right;
+
+        raycastDistance = _skinWidth + _deltaMovement.x;
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
+
+        for (int i = 0; i < _totalHoriRays; i++)
+        {
+            if (i != 0) raycastStart.y += _vertDistanceBetweenRays;
+
+            DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
+            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+            if (raycastHit)
+            {
+                _collisionState.right = true;
+
+                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (potentialWall)
+                {
+                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
+                        _collisionState.right = false;
+                }
+                else
+                {
+                    _collisionState.right = false;
+                }
+
+                if (_collisionState.right)
+                {
+                    _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+                    raycastDistance = Mathf.Abs(_deltaMovement.x);
+
+                    _deltaMovement.x -= _skinWidth;
+                }
+
+                _raycastHitsThisFrame.Add(raycastHit);
+
+                // If true : direct impact, so bail
+                if (raycastDistance < _skinWidth + k_skinWidthFudgeFactor)
+                    break;
+            }
+        }
+
+        // Left Check
+        raycastStart = _rayOrigins.bottomLeft;
+        raycastStart.y += _deltaMovement.y;
+
+        raycastDirection = Vector2.left;
+
+        raycastDistance = Mathf.Abs(_deltaMovement.x - _skinWidth);
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
+
+        for (int i = 0; i < _totalHoriRays; i++)
+        {
+            if (i != 0) raycastStart.y += _vertDistanceBetweenRays;
+
+            DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
+            raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+            if (raycastHit)
+            {
+                _collisionState.left = true;
+
+                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (potentialWall)
+                {
+                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
+                        _collisionState.left = false;
+                }
+                else
+                {
+                    _collisionState.left = false;
+                }
+
+                if (_collisionState.left)
+                {
+                    _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+                    raycastDistance = _deltaMovement.x;
+
+                    _deltaMovement.x += _skinWidth;
+                }
+
+                _raycastHitsThisFrame.Add(raycastHit);
+
+                if (_collisionState.left && _collisionState.right)
+                {
+                    _deltaMovement.x = 0;
+                    break;
+                }
+            }
+        }
+    }
+
     void Gravity()
     {
         if (!_useGravity) return;
         if (_collisionState.below) return;
 
-        _velocity += Physics2D.gravity * _gravityMultiplier;
+        Vector2 gravity = Physics2D.gravity * _gravityMultiplier;
+        MoveRigidbody(gravity);
     }
 
     #endregion
