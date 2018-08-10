@@ -43,7 +43,17 @@ public class PhysicsObject : MonoBehaviour
 
     #endregion
 
+    #region Events, Fields, and Properties
 
+    // Events
+    public event Action<RaycastHit2D> OnCollisionEvent;
+    public event Action<Collider2D> OnTriggerEnterEvent;
+    public event Action<Collider2D> OnTriggerStayEvent;
+    public event Action<Collider2D> OnTriggerExitEvent;
+
+
+
+    #endregion
 
     // Use this for initialization
     void Start () {
