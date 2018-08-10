@@ -22,6 +22,7 @@ public class Platform : MonoBehaviour
     [SerializeField] [Range(-90f, 90f)] float _slopeAngle;
 
     Rigidbody2D _rigidbody2D;
+    BoxCollider2D _collider2D;
 
     public float slopeAngle { get { return _slopeAngle; } }
     public float friction { get { return _physicsMaterial.friction; } }
@@ -30,5 +31,11 @@ public class Platform : MonoBehaviour
     private void Awake()
     {
         _rigidbody2D = GetComponent<Rigidbody2D>();
+        _collider2D = GetComponent<BoxCollider2D>();
+
+        _rigidbody2D.bodyType = RigidbodyType2D.Kinematic;
+
+        if (!_physicsMaterial)
+            _physicsMaterial = _collider2D.sharedMaterial;
     }
 }
