@@ -57,7 +57,8 @@ public class PhysicsObject : MonoBehaviour
     [SerializeField] CollisionState _collisionState;
     [SerializeField] bool _useGravity = true;
     [SerializeField] float _gravityMultiplier = 1f;
-    [SerializeField] Vector2 _velocity;
+    [SerializeField] Vector2 _projectedVelocity;
+    [SerializeField] Vector2 _currentVelocity;
     [Space]
 
     // Collision Fields
@@ -71,6 +72,7 @@ public class PhysicsObject : MonoBehaviour
     // Slopes
     [Range(0f, 90f)] [SerializeField]
     float _slopeLimit = 30f;
+    float _slopeLimitTangent = Mathf.Tan(75f * Mathf.Deg2Rad);
     [SerializeField]
     AnimationCurve _slopeSpeedModifier =
         new AnimationCurve(new Keyframe(-90f, 1.5f), new Keyframe(0f, 1f), new Keyframe(90f, 0f));
@@ -108,7 +110,7 @@ public class PhysicsObject : MonoBehaviour
     public float gravityMultiplier { get { return _gravityMultiplier; } set { _gravityMultiplier = value; } }
     
     public bool isGrounded { get { return _collisionState.below && _collisionState.groundPlatform; } }
-    public Vector2 velocity { get { return _velocity; } }
+    public Vector2 velocity { get { return _currentVelocity; } }
     public CollisionState collisions { get { return _collisionState; } }
 
     public float skinWidth
@@ -148,27 +150,31 @@ public class PhysicsObject : MonoBehaviour
     {
         _collisionState.Reset();
         _raycastHitsThisFrame.Clear();
+        _onSlope = false;
 
         ResetRaycastOrigins();
 
         Gravity();
 
         _prevPosition = _rigidbody2D.position;
-        _currPosition = _prevPosition + (_velocity * Time.deltaTime);
+        _currPosition = _prevPosition + (_projectedVelocity * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
+        
+        AdjustVertical();
+        
+        AdjustHorizontal();
 
-        //if (_deltaMovement.y != 0)
-            AdjustVertical();
-
-        //if (_deltaMovement.x != 0)
-            AdjustHorizontal();
+        AdjustForSlope();
 
         _currPosition = _prevPosition + _deltaMovement;
         _rigidbody2D.MovePosition(_currPosition);
 
-        if (isGrounded)
+        if (Time.deltaTime > 0)
+            _currentVelocity = _deltaMovement / Time.deltaTime;
+
+        if (isGrounded || _collisionState.hitCeiling)
         {
-            _velocity.y = 0;
+            _projectedVelocity.y = 0;
         }
 
         if (!_collisionState.groundedLastFrame && _collisionState.below)
@@ -199,7 +205,7 @@ public class PhysicsObject : MonoBehaviour
 
     public void MoveRigidbody(Vector2 move)
     {
-        _velocity += move * Time.deltaTime;
+        _projectedVelocity += move * Time.deltaTime;
     }
 
     /// <summary>
@@ -265,9 +271,12 @@ public class PhysicsObject : MonoBehaviour
                 Platform currPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
                 if (currPlatform)
                 {
-                    if (Mathf.Abs(currPlatform.slopeAngle) < _slopeLimit)
+                    if (Mathf.Abs(currPlatform.slopeAngle) <= _slopeLimit)
                     {
                         _collisionState.groundPlatform = currPlatform;
+
+                        if (Mathf.Abs(currPlatform.slopeAngle) > 0)
+                            _onSlope = true;
                     }
                     else
                     {
@@ -321,7 +330,7 @@ public class PhysicsObject : MonoBehaviour
                 Platform currPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
                 if (currPlatform)
                 {
-                    if (Mathf.Abs(currPlatform.slopeAngle) < _slopeLimit)
+                    if (Mathf.Abs(currPlatform.slopeAngle) <= _slopeLimit)
                     {
                         _collisionState.hitCeiling = true;
                     }
@@ -384,13 +393,16 @@ public class PhysicsObject : MonoBehaviour
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
+                float currAngle = 0;
                 _collisionState.right = true;
 
                 Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
                 if (potentialWall)
                 {
-                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
+                    if (Mathf.Abs(potentialWall.slopeAngle) <= _slopeLimit)
                         _collisionState.right = false;
+                    else
+                        currAngle = potentialWall.slopeAngle;
                 }
                 else
                 {
@@ -399,9 +411,18 @@ public class PhysicsObject : MonoBehaviour
 
                 if (_collisionState.right)
                 {
-                    _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+                    if (currAngle > 0)
+                    {
+                        // TOA : Y displacement is adjacent, X is opposite
+                        // Use of TOA to find the x displacement we need 
+                        _deltaMovement.x = _deltaMovement.y * Mathf.Tan(currAngle * Mathf.Deg2Rad) * 1.4f;
+                    }
+                    else
+                    {
+                        _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+                    }
+                    
                     raycastDistance = Mathf.Abs(_deltaMovement.x);
-
                     _deltaMovement.x -= _skinWidth;
                 }
 
@@ -431,13 +452,16 @@ public class PhysicsObject : MonoBehaviour
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
+                float currAngle = 0;
                 _collisionState.left = true;
 
                 Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
                 if (potentialWall)
                 {
-                    if (Mathf.Abs(potentialWall.slopeAngle) < _slopeLimit)
+                    if (Mathf.Abs(potentialWall.slopeAngle) <= _slopeLimit)
                         _collisionState.left = false;
+                    else
+                        currAngle = potentialWall.slopeAngle;
                 }
                 else
                 {
@@ -446,9 +470,16 @@ public class PhysicsObject : MonoBehaviour
 
                 if (_collisionState.left)
                 {
-                    _deltaMovement.x = raycastHit.point.x - raycastStart.x;
-                    raycastDistance = _deltaMovement.x;
+                    if (currAngle < 0)
+                    {
+                        _deltaMovement.x = _deltaMovement.y * Mathf.Tan(currAngle * Mathf.Deg2Rad) * 1.4f;
+                    }
+                    else
+                    {
+                        _deltaMovement.x = raycastHit.point.x - raycastStart.x;
+                    }
 
+                    raycastDistance = _deltaMovement.x;
                     _deltaMovement.x += _skinWidth;
                 }
 
@@ -459,6 +490,54 @@ public class PhysicsObject : MonoBehaviour
                     _deltaMovement.x = 0;
                     break;
                 }
+            }
+        }
+    }
+
+    void AdjustForSlope()
+    {
+        if (!_onSlope) return;
+        if (!_collisionState.groundPlatform) return;
+        if (!_collisionState.below) return;
+
+        Vector2 raycastStart, raycastDirection;
+        float raycastDistance;
+        RaycastHit2D raycastHit;
+        
+        // We want to check for slopes from the centre of the collider
+        raycastStart = new Vector2((_rayOrigins.bottomLeft.x + _rayOrigins.bottomRight.x) * 0.5f, _rayOrigins.bottomLeft.y);
+        raycastDirection = Vector2.down;
+        // Use _SlopeLimitTangent to calulate raycastDistance
+        raycastDistance = (_rayOrigins.bottomRight.x - raycastStart.x) * _slopeLimitTangent;
+
+        DrawRay(raycastStart, raycastDistance * raycastDirection, slopeRayColor);
+        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+        if (raycastHit)
+        {
+            // If no slope bail
+            float angle = Vector2.Angle(raycastHit.normal, Vector2.up);
+            if (angle == 0)
+                return;
+
+            // We are moving down if the slope's normal and _deltaMovement are in the same X direction
+            bool movingDownSlope = Mathf.Sign(raycastHit.normal.x) == Mathf.Sign(_deltaMovement.x);
+            if (movingDownSlope)
+            {
+                print("Going down");
+                // Going down we want to speed up so the _slopeSpeedModifier curve should be > 1 for negative angles
+                float speedModifier = _slopeSpeedModifier.Evaluate(-angle);
+                // Add extra downward movement here to ensure we stick to the platform
+                _deltaMovement.y += Mathf.Tan(angle * Mathf.Deg2Rad) * _deltaMovement.x;
+                _deltaMovement.x *= speedModifier;
+            }
+            else
+            {
+                print("Going up");
+                // Going down we want to slow down so the _slopeSpeedModifier curve should be < 1 for positive values
+                float speedModifier = _slopeSpeedModifier.Evaluate(angle);
+                // Add extra movement to ensure we stick
+                _deltaMovement.y -= Mathf.Tan(angle * Mathf.Deg2Rad) * _deltaMovement.x;
+                _deltaMovement.x *= speedModifier;
             }
         }
     }
