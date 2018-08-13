@@ -5,6 +5,8 @@ using UnityEngine;
 
 public abstract class InputComponent : MonoBehaviour
 {
+    #region Enums
+
     public enum InputType
     { Keyboard, Controller }
 
@@ -21,11 +23,13 @@ public abstract class InputComponent : MonoBehaviour
     public enum ControllerAxes
     {
         None,
-        LeftStickHorizontal, LeftStickVertical,
-        RightStickHorizontal, RightStickVertical,
-        DpadHorizontal, DpadVertical,
+        LeftStick_X, LeftStick_Y,
+        RightStick_X, RightStick_Y,
+        Dpad_X, Dpad_Y,
         LeftTrigger, RightTrigger
     }
+
+    #endregion
 
     #region Internal Classes
 
@@ -81,9 +85,9 @@ public abstract class InputComponent : MonoBehaviour
 
             if (inputType == InputType.Controller)
             {
-                Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton] + _playerNumber.ToString());
-                Held = Input.GetButton(k_buttonsToName[(int)controllerButton] + _playerNumber.ToString());
-                Up = Input.GetButtonUp(k_buttonsToName[(int)controllerButton] + _playerNumber.ToString());
+                Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton]);
+                Held = Input.GetButton(k_buttonsToName[(int)controllerButton]);
+                Up = Input.GetButtonUp(k_buttonsToName[(int)controllerButton]);
             }
             else if (inputType == InputType.Keyboard)
             {
@@ -147,12 +151,12 @@ public abstract class InputComponent : MonoBehaviour
 
         protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
         {
-            { (int)ControllerAxes.LeftStickHorizontal, "LeftStick Horizontal" },
-            { (int)ControllerAxes.LeftStickVertical, "LeftStick Vertical" },
-            { (int)ControllerAxes.RightStickHorizontal, "RightStick Horizontal" },
-            { (int)ControllerAxes.RightStickVertical, "RightStick Vertical" },
-            { (int)ControllerAxes.DpadHorizontal, "Dpad Horizontal" },
-            { (int)ControllerAxes.DpadVertical, "Dpad Vertical" },
+            { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
+            { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
+            { (int)ControllerAxes.RightStick_X, "RightStick X" },
+            { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
+            { (int)ControllerAxes.Dpad_X, "Dpad X" },
+            { (int)ControllerAxes.Dpad_Y, "Dpad Y" },
             { (int)ControllerAxes.LeftTrigger, "Left Trigger" },
             { (int)ControllerAxes.RightTrigger, "Right Trigger" }
         };
@@ -174,7 +178,7 @@ public abstract class InputComponent : MonoBehaviour
 
             if (inputType == InputType.Controller)
             {
-                float value = Input.GetAxisRaw(k_axisToName[(int)controllerAxis] + _playerNumber.ToString());
+                float value = Input.GetAxisRaw(k_axisToName[(int)controllerAxis]);
                 positiveHeld = value > Single.Epsilon;
                 negativeHeld = value < -Single.Epsilon;
             }
@@ -232,7 +236,7 @@ public abstract class InputComponent : MonoBehaviour
 
     public abstract void GainControl();
 
-    public abstract void ReleaseControl(bool resetVAlues = true);
+    public abstract void ReleaseControl(bool resetValues = true);
 
     protected void GainControl(InputButton inputButton)
     {

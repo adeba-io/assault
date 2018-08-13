@@ -28,8 +28,11 @@ public class Platform : MonoBehaviour
     BoxCollider2D _collider2D;
 
     public float slopeAngle { get { return _slopeAngle; } }
+
+    public PhysicsMaterial2D physicsMaterial { get { return _physicsMaterial; } set { _physicsMaterial = value; } }
     public float friction { get { return _physicsMaterial.friction; } }
     public float bounciness { get { return _physicsMaterial.bounciness; } }
+
     public PlatformType platformType { get { return _platformType; } }
 
     private void Awake()

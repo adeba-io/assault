@@ -23,24 +23,30 @@ public class PhysicsObject : MonoBehaviour
         public bool above, below;
         public bool left, right;
 
-        public bool hitCeiling;
         public bool groundedLastFrame, groundedThisFrame;
+        public bool ignoreGroundThisFrame;
         public Platform groundPlatform;
+
+        public bool hitCeilingLastFrame, hitCeilingThisFrame;
+
+        public bool hitWallLastFrame, hitWallThisFrame;
 
         public float groundSlopeAngle { get { return groundPlatform.slopeAngle; } }
         public bool hasCollision { get { return above || below || left || right; } }
 
         public void Reset()
         {
+            hitCeilingLastFrame = above;
             groundedLastFrame = below;
-            above = below = left = right = hitCeiling = groundedThisFrame = false;
+            hitWallLastFrame = right || left;
+            above = below = left = right = groundedThisFrame = hitCeilingThisFrame = hitWallThisFrame = ignoreGroundThisFrame = false;
             groundPlatform = null;
         }
 
         public override string ToString()
         {
-            return string.Format("[CollisionState] = a: {0}, b: {1}, l: {2}, r: {3}, groundedLastFrame: {4}, groundedThisFrame: {5}, Curr Platform: {6}, Curr Slope Angle: {7}",
-                                above, below, left, right, groundedLastFrame, groundedThisFrame, groundPlatform.name, groundSlopeAngle);
+            return string.Format("[CollisionState] = a: {0}, b: {1}, l: {2}, r: {3}, groundedLastFrame: {4}, groundedThisFrame: {5}, ignoreGroundThisFrame: {6], Curr Platform: {7}, Curr Slope Angle: {8}",
+                                above, below, left, right, groundedLastFrame, groundedThisFrame, ignoreGroundThisFrame, groundPlatform.name, groundSlopeAngle);
         }
     }
 
@@ -57,7 +63,7 @@ public class PhysicsObject : MonoBehaviour
     [SerializeField] CollisionState _collisionState;
     [SerializeField] bool _useGravity = true;
     [SerializeField] float _gravityMultiplier = 1f;
-    [SerializeField] Vector2 _projectedVelocity;
+    [SerializeField] public Vector2 _projectedVelocity;
     [SerializeField] Vector2 _currentVelocity;
     [Space]
 
@@ -110,8 +116,10 @@ public class PhysicsObject : MonoBehaviour
     public float gravityMultiplier { get { return _gravityMultiplier; } set { _gravityMultiplier = value; } }
     
     public bool isGrounded { get { return _collisionState.below && _collisionState.groundPlatform; } }
-    public Vector2 velocity { get { return _currentVelocity; } }
     public CollisionState collisions { get { return _collisionState; } }
+
+    public Vector2 projectedVelocity { get { return _projectedVelocity; } set { _projectedVelocity = value; } }
+    public Vector2 velocity { get { return _currentVelocity; } }
 
     public float skinWidth
     {
@@ -155,30 +163,46 @@ public class PhysicsObject : MonoBehaviour
         ResetRaycastOrigins();
 
         Gravity();
+        GroundFriction();
+        AirFriction();
 
         _prevPosition = _rigidbody2D.position;
         _currPosition = _prevPosition + (_projectedVelocity * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
+
+        if (_deltaMovement.magnitude < _minMoveDistance) _deltaMovement = Vector2.zero;
         
         AdjustVertical();
         
         AdjustHorizontal();
 
         AdjustForSlope();
-
+        
         _currPosition = _prevPosition + _deltaMovement;
         _rigidbody2D.MovePosition(_currPosition);
 
         if (Time.deltaTime > 0)
             _currentVelocity = _deltaMovement / Time.deltaTime;
 
-        if (isGrounded || _collisionState.hitCeiling)
-        {
-            _projectedVelocity.y = 0;
-        }
-
+        _deltaMovement = Vector2.zero;
+        
         if (!_collisionState.groundedLastFrame && _collisionState.below)
             _collisionState.groundedThisFrame = true;
+
+        if (!_collisionState.hitCeilingLastFrame && _collisionState.above)
+            _collisionState.hitCeilingThisFrame = true;
+
+        if (!_collisionState.hitWallLastFrame && (_collisionState.right || _collisionState.left))
+            _collisionState.hitWallThisFrame = true;
+
+        if (_collisionState.groundedThisFrame)
+            _projectedVelocity.y = 0;
+
+        if (_collisionState.hitCeilingThisFrame)
+            _projectedVelocity.y = 0;
+
+        if (_collisionState.hitWallThisFrame)
+            _projectedVelocity.x = 0;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -203,9 +227,40 @@ public class PhysicsObject : MonoBehaviour
 
     #region Public
 
-    public void MoveRigidbody(Vector2 move)
+    public Vector2 MoveRigidbody(Vector2 move, bool alterVelocity = true)
     {
-        _projectedVelocity += move * Time.deltaTime;
+        Vector2 toAdd = move * Time.deltaTime;
+
+        if (alterVelocity)
+            _projectedVelocity += toAdd;
+
+        return toAdd;
+    }
+
+    public Vector2 MoveRigidbody(float moveX, float moveY, bool alterVelocity = true)
+    {
+        Vector2 toAdd = new Vector2(moveX, moveY) * Time.deltaTime;
+
+        if (alterVelocity)
+            _projectedVelocity += toAdd;
+
+        return toAdd;
+    }
+
+    public void ForceRigidbody(Vector2 force, bool resetX = false, bool resetY = false)
+    {
+        if (resetX) _projectedVelocity.x = 0;
+        if (resetY) _projectedVelocity.y = 0;
+
+        _projectedVelocity += force;
+    }
+
+    public void ForceRigidbody(float forceX, float forceY, bool resetX = false, bool resetY = false)
+    {
+        if (resetX) _projectedVelocity.x = 0;
+        if (resetY) _projectedVelocity.y = 0;
+
+        _projectedVelocity += new Vector2(forceX, forceY);
     }
 
     /// <summary>
@@ -288,7 +343,7 @@ public class PhysicsObject : MonoBehaviour
                     _collisionState.below = false;
                 }
 
-                if (_collisionState.below)
+                if (_collisionState.groundPlatform && !_collisionState.ignoreGroundThisFrame && !goingUp)
                 {
                     _deltaMovement.y = raycastHit.point.y - raycastStart.y;
                     raycastDistance = Mathf.Abs(_deltaMovement.y);
@@ -333,7 +388,7 @@ public class PhysicsObject : MonoBehaviour
                 {
                     if (Mathf.Abs(currPlatform.slopeAngle) <= _slopeLimit)
                     {
-                        _collisionState.hitCeiling = true;
+                        _collisionState.above = true;
                     }
                     else
                     {
@@ -345,7 +400,7 @@ public class PhysicsObject : MonoBehaviour
                     _collisionState.above = false;
                 }
 
-                if (_collisionState.above)
+                if (_collisionState.above && goingUp)
                 {
                     _deltaMovement.y = raycastHit.point.y - raycastStart.y;
                     raycastDistance = Mathf.Abs(_deltaMovement.y);
@@ -394,10 +449,17 @@ public class PhysicsObject : MonoBehaviour
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
-                float currAngle = Vector2.Angle(raycastHit.normal, Vector2.left);
+                float currAngle = Vector2.Angle(raycastHit.normal, Vector2.up);
+                print(currAngle);
                 _collisionState.right = true;
 
                 if (currAngle <= _slopeLimit)
+                {
+                    _collisionState.right = false;
+                }
+
+                Platform potentWall = raycastHit.collider.gameObject.GetComponent<Platform>();
+                if (!potentWall)
                 {
                     _collisionState.right = false;
                 }
@@ -416,7 +478,7 @@ public class PhysicsObject : MonoBehaviour
                     _collisionState.right = false;
                 }
                 */
-
+                
                 if (_collisionState.right)
                 {
                     if (currAngle > 0)
@@ -460,7 +522,7 @@ public class PhysicsObject : MonoBehaviour
             raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
             if (raycastHit)
             {
-                float currAngle = Vector2.Angle(raycastHit.normal, Vector2.right);
+                float currAngle = Vector2.Angle(raycastHit.normal, Vector2.up);
                 _collisionState.left = true;
 
                 if (currAngle <= _slopeLimit)
@@ -536,7 +598,6 @@ public class PhysicsObject : MonoBehaviour
             bool movingDownSlope = Mathf.Sign(raycastHit.normal.x) == Mathf.Sign(_deltaMovement.x);
             if (movingDownSlope)
             {
-                print("Going down");
                 // Going down we want to speed up so the _slopeSpeedModifier curve should be > 1 for negative angles
                 float speedModifier = _slopeSpeedModifier.Evaluate(-angle);
                 // Add extra downward movement here to ensure we stick to the platform
@@ -548,7 +609,6 @@ public class PhysicsObject : MonoBehaviour
             }
             else
             {
-                print("Going up");
                 // Going down we want to slow down so the _slopeSpeedModifier curve should be < 1 for positive values
                 float speedModifier = _slopeSpeedModifier.Evaluate(angle);
                 // Add extra movement to ensure we stick
@@ -558,13 +618,38 @@ public class PhysicsObject : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region External Forces
+
     void Gravity()
     {
         if (!_useGravity) return;
+        if (_collisionState.groundedLastFrame) return;
+
+        Vector2 gravity = PhysicsManager.gravity * _gravityMultiplier;
+        MoveRigidbody(gravity);
+    }
+
+    void GroundFriction()
+    {
+        if (!_collisionState.below) return;
+        if (!_collisionState.groundPlatform) return;
+
+        if (_projectedVelocity.x > 0)
+            _projectedVelocity.x -= _collisionState.groundPlatform.friction * Time.deltaTime;
+        else if (_projectedVelocity.x < 0)
+            _projectedVelocity.x += _collisionState.groundPlatform.friction * Time.deltaTime;
+    }
+
+    void AirFriction()
+    {
         if (_collisionState.below) return;
 
-        Vector2 gravity = Physics2D.gravity * _gravityMultiplier;
-        MoveRigidbody(gravity);
+        if (_projectedVelocity.x > 0)
+            _projectedVelocity.x -= PhysicsManager.airFriction * Time.deltaTime;
+        else if (_projectedVelocity.x < 0)
+            _projectedVelocity.x += PhysicsManager.airFriction * Time.deltaTime;
     }
 
     #endregion

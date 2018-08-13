@@ -6,8 +6,8 @@ public class PlayerInput : InputComponent
 {
     [SerializeField] int _playerNumber = 1;
 
-    public InputAxis ControlHorizontal = new InputAxis(KeyCode.D, KeyCode.A, ControllerAxes.LeftStickHorizontal);
-    public InputAxis ControlVertical = new InputAxis(KeyCode.W, KeyCode.S, ControllerAxes.LeftStickVertical);
+    public InputAxis ControlHorizontal = new InputAxis(KeyCode.LeftArrow, KeyCode.RightArrow, ControllerAxes.LeftStick_X);
+    public InputAxis ControlVertical = new InputAxis(KeyCode.UpArrow, KeyCode.DownArrow, ControllerAxes.LeftStick_Y);
 
     public InputButton Jump = new InputButton(KeyCode.Space, ControllerButtons.FaceBottom);
     public InputButton AttackLight = new InputButton(KeyCode.J, ControllerButtons.FaceLeft);
@@ -30,17 +30,45 @@ public class PlayerInput : InputComponent
 
     public override void GainControl()
     {
-        throw new System.NotImplementedException();
+        _haveControl = true;
+
+        GainControl(ControlHorizontal);
+        GainControl(ControlVertical);
+
+        GainControl(Jump);
+        GainControl(AttackLight);
+        GainControl(AttackHeavy);
+        GainControl(Special);
+        GainControl(Meter);
+        GainControl(Defend);
     }
 
-    public override void ReleaseControl(bool resetVAlues = true)
+    public override void ReleaseControl(bool resetValues = true)
     {
-        throw new System.NotImplementedException();
+        _haveControl = false;
+
+        ReleaseControl(ControlHorizontal, resetValues);
+        ReleaseControl(ControlVertical, resetValues);
+
+        ReleaseControl(Jump, resetValues);
+        ReleaseControl(AttackLight, resetValues);
+        ReleaseControl(AttackHeavy, resetValues);
+        ReleaseControl(Special, resetValues);
+        ReleaseControl(Meter, resetValues);
+        ReleaseControl(Defend, resetValues);
     }
 
     protected override void GetInputs(bool fixedUpdateHappened)
     {
-        throw new System.NotImplementedException();
+        ControlHorizontal.StateUpdate(_inputType);
+        ControlVertical.StateUpdate(_inputType);
+
+        Jump.StateUpdate(fixedUpdateHappened, _inputType);
+        AttackLight.StateUpdate(fixedUpdateHappened, _inputType);
+        AttackHeavy.StateUpdate(fixedUpdateHappened, _inputType);
+        Special.StateUpdate(fixedUpdateHappened, _inputType);
+        Meter.StateUpdate(fixedUpdateHappened, _inputType);
+        Defend.StateUpdate(fixedUpdateHappened, _inputType);
     }
 
     void AssignPlayerNumberToInputs()

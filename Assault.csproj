@@ -311,8 +311,10 @@
     <Compile Include="Assets\Scripts\Input\InputComponent.cs" />
     <Compile Include="Assets\Scripts\Input\PlayerInput.cs" />
     <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\PhysicsManager.cs" />
     <Compile Include="Assets\Scripts\PhysicsObject.cs" />
-    <Compile Include="Assets\Scripts\Platform.cs" />
+    <Compile Include="Assets\Scripts\PlayerController.cs" />
+    <Compile Include="Assets\Scripts\Terrain\Platform.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="C:\Users\adeba_iy0jonw\AppData\Local\Unity\cache\packages\packages.unity.com\com.unity.package-manager-ui@1.9.10\Editor\Resources\Styles\Main_Dark.uss" />

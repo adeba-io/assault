@@ -7,6 +7,7 @@ using UnityEditor;
 public class PlatformEditor : Editor
 {
     Platform platform;
+    Collider2D collider;
 
     SerializedProperty _platformType;
     SerializedProperty _slopeAngle;
@@ -19,6 +20,7 @@ public class PlatformEditor : Editor
     private void OnEnable()
     {
         platform = (Platform)target;
+        collider = platform.GetComponent<Collider2D>();
 
         _platformType = serializedObject.FindProperty("_platformType");
         _slopeAngle = serializedObject.FindProperty("_slopeAngle");
@@ -35,6 +37,11 @@ public class PlatformEditor : Editor
         platform.transform.rotation = Quaternion.Euler(0, 0, _slopeAngle.floatValue);
 
         EditorGUILayout.PropertyField(_physicsMaterial, gui_physicsMaterial);
+
+        if (platform.physicsMaterial && !collider.sharedMaterial)
+            collider.sharedMaterial = platform.physicsMaterial;
+        else if (collider.sharedMaterial && !platform.physicsMaterial)
+            platform.physicsMaterial = collider.sharedMaterial;
 
         serializedObject.ApplyModifiedProperties();
     }
