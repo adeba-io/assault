@@ -8,6 +8,7 @@ public class PlatformEditor : Editor
 {
     Platform platform;
     Collider2D collider;
+    bool _physicsMaterialFoldout = false;
 
     SerializedProperty _platformType;
     SerializedProperty _slopeAngle;
@@ -30,6 +31,8 @@ public class PlatformEditor : Editor
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
+
+        int indent = EditorGUI.indentLevel;
 
         EditorGUILayout.PropertyField(_platformType, gui_platformType);
 

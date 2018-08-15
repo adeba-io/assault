@@ -62,13 +62,27 @@ public class PhysicsObjectEditor : Editor
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
+        /*
+        serializedObject.Update();
 
         physicsObject = (PhysicsObject)target;
+
+        EditorGUILayout.PropertyField(_collisionState, gui_collisionState, true);
+
+        EditorGUILayout.BeginHorizontal();
+
+        bool usingGravity = EditorGUILayout.PropertyField(_useGravity, gui_useGravity);
+
+        EditorGUILayout.PropertyField(_gravityMultiplier, gui_gravityMultiplier);
+
+        EditorGUILayout.EndHorizontal();
 
         if (GUILayout.Button("Jump by 10f"))
         {
             physicsObject.collisions.ignoreGroundThisFrame = true;
             physicsObject.ForceRigidbody(0f, 10f, false, true);
         }
+
+        serializedObject.ApplyModifiedProperties();*/  
     }
 }
