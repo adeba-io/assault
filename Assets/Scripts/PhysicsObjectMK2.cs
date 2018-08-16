@@ -42,10 +42,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
     // Raycasts
     RaycastPoints _raycastPoints;
 
-    [SerializeField]
-    [Range(0.4f, 0.8f)]
-    float _maxRaycastDistanceY = 0.5f, _maxRaycastDistanceX = 0.5f;
-
     // Slopes
     [SerializeField] [Range(0f, 45f)]
     float _groundSlopeLimit = 30f, _ceilingSlopeLimit = 10f;
@@ -98,20 +94,25 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Setup for new FixedUpdate
         _collisionState.Reset();
         _onSlope = false;
-
         ResetRaycastPoints();
 
+        // Take external forces into account
         Gravity();
 
+        // Calc _deltaMovement
         _prevPosition = _rigidbody.position;
         _currPosition = _prevPosition + (_projectedVelocity * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
 
-        AdjustHorizontal();
+        // Adjust _deltaMovement according to collisions
+        // Adjust vertical first
         AdjustVertical();
+        AdjustHorizontal();
 
+        // Find new _currPosition an move rigidbody accordingly
         _currPosition = _prevPosition + _deltaMovement;
         _rigidbody.MovePosition(_currPosition);
 
@@ -210,6 +211,48 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
     void AdjustVertical()
     {
+        // Setup required varaibles
+        Vector2 hitNormal = Vector2.zero;
+        float distanceToHit = 0;
+
+        // Below Check
+        CheckVerticalCollisions(false, ref distanceToHit, ref hitNormal);
+
+        if (_collisionState.belowPlatform)
+        {
+            float adjustDistance = distanceToHit - _skinWidth; //  - _skinWidth
+
+            if (adjustDistance < 0) adjustDistance = 0;
+
+            _deltaMovement.y = -adjustDistance;
+
+            if (_deltaMovement.y > 0) _deltaMovement.y = 0;
+        }
+
+
+        // Above CHeck
+        distanceToHit = 0;
+        hitNormal = Vector2.zero;
+
+        CheckVerticalCollisions(true, ref distanceToHit, ref hitNormal);
+
+        // If we're sandwiched between two platforms, don't move
+        if (_collisionState.abovePlatform && _collisionState.belowPlatform)
+        {
+            _deltaMovement.y = 0;
+            return;
+        }
+
+        if (_collisionState.abovePlatform)
+        {
+            float adjustDistance = distanceToHit - _skinWidth;
+
+            if (adjustDistance < 0) adjustDistance = 0;
+
+            _deltaMovement.y = adjustDistance;
+        }
+
+        /*
         bool goingUp = _deltaMovement.y > 0f;
         float aboveDist = 0, belowDist = 0;
         Vector2 ceilingNormal = Vector2.zero, belowNormal = Vector2.zero;
@@ -255,12 +298,59 @@ public class PhysicsObjectMK2 : MonoBehaviour
                 float toMove = Mathf.Tan(belowAngle * Mathf.Deg2Rad) * _deltaMovement.y;
 
                 _deltaMovement.x += toMove;
-            }*/
-        }
+            }*
+        }*/
     }
 
     void AdjustHorizontal()
     {
+        // Setuo required varaibles
+        Vector2 hitNormal = Vector2.zero;
+        float distanceToHit = 0;
+
+        // Right Check
+        CheckHorizontalCollisions(true, ref distanceToHit, ref hitNormal);
+
+        if (_collisionState.rightPlatform)
+        {
+            float adjustDistance = distanceToHit - _skinWidth;
+
+            if (adjustDistance < 0) adjustDistance = 0;
+
+            _deltaMovement.x = adjustDistance;
+
+            if (_deltaMovement.x < 0) _deltaMovement.x = 0;
+
+           // _deltaMovement.x += (distanceToHit - _skinWidth);
+        }
+
+
+        // Left Check
+        hitNormal = Vector2.zero;
+        distanceToHit = 0;
+
+        CheckHorizontalCollisions(false, ref distanceToHit, ref hitNormal);
+
+        // If we're sandwiched between two platforms, don't move
+        if (_collisionState.rightPlatform && _collisionState.leftPlatform)
+        {
+            _deltaMovement.x = 0;
+        }
+
+        if (_collisionState.leftPlatform)
+        {
+            float adjustDistance = distanceToHit - _skinWidth;
+
+            if (adjustDistance < 0) adjustDistance = 0;
+
+            _deltaMovement.x = -adjustDistance;
+
+            if (_deltaMovement.x > 0) _deltaMovement.x = 0;
+
+            //_deltaMovement.x -= (distanceToHit - _skinWidth);
+        }
+
+        /*
         bool goingRight = _deltaMovement.x > 0f;
         float rightDist = 0, leftDist = 0;
         Vector2 rightNormal = Vector2.zero, leftNormal = Vector2.zero;
@@ -313,8 +403,8 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
                     _deltaMovement.x += toMove;
                 }
-            }*/
-        }
+            }
+        }*/
     }
 
     void AdjustSlope()
@@ -357,33 +447,34 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
     void CheckAboveCollisions(bool goingUp, ref float aboveDistance, ref Vector2 ceilingNormal)
     {
+        // Declare required variables
         Vector2 raycastStart, raycastDirection;
         float raycastDistance;
         RaycastHit2D raycastHit;
 
-        raycastStart = _raycastPoints.top + _deltaMovement;
+        // Setup required variables
+        raycastStart = _raycastPoints.top;
         raycastDirection = Vector2.up;
 
-        raycastDistance = _skinWidth + _deltaMovement.y;
+        raycastDistance = _deltaMovement.y;
         if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-        if (raycastDistance > _maxRaycastDistanceY) raycastDistance = _maxRaycastDistanceY;
 
         DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
 
         raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
         if (raycastHit)
         {
+            // Betweeen normal and Vector2.down as we check above
             float currAngle = Vector2.Angle(raycastHit.normal, Vector2.down);
+            // If the angle is greater bail as it is not a ceiling
+            if (currAngle > _ceilingSlopeLimit) return;
+
             Platform potentPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
 
             if (potentPlatform)
             {
                 _collisionState.above = true;
-
-                if (currAngle <= _ceilingSlopeLimit)
-                {
-                    _collisionState.abovePlatform = potentPlatform;
-                }
+                _collisionState.abovePlatform = potentPlatform;
             }
 
             if (!goingUp) _collisionState.above = false;
@@ -403,12 +494,9 @@ public class PhysicsObjectMK2 : MonoBehaviour
         RaycastHit2D raycastHit;
 
         raycastStart = _raycastPoints.bottom;
-        raycastStart += _deltaMovement;
         raycastDirection = Vector2.down;
 
         raycastDistance = _skinWidth; // - _deltaMovement.y
-        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-        if (raycastDistance > _maxRaycastDistanceY) raycastDistance = _maxRaycastDistanceY;
 
         DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
 
@@ -416,23 +504,76 @@ public class PhysicsObjectMK2 : MonoBehaviour
         if (raycastHit)
         {
             float currAngle = Vector2.Angle(raycastHit.normal, Vector2.up);
+            if (currAngle > _groundSlopeLimit) return;
 
             Platform potentPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
 
             if (potentPlatform)
             {
-                if (currAngle <= _groundSlopeLimit)
-                {
-                    _collisionState.below = true;
-                    _collisionState.belowPlatform = potentPlatform;
+                _collisionState.below = true;
+                _collisionState.belowPlatform = potentPlatform;
 
-                    if (currAngle > 0) _onSlope = true;
-                }
+                if (currAngle > 0) _onSlope = true;
             }
 
             //if (goingUp) _collisionState.below = false;
 
             belowDistance = raycastHit.distance;
+        }
+    }
+
+    void CheckVerticalCollisions(bool above, ref float distancehToHit, ref Vector2 hitNormal)
+    {
+        // Declare required variables
+        Vector2 raycastStart, raycastDirection;
+        float raycastDistance;
+        RaycastHit2D raycastHit;
+        bool goingUp;
+        float appropriateSlopeLimit;
+
+        // Setup required variables
+        raycastStart = (above ? _raycastPoints.top : _raycastPoints.bottom);
+        raycastDirection = (above ? Vector2.up : Vector2.down);
+
+        raycastDistance = (above ? _deltaMovement.y : -_deltaMovement.y);
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+
+        goingUp = _deltaMovement.y > 0;
+        appropriateSlopeLimit = (above ? _ceilingSlopeLimit : _groundSlopeLimit);
+
+        // Raycast Stuff
+        DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
+
+        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+        if (raycastHit)
+        {
+            // Don't register collisions if we're moving away from the collider
+            // A temporary failsafe to allow us to move away from touching colliders
+            if ((above && !goingUp) || (!above && goingUp)) return;
+            // We calc against the reverse of raycastDirection
+            float currAngle = Vector2.Angle(-raycastDirection, raycastHit.normal);
+            // If the angle is greater thatn appropriateSLopeLimit, bail
+            if (currAngle > appropriateSlopeLimit) return;
+
+            Platform potentialPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
+            if (potentialPlatform)
+            {
+                if (above)
+                {
+                    _collisionState.above = true;
+                    _collisionState.abovePlatform = potentialPlatform;
+                }
+                else
+                {
+                    _collisionState.below = true;
+                    _collisionState.belowPlatform = potentialPlatform;
+
+                    if (currAngle > 0) _onSlope = true;
+                }
+            }
+
+            distancehToHit = raycastHit.distance;
+            hitNormal = raycastHit.normal;
         }
     }
 
@@ -447,7 +588,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         raycastDistance = _deltaMovement.x + _skinWidth;
         if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
 
         DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
 
@@ -484,7 +624,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         raycastDistance = _skinWidth - _deltaMovement.x;
         if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-        else if (raycastDistance > _maxRaycastDistanceX) raycastDistance = _maxRaycastDistanceX;
 
         DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
 
@@ -507,6 +646,59 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
             leftDistance = raycastHit.distance;
             leftNormal = raycastHit.normal;
+        }
+    }
+
+    void CheckHorizontalCollisions(bool right, ref float distanceToHit, ref Vector2 hitNormal)
+    {
+        // Declare reuired variables
+        Vector2 raycastStart, raycastDirection;
+        float raycastDistance;
+        RaycastHit2D raycastHit;
+        bool goingRight;
+
+        // Setup required varaibles
+        raycastStart = (right ? _raycastPoints.right : _raycastPoints.left);
+        raycastDirection = (right ? Vector2.right : Vector2.left);
+        
+        raycastDistance = (right ? _deltaMovement.x : -_deltaMovement.x);
+        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
+
+        goingRight = _deltaMovement.x > 0;
+
+        // Raycast Stuff
+        DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
+
+        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+        if (raycastHit)
+        {
+            // Don't register collisions if we're moving away from the collider
+            // A temporary failsafe to allow us to move away from touching colliders
+            if ((right && !goingRight) || (!right && goingRight)) return;
+            // We calc against the reverse of raycastDirection
+            float currAngle = Vector2.Angle(Vector2.down, raycastHit.normal);
+            // If the angle is less than or equal to _groundSlopeLimit, or greater than or equal to _ceilingSlopeLimit,
+            // bail it's not a wall
+            print(currAngle);
+            if (currAngle <= _groundSlopeLimit || currAngle >= 180f - _ceilingSlopeLimit) return;
+
+            Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
+            if (potentialWall)
+            {
+                if (right)
+                {
+                    _collisionState.right = true;
+                    _collisionState.rightPlatform = potentialWall;
+                }
+                else
+                {
+                    _collisionState.left = true;
+                    _collisionState.leftPlatform = potentialWall;
+                }
+            }
+
+            distanceToHit = raycastHit.distance;
+            hitNormal = raycastHit.normal;
         }
     }
 
