@@ -26,6 +26,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
     [SerializeField] CollisionState _collisionState;
     [SerializeField] bool _useGravity = true;
+    [SerializeField] bool _useFriction = true;
     [SerializeField] float _gravityMultiplier = 1f;
     [SerializeField] Vector2 _projectedVelocity;
     [SerializeField] Vector2 _currentVelocity;
@@ -96,13 +97,15 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Take external forces into account
+        Gravity();
+        GroundFriction();
+        AirFriction();
+
         // Setup for new FixedUpdate
         _collisionState.Reset();
         _onSlope = false;
         ResetRaycastPoints();
-
-        // Take external forces into account
-        Gravity();
 
         // Calc _deltaMovement
         _prevPosition = _rigidbody.position;
@@ -275,55 +278,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
             _deltaMovement.y = adjustDistance;
         }
-
-        /*
-        bool goingUp = _deltaMovement.y > 0f;
-        float aboveDist = 0, belowDist = 0;
-        Vector2 ceilingNormal = Vector2.zero, belowNormal = Vector2.zero;
-
-        CheckAboveCollisions(goingUp, ref aboveDist, ref ceilingNormal);
-        CheckBelowCollisions(goingUp, ref belowDist, ref belowNormal);
-
-        if (_collisionState.abovePlatform && _collisionState.belowPlatform)
-        {
-            _deltaMovement.y = 0;
-            return;
-        }
-        
-        if (aboveDist != 0)
-        {
-            _deltaMovement.y += aboveDist - _skinWidth;
-
-            if (ceilingNormal != Vector2.zero)
-            {
-                bool moveRight = ceilingNormal.x > 0;
-                float ceilingAngle = Vector2.SignedAngle(Vector2.down, ceilingNormal);
-                float toMove = 0;
-
-                DrawRay(_raycastPoints.top, ceilingNormal * 0.5f, slopeRayColor);
-
-                toMove = Mathf.Tan(ceilingAngle * Mathf.Deg2Rad) * _deltaMovement.y;
-
-                _deltaMovement.x += toMove;
-            }
-        }
-        else if (belowDist != 0)
-        {
-            if (_collisionState.below)
-                _deltaMovement.y -= (belowDist - _skinWidth);
-            /*
-            if (belowNormal != Vector2.zero)
-            {
-                bool moveRight = belowNormal.x > 0;
-                float belowAngle = Vector2.SignedAngle(Vector2.up, belowNormal);
-
-                DrawRay(_raycastPoints.bottom, belowNormal * 0.5f, slopeRayColor);
-
-                float toMove = Mathf.Tan(belowAngle * Mathf.Deg2Rad) * _deltaMovement.y;
-
-                _deltaMovement.x += toMove;
-            }*
-        }*/
     }
 
     void AdjustHorizontal()
@@ -362,8 +316,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
                 //if (_deltaMovement.x < 0) _deltaMovement.x = 0;
             }
-
-           // _deltaMovement.x += (distanceToHit - _skinWidth);
         }
 
 
@@ -413,64 +365,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
                 if (_deltaMovement.x > 0) _deltaMovement.x = 0;
             }
-            //_deltaMovement.x -= (distanceToHit - _skinWidth);
         }
-
-        /*
-        bool goingRight = _deltaMovement.x > 0f;
-        float rightDist = 0, leftDist = 0;
-        Vector2 rightNormal = Vector2.zero, leftNormal = Vector2.zero;
-
-        CheckRightCollisions(goingRight, ref rightDist, ref rightNormal);
-        CheckLeftCollisions(goingRight, ref leftDist, ref leftNormal);
-
-        if (_collisionState.leftPlatform && _collisionState.rightPlatform)
-        {
-            _deltaMovement.x = 0;
-            return;
-        }
-
-        if (rightDist != 0)
-        {
-            _deltaMovement.x -= rightDist + _skinWidth;
-            
-            if (rightNormal != Vector2.zero)
-            {
-                float wallAngle = Vector2.SignedAngle(Vector2.left, rightNormal);
-                print("Angle adjust");
-
-                if (wallAngle > 0 && _deltaMovement.y < 0)
-                {
-                    DrawRay(_raycastPoints.right, rightNormal * 0.5f, slopeRayColor);
-
-                    float toMove = Mathf.Tan(wallAngle * Mathf.Deg2Rad) * _deltaMovement.y;
-
-                    _deltaMovement.x -= toMove;
-                }
-            }
-            else
-            {
-                 _deltaMovement.x -= rightDist + _skinWidth;
-            }
-        }
-        else if (leftDist != 0)
-        {
-            _deltaMovement.x -= (leftDist - _skinWidth);
-            /*
-            if (leftNormal != Vector2.zero)
-            {
-                float wallAngle = Vector2.SignedAngle(Vector2.right, leftNormal);
-
-                if (wallAngle > 0 && _deltaMovement.y < 0)
-                {
-                    DrawRay(_raycastPoints.left, leftNormal * 0.5f, slopeRayColor);
-
-                    float toMove = Mathf.Tan(wallAngle * Mathf.Deg2Rad) * _deltaMovement.y;
-
-                    _deltaMovement.x += toMove;
-                }
-            }
-        }*/
     }
 
     void AdjustForSlope()
@@ -534,115 +429,12 @@ public class PhysicsObjectMK2 : MonoBehaviour
                 _deltaMovement.y += shiftY;
             }
         }
-
-        /*
-        raycastStart = _raycastPoints.bottom;
-        raycastStart.x += _deltaMovement.x;
-        raycastDirection = Vector2.down;
-        raycastDistance = .2f;
-
-        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-        if (raycastHit)
-        {
-            float angle = Vector2.Angle(raycastHit.normal, Vector2.up);
-            if (angle == 0)
-                return;
-
-            bool movingDownSlope = Mathf.Sign(raycastHit.normal.x) == Mathf.Sign(_deltaMovement.x);
-            if (movingDownSlope)
-            {
-                float speedModifier = _slopeSpeedModifier.Evaluate(-angle);
-                _deltaMovement.x *= speedModifier;
-            }
-            else
-            {
-                float speedModifier = _slopeSpeedModifier.Evaluate(angle);
-                _deltaMovement.x *= speedModifier;
-            }
-        }*/
     }
 
     #endregion
 
     #region Collision
-
-    void CheckAboveCollisions(bool goingUp, ref float aboveDistance, ref Vector2 ceilingNormal)
-    {
-        // Declare required variables
-        Vector2 raycastStart, raycastDirection;
-        float raycastDistance;
-        RaycastHit2D raycastHit;
-
-        // Setup required variables
-        raycastStart = _raycastPoints.top;
-        raycastDirection = Vector2.up;
-
-        raycastDistance = _deltaMovement.y;
-        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-
-        DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
-
-        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-        if (raycastHit)
-        {
-            // Betweeen normal and Vector2.down as we check above
-            float currAngle = Vector2.Angle(raycastHit.normal, Vector2.down);
-            // If the angle is greater bail as it is not a ceiling
-            if (currAngle > _ceilingSlopeLimit) return;
-
-            Platform potentPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
-
-            if (potentPlatform)
-            {
-                _collisionState.above = true;
-                _collisionState.abovePlatform = potentPlatform;
-            }
-
-            if (!goingUp) _collisionState.above = false;
-
-            aboveDistance = raycastHit.distance;
-            ceilingNormal = raycastHit.normal;
-        }
-        
-        if (!_collisionState.hitCeilingLastFrame && _collisionState.above)
-            _collisionState.hitCeilingThisFrame = true;
-    }
-
-    void CheckBelowCollisions(bool goingUp, ref float belowDistance, ref Vector2 belowNormal)
-    {
-        Vector2 raycastStart, raycastDirection;
-        float raycastDistance;
-        RaycastHit2D raycastHit;
-
-        raycastStart = _raycastPoints.bottom;
-        raycastDirection = Vector2.down;
-
-        raycastDistance = _skinWidth; // - _deltaMovement.y
-
-        DrawRay(raycastStart, raycastDirection * raycastDistance, vertRayColor);
-
-        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-        if (raycastHit)
-        {
-            float currAngle = Vector2.Angle(raycastHit.normal, Vector2.up);
-            if (currAngle > _groundSlopeLimit) return;
-
-            Platform potentPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
-
-            if (potentPlatform)
-            {
-                _collisionState.below = true;
-                _collisionState.belowPlatform = potentPlatform;
-
-                if (currAngle > 0) _onSlope = true;
-            }
-
-            //if (goingUp) _collisionState.below = false;
-
-            belowDistance = raycastHit.distance;
-        }
-    }
-
+    
     void CheckVerticalCollisions(bool above, ref float distancehToHit, ref Vector2 hitNormal)
     {
         // Declare required variables
@@ -699,79 +491,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
             hitNormal = raycastHit.normal;
         }
     }
-
-    void CheckRightCollisions(bool goingRight, ref float rightDistance, ref Vector2 rightNormal)
-    {
-        Vector2 raycastStart, raycastDirection;
-        float raycastDistance;
-        RaycastHit2D raycastHit;
-
-        raycastStart = _raycastPoints.right + _deltaMovement;
-        raycastDirection = Vector2.right;
-
-        raycastDistance = _deltaMovement.x + _skinWidth;
-        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-
-        DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
-
-        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-        if (raycastHit)
-        {
-            float currAngle = Vector2.Angle(raycastHit.normal, -raycastDirection);
-            Platform potentWall = raycastHit.collider.gameObject.GetComponent<Platform>();
-
-            if (potentWall)
-            {
-                if (currAngle > _groundSlopeLimit && currAngle < 90f - _ceilingSlopeLimit)
-                {
-                    _collisionState.right = true;
-                    _collisionState.rightPlatform = potentWall;
-                }
-            }
-
-            if (!goingRight) _collisionState.right = false;
-
-            rightDistance = raycastHit.distance;
-            rightNormal = raycastHit.normal;
-        }
-    }
-
-    void CheckLeftCollisions(bool goingRight, ref float leftDistance, ref Vector2 leftNormal)
-    {
-        Vector2 raycastStart, raycastDirection;
-        float raycastDistance;
-        RaycastHit2D raycastHit;
-
-        raycastStart = _raycastPoints.left + _deltaMovement;
-        raycastDirection = Vector2.left;
-
-        raycastDistance = _skinWidth - _deltaMovement.x;
-        if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
-
-        DrawRay(raycastStart, raycastDirection * raycastDistance, horiRayColor);
-
-        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
-        if (raycastHit)
-        {
-            float currAngle = Vector2.Angle(raycastHit.normal, -raycastDirection);
-            Platform potentWall = raycastHit.collider.gameObject.GetComponent<Platform>();
-
-            if (potentWall)
-            {
-                if (currAngle > _groundSlopeLimit && currAngle < 90f - _ceilingSlopeLimit)
-                {
-                    _collisionState.left = true;
-                    _collisionState.leftPlatform = potentWall;
-                }
-            }
-
-            if (goingRight) _collisionState.left = false;
-
-            leftDistance = raycastHit.distance;
-            leftNormal = raycastHit.normal;
-        }
-    }
-
+    
     void CheckHorizontalCollisions(bool right, ref float distanceToHit, ref Vector2 hitNormal)
     {
         // Declare reuired variables
@@ -856,6 +576,30 @@ public class PhysicsObjectMK2 : MonoBehaviour
         Vector2 toMove = PhysicsManager.gravity * _gravityMultiplier * Time.deltaTime;
 
         _projectedVelocity += toMove;
+    }
+
+    void GroundFriction()
+    {
+        if (!_collisionState.below) return;
+        if (!_collisionState.belowPlatform) return;
+        if (!_useFriction) return;
+
+        if (_projectedVelocity.x > 0)
+            _projectedVelocity.x -= _collisionState.belowPlatform.friction * Time.deltaTime;
+        else if (_projectedVelocity.x < 0)
+            _projectedVelocity.x += _collisionState.belowPlatform.friction * Time.deltaTime;
+    }
+
+    void AirFriction()
+    {
+        if (_collisionState.below) return;
+        if (_collisionState.hitGroundLastFrame) return;
+        if (!_useFriction) return;
+
+        if (_projectedVelocity.x > 0)
+            _projectedVelocity.x -= PhysicsManager.airFriction * Time.deltaTime;
+        else if (_projectedVelocity.x < 0)
+            _projectedVelocity.x += PhysicsManager.airFriction * Time.deltaTime;
     }
 
     #endregion
