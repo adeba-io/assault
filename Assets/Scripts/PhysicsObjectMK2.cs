@@ -34,6 +34,8 @@ public class PhysicsObjectMK2 : MonoBehaviour
     // Collision Fields
     [SerializeField] [Range(0.1f, 0.4f)]
     float _skinWidth = 0.02f;
+    [SerializeField] [Range(0f, 0.3f)]
+    float _horiSkinBuffer = 0.3f;
 
     public LayerMask _collisionMask = 0;
 
@@ -112,9 +114,16 @@ public class PhysicsObjectMK2 : MonoBehaviour
         AdjustHorizontal();
         AdjustVertical();
 
+        AdjustForSlope();
+
         // Find new _currPosition an move rigidbody accordingly
         _currPosition = _prevPosition + _deltaMovement;
         _rigidbody.MovePosition(_currPosition);
+
+        // Only find _currentVelocity if time is passing in game
+        if (Time.deltaTime > 0) _currentVelocity = _deltaMovement / Time.deltaTime;
+        // If we're grounded we have no important Y velocity
+        if (_collisionState.belowPlatform) _currentVelocity.y = 0;
 
         if (!_collisionState.hitGroundLastFrame && _collisionState.below)
             _collisionState.hitGroundThisFrame = true;
@@ -328,23 +337,24 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         if (_collisionState.rightPlatform)
         {
-            float wallAngle = Vector2.SignedAngle(Vector2.left, hitNormal);
-            wallAngle = Mathf.Abs(wallAngle);
+            float wallAngle = Vector2.Angle(Vector2.left, hitNormal);
             print(wallAngle);
 
             if (wallAngle > 0 && wallAngle != 90f)
             {
-                // Adjust for sloped walls
-                DrawRay(_raycastPoints.right, hitNormal * 0.5f, slopeRayColor);
+                // Draw Ray
+                Vector2 rayPoint = _raycastPoints.right;
+                rayPoint.x += distanceToHit;
+                DrawRay(rayPoint, hitNormal * 0.5f, slopeRayColor);
 
+                // Adjust for slope
                 // No matter if we're going up or down we want to shift left
                 float toMove = Mathf.Tan(wallAngle * Mathf.Deg2Rad) * Mathf.Abs(_deltaMovement.y);
-
                 _deltaMovement.x = -toMove;
             }
             else
             {
-                float adjustDistance = distanceToHit - _skinWidth;
+                float adjustDistance = distanceToHit - _skinWidth - _horiSkinBuffer;
 
                 if (adjustDistance < 0) adjustDistance = 0;
 
@@ -379,14 +389,30 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         if (_collisionState.leftPlatform)
         {
-            float adjustDistance = distanceToHit - _skinWidth;
+            float wallAngle = Vector2.Angle(Vector2.right, hitNormal);
 
-            if (adjustDistance < 0) adjustDistance = 0;
+            if (wallAngle > 0 && wallAngle != 90f)
+            {
+                // Draw Ray
+                Vector2 rayPoint = _raycastPoints.left;
+                rayPoint.x -= distanceToHit;
+                DrawRay(rayPoint, hitNormal * 0.5f, slopeRayColor);
 
-            _deltaMovement.x = -adjustDistance;
+                // Adjust for slope
+                // No matter if we're going up or down we want to shift right
+                float toMove = Mathf.Tan(wallAngle * Mathf.Deg2Rad) * Mathf.Abs(_deltaMovement.y);
+                _deltaMovement.x = toMove;
+            }
+            else
+            {
+                float adjustDistance = distanceToHit - _skinWidth - _horiSkinBuffer;
 
-            if (_deltaMovement.x > 0) _deltaMovement.x = 0;
+                if (adjustDistance < 0) adjustDistance = 0;
 
+                _deltaMovement.x = -adjustDistance;
+
+                if (_deltaMovement.x > 0) _deltaMovement.x = 0;
+            }
             //_deltaMovement.x -= (distanceToHit - _skinWidth);
         }
 
@@ -447,14 +473,69 @@ public class PhysicsObjectMK2 : MonoBehaviour
         }*/
     }
 
-    void AdjustSlope()
+    void AdjustForSlope()
     {
         if (!_onSlope) return;
+        if (!_collisionState.below) return;
+        if (!_collisionState.belowPlatform) return;
+        if (_deltaMovement.x == 0) return;
 
+        // Declare required variables
         Vector2 raycastStart, raycastDirection;
         float raycastDistance;
         RaycastHit2D raycastHit;
+        bool goingRight;
 
+        // Setup required variables
+        raycastStart = _raycastPoints.bottom; // + _deltaMovement
+        raycastDirection = Vector2.down;
+
+        raycastDistance = 0.1f + _skinWidth;
+
+        goingRight = _deltaMovement.x > 0;
+
+        // Raycast Stuff 1
+        DrawRay(raycastStart, raycastDirection * raycastDistance, slopeRayColor);
+
+        raycastHit = Physics2D.Raycast(raycastStart, raycastDirection, raycastDistance, _collisionMask);
+        if (raycastHit)
+        {
+            // Draw Ray
+            DrawRay(raycastHit.point, raycastHit.normal * 0.3f, slopeRayColor);
+
+            // Calc angle
+            float slopeAngle = Vector2.Angle(Vector2.up, raycastHit.normal);
+            // If the angle is greater than _groundSlopeLimit or equals zero, bail
+            if (slopeAngle > _groundSlopeLimit || slopeAngle == 0) return;
+
+            // If the X component of our movement and the hit normal have the same sign
+            // (i.e. point in the same direction) we are moving down the slope
+            bool movingDownSlope = Mathf.Sign(raycastHit.normal.x) == Mathf.Sign(_deltaMovement.x);
+            if (movingDownSlope)
+            {
+                // Going down we want to speed up
+                // The _slopeSpeedModifier curve should be > 1 for negative values
+                float speedMultiplier = _slopeSpeedModifier.Evaluate(-slopeAngle);
+                _deltaMovement.x *= speedMultiplier;
+                // Calc the alteration in the Y axis
+                float shiftY = Mathf.Tan(slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(_deltaMovement.x);
+                // To ensure we stick to the ground
+                _deltaMovement.y -= (raycastHit.distance - (_skinWidth * 0.75f)); // - _skinWidth
+                _deltaMovement.y -= shiftY;
+            }
+            else
+            {
+                // Going up we want to slow down
+                // The _slopeSpeedModifier curve should be < 1 for positive values
+                float speedMultiplier = _slopeSpeedModifier.Evaluate(slopeAngle);
+                _deltaMovement.x *= speedMultiplier;
+                // Calc the alteration in the Y axis
+                float shiftY = Mathf.Tan(slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(_deltaMovement.x);
+                _deltaMovement.y += shiftY;
+            }
+        }
+
+        /*
         raycastStart = _raycastPoints.bottom;
         raycastStart.x += _deltaMovement.x;
         raycastDirection = Vector2.down;
@@ -478,7 +559,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
                 float speedModifier = _slopeSpeedModifier.Evaluate(angle);
                 _deltaMovement.x *= speedModifier;
             }
-        }
+        }*/
     }
 
     #endregion
@@ -576,7 +657,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
         raycastStart.x += _deltaMovement.x;
         raycastDirection = (above ? Vector2.up : Vector2.down);
 
-        raycastDistance = (above ? _deltaMovement.y : -_deltaMovement.y);
+        raycastDistance = (above ? _deltaMovement.y : -_deltaMovement.y) + _skinWidth;
         if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
 
         goingUp = _deltaMovement.y > 0;
@@ -593,8 +674,9 @@ public class PhysicsObjectMK2 : MonoBehaviour
             if ((above && !goingUp) || (!above && goingUp)) return;
             // We calc against the reverse of raycastDirection
             float currAngle = Vector2.Angle(-raycastDirection, raycastHit.normal);
-            // If the angle is greater thatn appropriateSLopeLimit, bail
+            // If the angle is greater that the appropriateSlopeLimit, bail
             if (currAngle > appropriateSlopeLimit) return;
+            print(currAngle + " " + raycastHit.normal);
 
             Platform potentialPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
             if (potentialPlatform)
@@ -700,9 +782,14 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         // Setup required varaibles
         raycastStart = (right ? _raycastPoints.right : _raycastPoints.left);
+        if (right)
+            raycastStart.x -= _horiSkinBuffer;
+        else
+            raycastStart.x += _horiSkinBuffer;
+        
         raycastDirection = (right ? Vector2.right : Vector2.left);
         
-        raycastDistance = (right ? _deltaMovement.x : -_deltaMovement.x);
+        raycastDistance = (right ? _deltaMovement.x : -_deltaMovement.x) + _skinWidth + _horiSkinBuffer;
         if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
 
         goingRight = _deltaMovement.x > 0;

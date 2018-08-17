@@ -367,6 +367,12 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519420028}
   m_Enabled: 1
+--- !u!4 &1045811276 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3349913331422115662, guid: bef0e2bc79190e04293c0df21c4a6f8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 3349913331318613762}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &665141939
 GameObject:
   m_ObjectHideFlags: 0
@@ -402,12 +408,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &1045811276 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3349913331422115662, guid: bef0e2bc79190e04293c0df21c4a6f8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 3349913331318613762}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &847717714
 GameObject:
   m_ObjectHideFlags: 0
@@ -427,7 +427,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &847717715
 Transform:
   m_ObjectHideFlags: 0
@@ -435,8 +435,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 847717714}
-  m_LocalRotation: {x: -0, y: -0, z: 0.6011179, w: 0.7991604}
-  m_LocalPosition: {x: -3.87, y: 2.83, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0.4485392, w: 0.8937632}
+  m_LocalPosition: {x: -5.57, y: 3.65, z: 0}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 665141940}
@@ -503,7 +503,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _platformType: 0
   _physicsMaterial: {fileID: 0}
-  _slopeAngle: 73.9
+  _slopeAngle: -53.3
 --- !u!50 &847717717
 Rigidbody2D:
   serializedVersion: 4
@@ -578,8 +578,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1669855078}
-  m_LocalRotation: {x: -0, y: -0, z: 0.5060338, w: 0.86251366}
-  m_LocalPosition: {x: -2.37, y: 3.66, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.51, y: 13.82, z: 0}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 665141940}
@@ -646,7 +646,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _platformType: 0
   _physicsMaterial: {fileID: 0}
-  _slopeAngle: 60.8
+  _slopeAngle: 0
 --- !u!50 &1669855081
 Rigidbody2D:
   serializedVersion: 4
@@ -722,7 +722,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2137761122}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 7.1, z: 0}
+  m_LocalPosition: {x: -1.01, y: 9.57, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -852,10 +852,11 @@ MonoBehaviour:
     hitRightWallLastFrame: 0
     hitRightWallThisFrame: 0
   _useGravity: 1
-  _gravityMultiplier: 1.5
-  _projectedVelocity: {x: 0, y: 0}
+  _gravityMultiplier: 1
+  _projectedVelocity: {x: 0, y: 10}
   _currentVelocity: {x: 0, y: 0}
-  _skinWidth: 0.02
+  _skinWidth: 0.1
+  _horiSkinBuffer: 0.3
   _collisionMask:
     serializedVersion: 2
     m_Bits: 256
