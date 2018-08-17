@@ -852,7 +852,7 @@ MonoBehaviour:
     hitRightWallLastFrame: 0
     hitRightWallThisFrame: 0
   _useGravity: 1
-  _gravityMultiplier: 1
+  _gravityMultiplier: 1.5
   _projectedVelocity: {x: 0, y: 0}
   _currentVelocity: {x: 0, y: 0}
   _skinWidth: 0.02

@@ -108,9 +108,9 @@ public class PhysicsObjectMK2 : MonoBehaviour
         _deltaMovement = _currPosition - _prevPosition;
 
         // Adjust _deltaMovement according to collisions
-        // Adjust vertical first
-        AdjustVertical();
+        // AdjustHorizontal first
         AdjustHorizontal();
+        AdjustVertical();
 
         // Find new _currPosition an move rigidbody accordingly
         _currPosition = _prevPosition + _deltaMovement;
@@ -218,6 +218,14 @@ public class PhysicsObjectMK2 : MonoBehaviour
         // Below Check
         CheckVerticalCollisions(false, ref distanceToHit, ref hitNormal);
 
+        // It's a platform we ant to use only if it hasn't been picked up as a ;eft or right collider
+        // This allows us to keep falling if we are in the middle of a platform
+        if (_collisionState.rightPlatform == _collisionState.belowPlatform || _collisionState.leftPlatform == _collisionState.belowPlatform)
+        {
+            _collisionState.below = false;
+            _collisionState.belowPlatform = null;
+        }
+
         if (_collisionState.belowPlatform)
         {
             float adjustDistance = distanceToHit - _skinWidth; //  - _skinWidth
@@ -235,6 +243,13 @@ public class PhysicsObjectMK2 : MonoBehaviour
         hitNormal = Vector2.zero;
 
         CheckVerticalCollisions(true, ref distanceToHit, ref hitNormal);
+
+        // If the platform's been deemed a left or right platform we cannot use it
+        if (_collisionState.rightPlatform == _collisionState.abovePlatform || _collisionState.leftPlatform == _collisionState.abovePlatform)
+        {
+            _collisionState.above = false;
+            _collisionState.abovePlatform = null;
+        }
 
         // If we're sandwiched between two platforms, don't move
         if (_collisionState.abovePlatform && _collisionState.belowPlatform)
@@ -313,13 +328,30 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         if (_collisionState.rightPlatform)
         {
-            float adjustDistance = distanceToHit - _skinWidth;
+            float wallAngle = Vector2.SignedAngle(Vector2.left, hitNormal);
+            wallAngle = Mathf.Abs(wallAngle);
+            print(wallAngle);
 
-            if (adjustDistance < 0) adjustDistance = 0;
+            if (wallAngle > 0 && wallAngle != 90f)
+            {
+                // Adjust for sloped walls
+                DrawRay(_raycastPoints.right, hitNormal * 0.5f, slopeRayColor);
 
-            _deltaMovement.x = adjustDistance;
+                // No matter if we're going up or down we want to shift left
+                float toMove = Mathf.Tan(wallAngle * Mathf.Deg2Rad) * Mathf.Abs(_deltaMovement.y);
 
-            if (_deltaMovement.x < 0) _deltaMovement.x = 0;
+                _deltaMovement.x = -toMove;
+            }
+            else
+            {
+                float adjustDistance = distanceToHit - _skinWidth;
+
+                if (adjustDistance < 0) adjustDistance = 0;
+
+                _deltaMovement.x = adjustDistance;
+
+                //if (_deltaMovement.x < 0) _deltaMovement.x = 0;
+            }
 
            // _deltaMovement.x += (distanceToHit - _skinWidth);
         }
@@ -330,7 +362,15 @@ public class PhysicsObjectMK2 : MonoBehaviour
         distanceToHit = 0;
 
         CheckHorizontalCollisions(false, ref distanceToHit, ref hitNormal);
-
+        /*
+        // If we're picking up collisions from the same collider on both sides
+        // We're in the middle of the collider so both should be ignored
+        if (_collisionState.rightPlatform == _collisionState.leftPlatform)
+        {
+            _collisionState.left = _collisionState.right = false;
+            _collisionState.leftPlatform = _collisionState.rightPlatform = null;
+        }
+        */
         // If we're sandwiched between two platforms, don't move
         if (_collisionState.rightPlatform && _collisionState.leftPlatform)
         {
@@ -533,6 +573,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
         // Setup required variables
         raycastStart = (above ? _raycastPoints.top : _raycastPoints.bottom);
+        raycastStart.x += _deltaMovement.x;
         raycastDirection = (above ? Vector2.up : Vector2.down);
 
         raycastDistance = (above ? _deltaMovement.y : -_deltaMovement.y);
@@ -674,12 +715,12 @@ public class PhysicsObjectMK2 : MonoBehaviour
         {
             // Don't register collisions if we're moving away from the collider
             // A temporary failsafe to allow us to move away from touching colliders
-            if ((right && !goingRight) || (!right && goingRight)) return;
+            if (_deltaMovement.x != 0)
+                if ((right && !goingRight) || (!right && goingRight)) return;
             // We calc against the reverse of raycastDirection
-            float currAngle = Vector2.Angle(Vector2.down, raycastHit.normal);
+            float currAngle = Vector2.Angle(Vector2.up, raycastHit.normal);
             // If the angle is less than or equal to _groundSlopeLimit, or greater than or equal to _ceilingSlopeLimit,
             // bail it's not a wall
-            print(currAngle);
             if (currAngle <= _groundSlopeLimit || currAngle >= 180f - _ceilingSlopeLimit) return;
 
             Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
