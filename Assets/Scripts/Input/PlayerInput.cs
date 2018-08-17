@@ -6,7 +6,7 @@ public class PlayerInput : InputComponent
 {
     [SerializeField] int _playerNumber = 1;
 
-    public InputAxis ControlHorizontal = new InputAxis(KeyCode.LeftArrow, KeyCode.RightArrow, ControllerAxes.LeftStick_X);
+    public InputAxis ControlHorizontal = new InputAxis(KeyCode.RightArrow, KeyCode.LeftArrow, ControllerAxes.LeftStick_X);
     public InputAxis ControlVertical = new InputAxis(KeyCode.UpArrow, KeyCode.DownArrow, ControllerAxes.LeftStick_Y);
 
     public InputButton Jump = new InputButton(KeyCode.Space, ControllerButtons.FaceBottom);

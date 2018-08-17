@@ -40,8 +40,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
 
     public LayerMask _collisionMask = 0;
 
-    List<Platform> _adjustmentObjects = new List<Platform>(3);
-
     // Raycasts
     RaycastPoints _raycastPoints;
 
@@ -112,6 +110,8 @@ public class PhysicsObjectMK2 : MonoBehaviour
         _currPosition = _prevPosition + (_projectedVelocity * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
 
+        if (_deltaMovement.magnitude < _minMoveDistance) _deltaMovement = Vector2.zero;
+
         // Adjust _deltaMovement according to collisions
         // AdjustHorizontal first
         AdjustHorizontal();
@@ -171,10 +171,10 @@ public class PhysicsObjectMK2 : MonoBehaviour
     #region Public
 
     /// <summary>
-    /// Increases the velocity of the GameObject. Automatically multiplies the move by Time.deltaTime. Returns the GameObject's new velocity
+    /// Accelerates the GameObject. Automatically multiplies the move by Time.deltaTime. Returns the GameObject's new velocity
     /// </summary>
-    /// <param name="move">The Vector2to be added to the velocity</param>
-    /// <param name="alterVelocity">Should we alter the valocity with move?</param>
+    /// <param name="move">The Vector2 to accelerate by</param>
+    /// <param name="alterVelocity">Should we alter the valocity with?</param>
     /// <returns></returns>
     public Vector2 MoveRigidbody(Vector2 move, bool alterVelocity = true)
     {
@@ -186,11 +186,11 @@ public class PhysicsObjectMK2 : MonoBehaviour
     }
 
     /// <summary>
-    /// Increases the velocity. Returns the added velocity
+    /// Accelerates the GameObject. Automatically multiplies the added force by Time.deltaTime. Returns the added velocity
     /// </summary>
-    /// <param name="moveX"></param>
-    /// <param name="moveY"></param>
-    /// <param name="alterVelocity"></param>
+    /// <param name="moveX">The X component to accelerate by</param>
+    /// <param name="moveY">The Y component to accelerate by</param>
+    /// <param name="alterVelocity">Should we alter the velocity?</param>
     /// <returns></returns>
     public Vector2 MoveRigidbody(float moveX, float moveY, bool alterVelocity = true)
     {
@@ -379,15 +379,12 @@ public class PhysicsObjectMK2 : MonoBehaviour
         Vector2 raycastStart, raycastDirection;
         float raycastDistance;
         RaycastHit2D raycastHit;
-        bool goingRight;
 
         // Setup required variables
         raycastStart = _raycastPoints.bottom; // + _deltaMovement
         raycastDirection = Vector2.down;
 
         raycastDistance = 0.1f + _skinWidth;
-
-        goingRight = _deltaMovement.x > 0;
 
         // Raycast Stuff 1
         DrawRay(raycastStart, raycastDirection * raycastDistance, slopeRayColor);
