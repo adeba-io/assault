@@ -6,7 +6,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(BoxCollider2D))]
-public class PhysicsObjectMK2 : MonoBehaviour
+public class PhysicsObject : MonoBehaviour
 {
     #region Internal Types
 
@@ -24,31 +24,35 @@ public class PhysicsObjectMK2 : MonoBehaviour
     public Action<Collider2D> OnTriggerStayEvent;
     public Action<Collider2D> OnTriggerExitEvent;
 
-    [SerializeField] CollisionState _collisionState;
-    [SerializeField] bool _useGravity = true;
-    [SerializeField] bool _useFriction = true;
-    [SerializeField] float _gravityMultiplier = 1f;
-    [SerializeField] Vector2 _projectedVelocity;
+    [SerializeField] protected CollisionState _collisionState;
+    [SerializeField] protected bool _useGravity = true;
+    [SerializeField] protected bool _useFriction = true;
+    [SerializeField] protected float _gravityMultiplier = 1f;
+    [SerializeField] protected Vector2 _projectedVelocity;
     [SerializeField] Vector2 _currentVelocity;
     [Space]
 
     // Collision Fields
-    [SerializeField] [Range(0.1f, 0.4f)]
+    [SerializeField]
+    [Range(0.1f, 0.4f)]
     float _skinWidth = 0.02f;
-    [SerializeField] [Range(0f, 0.3f)]
+    [SerializeField]
+    [Range(0f, 0.3f)]
     float _horiSkinBuffer = 0.3f;
 
-    public LayerMask _collisionMask = 0;
+    [SerializeField]
+    protected LayerMask _collisionMask = 0;
 
     // Raycasts
     RaycastPoints _raycastPoints;
 
     // Slopes
-    [SerializeField] [Range(0f, 45f)]
-    float _groundSlopeLimit = 30f, _ceilingSlopeLimit = 10f;
+    [SerializeField]
+    [Range(0f, 45f)]
+    protected float _groundSlopeLimit = 30f, _ceilingSlopeLimit = 10f;
 
     [SerializeField]
-    AnimationCurve _slopeSpeedModifier =
+    protected AnimationCurve _slopeSpeedModifier =
         new AnimationCurve(new Keyframe(-90f, 1.5f), new Keyframe(0f, 1f), new Keyframe(90f, 0.5f));
 
     bool _onSlope = false;
@@ -68,7 +72,11 @@ public class PhysicsObjectMK2 : MonoBehaviour
     public bool useGravity { get { return _useGravity; } set { useGravity = value; } }
     public float gravityMultiplier { get { return _gravityMultiplier; } set { _gravityMultiplier = value; } }
 
-    public float skinWidth { get { return _skinWidth; } set { _skinWidth = value; } }
+    public float skinWidth
+    {
+        get { return _skinWidth; }
+        set { _skinWidth = value; ResetRaycastPoints(); }
+    }
 
     public bool isGrounded { get { return _collisionState.below && _collisionState.belowPlatform; } }
     public CollisionState collisionState { get { return _collisionState; } }
@@ -128,8 +136,8 @@ public class PhysicsObjectMK2 : MonoBehaviour
         // If we're grounded we have no important Y velocity
         if (_collisionState.belowPlatform) _currentVelocity.y = 0;
 
-        if (!_collisionState.hitGroundLastFrame && _collisionState.below)
-            _collisionState.hitGroundThisFrame = true;
+        if (!_collisionState.groundedLastFrame && _collisionState.below)
+            _collisionState.groundedThisFrame = true;
 
         if (!_collisionState.hitCeilingLastFrame && _collisionState.above)
             _collisionState.hitCeilingThisFrame = true;
@@ -140,7 +148,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
         if (!_collisionState.hitRightWallLastFrame && _collisionState.right)
             _collisionState.hitRightWallThisFrame = true;
 
-        if (_collisionState.hitGroundThisFrame || _collisionState.hitCeilingThisFrame)
+        if (_collisionState.groundedThisFrame || _collisionState.hitCeilingThisFrame)
             _projectedVelocity.y = 0;
 
         if (_collisionState.hitLeftWallThisFrame || _collisionState.hitRightWallThisFrame)
@@ -181,7 +189,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
         Vector2 toAdd = move * Time.deltaTime;
 
         if (alterVelocity) _projectedVelocity += toAdd;
-        
+
         return toAdd;
     }
 
@@ -215,6 +223,18 @@ public class PhysicsObjectMK2 : MonoBehaviour
         if (resetY) _projectedVelocity.y = 0;
 
         _projectedVelocity += new Vector2(forceX, forceY);
+    }
+
+    /// <summary>
+    /// Moves the GameObject without any implied velocity changes
+    /// </summary>
+    /// <param name="newPosiition">The new position of the GameObject in global coordinates</param>
+    public void Teleport(Vector2 newPosiition)
+    {
+        Vector2 deltaPosition = newPosiition = _currPosition;
+        _prevPosition += deltaPosition;
+        _currPosition = newPosiition;
+        _rigidbody.MovePosition(newPosiition);
     }
 
     #endregion
@@ -292,7 +312,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
         if (_collisionState.rightPlatform)
         {
             float wallAngle = Vector2.Angle(Vector2.left, hitNormal);
-            print(wallAngle);
 
             if (wallAngle > 0 && wallAngle != 90f)
             {
@@ -431,7 +450,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
     #endregion
 
     #region Collision
-    
+
     void CheckVerticalCollisions(bool above, ref float distancehToHit, ref Vector2 hitNormal)
     {
         // Declare required variables
@@ -465,7 +484,6 @@ public class PhysicsObjectMK2 : MonoBehaviour
             float currAngle = Vector2.Angle(-raycastDirection, raycastHit.normal);
             // If the angle is greater that the appropriateSlopeLimit, bail
             if (currAngle > appropriateSlopeLimit) return;
-            print(currAngle + " " + raycastHit.normal);
 
             Platform potentialPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
             if (potentialPlatform)
@@ -488,7 +506,7 @@ public class PhysicsObjectMK2 : MonoBehaviour
             hitNormal = raycastHit.normal;
         }
     }
-    
+
     void CheckHorizontalCollisions(bool right, ref float distanceToHit, ref Vector2 hitNormal)
     {
         // Declare reuired variables
@@ -503,9 +521,9 @@ public class PhysicsObjectMK2 : MonoBehaviour
             raycastStart.x -= _horiSkinBuffer;
         else
             raycastStart.x += _horiSkinBuffer;
-        
+
         raycastDirection = (right ? Vector2.right : Vector2.left);
-        
+
         raycastDistance = (right ? _deltaMovement.x : -_deltaMovement.x) + _skinWidth + _horiSkinBuffer;
         if (raycastDistance < _skinWidth) raycastDistance = _skinWidth;
 
@@ -568,8 +586,8 @@ public class PhysicsObjectMK2 : MonoBehaviour
     void Gravity()
     {
         if (!_useGravity) return;
-        if (_collisionState.hitGroundLastFrame) return;
-        
+        if (_collisionState.groundedLastFrame) return;
+
         Vector2 toMove = PhysicsManager.gravity * _gravityMultiplier * Time.deltaTime;
 
         _projectedVelocity += toMove;
@@ -590,13 +608,16 @@ public class PhysicsObjectMK2 : MonoBehaviour
     void AirFriction()
     {
         if (_collisionState.below) return;
-        if (_collisionState.hitGroundLastFrame) return;
+        if (_collisionState.groundedLastFrame) return;
         if (!_useFriction) return;
 
         if (_projectedVelocity.x > 0)
-            _projectedVelocity.x -= PhysicsManager.airFriction * Time.deltaTime;
+            _projectedVelocity.x -= PhysicsManager.airFriction.x * Time.deltaTime;
         else if (_projectedVelocity.x < 0)
-            _projectedVelocity.x += PhysicsManager.airFriction * Time.deltaTime;
+            _projectedVelocity.x += PhysicsManager.airFriction.x * Time.deltaTime;
+
+        if (_projectedVelocity.y < 0)
+            _projectedVelocity.y += PhysicsManager.airFriction.y * Time.deltaTime;
     }
 
     #endregion
@@ -630,21 +651,23 @@ public class CollisionState
     public Platform rightPlatform;
 
     public bool hitCeilingLastFrame, hitCeilingThisFrame;
-    public bool hitGroundLastFrame, hitGroundThisFrame;
+    public bool groundedLastFrame, groundedThisFrame;
     public bool hitLeftWallLastFrame, hitLeftWallThisFrame;
     public bool hitRightWallLastFrame, hitRightWallThisFrame;
-    
+
     public bool hasCollision { get { return above || below || left || right; } }
+
+    public bool touchingWall { get { return leftPlatform || rightPlatform; } }
 
     public void Reset()
     {
         hitCeilingLastFrame = hitCeilingThisFrame;
-        hitGroundLastFrame = below;
+        groundedLastFrame = below;
         hitLeftWallLastFrame = hitLeftWallThisFrame;
         hitRightWallLastFrame = hitRightWallThisFrame;
 
         above = below = left = right = false;
-        hitCeilingThisFrame = hitGroundThisFrame = hitLeftWallThisFrame = hitRightWallThisFrame = false;
+        hitCeilingThisFrame = groundedThisFrame = hitLeftWallThisFrame = hitRightWallThisFrame = false;
         abovePlatform = belowPlatform = leftPlatform = rightPlatform = null;
     }
 }

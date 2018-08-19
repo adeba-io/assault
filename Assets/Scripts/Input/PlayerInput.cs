@@ -6,15 +6,15 @@ public class PlayerInput : InputComponent
 {
     [SerializeField] int _playerNumber = 1;
 
-    public InputAxis ControlHorizontal = new InputAxis(KeyCode.RightArrow, KeyCode.LeftArrow, ControllerAxes.LeftStick_X);
-    public InputAxis ControlVertical = new InputAxis(KeyCode.UpArrow, KeyCode.DownArrow, ControllerAxes.LeftStick_Y);
+    public InputAxis Control_X = new InputAxis(KeyCode.RightArrow, KeyCode.LeftArrow, ControllerAxes.LeftStick_X);
+    public InputAxis Control_Y = new InputAxis(KeyCode.UpArrow, KeyCode.DownArrow, ControllerAxes.LeftStick_Y);
 
     public InputButton Jump = new InputButton(KeyCode.Space, ControllerButtons.FaceBottom);
-    public InputButton AttackLight = new InputButton(KeyCode.J, ControllerButtons.FaceLeft);
-    public InputButton AttackHeavy = new InputButton(KeyCode.K, ControllerButtons.FaceTop);
-    public InputButton Special = new InputButton(KeyCode.L, ControllerButtons.FaceRight);
-    public InputButton Meter = new InputButton(KeyCode.B, ControllerButtons.RightBumper);
-    public InputButton Defend = new InputButton(KeyCode.N, ControllerButtons.LeftBumper);
+    public InputButton AttackLight = new InputButton(KeyCode.F, ControllerButtons.FaceLeft);
+    public InputButton AttackHeavy = new InputButton(KeyCode.E, ControllerButtons.FaceTop);
+    public InputButton Special = new InputButton(KeyCode.W, ControllerButtons.FaceRight);
+    public InputButton Meter = new InputButton(KeyCode.A, ControllerButtons.RightBumper);
+    public InputButton Defend = new InputButton(KeyCode.V, ControllerButtons.LeftBumper);
 
     protected bool _haveControl = true;
 
@@ -32,8 +32,8 @@ public class PlayerInput : InputComponent
     {
         _haveControl = true;
 
-        GainControl(ControlHorizontal);
-        GainControl(ControlVertical);
+        GainControl(Control_X);
+        GainControl(Control_Y);
 
         GainControl(Jump);
         GainControl(AttackLight);
@@ -47,8 +47,8 @@ public class PlayerInput : InputComponent
     {
         _haveControl = false;
 
-        ReleaseControl(ControlHorizontal, resetValues);
-        ReleaseControl(ControlVertical, resetValues);
+        ReleaseControl(Control_X, resetValues);
+        ReleaseControl(Control_Y, resetValues);
 
         ReleaseControl(Jump, resetValues);
         ReleaseControl(AttackLight, resetValues);
@@ -60,8 +60,8 @@ public class PlayerInput : InputComponent
 
     protected override void GetInputs(bool fixedUpdateHappened)
     {
-        ControlHorizontal.StateUpdate(_inputType);
-        ControlVertical.StateUpdate(_inputType);
+        Control_X.StateUpdate(_inputType);
+        Control_Y.StateUpdate(_inputType);
 
         Jump.StateUpdate(fixedUpdateHappened, _inputType);
         AttackLight.StateUpdate(fixedUpdateHappened, _inputType);
@@ -73,8 +73,8 @@ public class PlayerInput : InputComponent
 
     void AssignPlayerNumberToInputs()
     {
-        ControlHorizontal._playerNumber = _playerNumber;
-        ControlVertical._playerNumber = _playerNumber;
+        Control_X._playerNumber = _playerNumber;
+        Control_Y._playerNumber = _playerNumber;
 
         Jump._playerNumber = _playerNumber;
         AttackLight._playerNumber = _playerNumber;

@@ -33,6 +33,8 @@ public abstract class InputComponent : MonoBehaviour
 
     #region Internal Classes
 
+    #region Button Control
+
     [Serializable]
     public class InputButton
     {
@@ -55,18 +57,18 @@ public abstract class InputComponent : MonoBehaviour
         public bool Enabled { get { return _enabled; } }
 
         protected static readonly Dictionary<int, string> k_buttonsToName = new Dictionary<int, string>
-        {
-            { (int)ControllerButtons.FaceTop, "FaceTop" },
-            { (int)ControllerButtons.FaceBottom, "FaceBottom" },
-            { (int)ControllerButtons.FaceLeft, "FaceLeft" },
-            { (int)ControllerButtons.FaceRight, "FaceRight" },
-            { (int)ControllerButtons.Start, "Start" },
-            { (int)ControllerButtons.Select, "Select" },
-            { (int)ControllerButtons.LeftStick, "LeftStick" },
-            { (int)ControllerButtons.RightStick, "RightStick" },
-            { (int)ControllerButtons.LeftBumper, "LeftBumper" },
-            { (int)ControllerButtons.RightBumper, "RightBumper" }
-        };
+    {
+        { (int)ControllerButtons.FaceTop, "FaceTop" },
+        { (int)ControllerButtons.FaceBottom, "FaceBottom" },
+        { (int)ControllerButtons.FaceLeft, "FaceLeft" },
+        { (int)ControllerButtons.FaceRight, "FaceRight" },
+        { (int)ControllerButtons.Start, "Start" },
+        { (int)ControllerButtons.Select, "Select" },
+        { (int)ControllerButtons.LeftStick, "LeftStick" },
+        { (int)ControllerButtons.RightStick, "RightStick" },
+        { (int)ControllerButtons.LeftBumper, "LeftBumper" },
+        { (int)ControllerButtons.RightBumper, "RightBumper" }
+    };
 
         public InputButton(KeyCode key, ControllerButtons controlBtn)
         { this.key = key; controllerButton = controlBtn; }
@@ -133,6 +135,10 @@ public abstract class InputComponent : MonoBehaviour
             Up = false;
         }
     }
+    
+    #endregion
+
+    #region Axes Control
 
     [Serializable]
     public class InputAxis
@@ -150,16 +156,16 @@ public abstract class InputComponent : MonoBehaviour
         public bool ReceivingInput { get; protected set; }
 
         protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
-        {
-            { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
-            { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
-            { (int)ControllerAxes.RightStick_X, "RightStick X" },
-            { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
-            { (int)ControllerAxes.Dpad_X, "Dpad X" },
-            { (int)ControllerAxes.Dpad_Y, "Dpad Y" },
-            { (int)ControllerAxes.LeftTrigger, "Left Trigger" },
-            { (int)ControllerAxes.RightTrigger, "Right Trigger" }
-        };
+    {
+        { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
+        { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
+        { (int)ControllerAxes.RightStick_X, "RightStick X" },
+        { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
+        { (int)ControllerAxes.Dpad_X, "Dpad X" },
+        { (int)ControllerAxes.Dpad_Y, "Dpad Y" },
+        { (int)ControllerAxes.LeftTrigger, "Left Trigger" },
+        { (int)ControllerAxes.RightTrigger, "Right Trigger" }
+    };
 
         public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis)
         { positive = posi; negative = nega; contrAxis = controllerAxis; }
@@ -213,6 +219,8 @@ public abstract class InputComponent : MonoBehaviour
             }
         }
     }
+
+    #endregion
 
     #endregion
 

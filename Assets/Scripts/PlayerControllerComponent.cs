@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(PhysicsObjectMK2))]
+[RequireComponent(typeof(PhysicsObject))]
 [RequireComponent(typeof(PlayerInput))]
-public class PlayerControllerMK2 : MonoBehaviour
+public class PlayerControllerComponent : MonoBehaviour
 {
     [SerializeField] float _runAcceleration = 4f;
     [SerializeField] float _maxRunSpeed = 7f;
@@ -23,12 +23,12 @@ public class PlayerControllerMK2 : MonoBehaviour
     [SerializeField] float _fallSpeed = 5f;
     [SerializeField] float _fastFallSpeed = 7f;
 
-    PhysicsObjectMK2 _physicsObject;
+    PhysicsObject _physicsObject;
     PlayerInput Input;
 
     private void Start()
     {
-        _physicsObject = GetComponent<PhysicsObjectMK2>();
+        _physicsObject = GetComponent<PhysicsObject>();
         Input = GetComponent<PlayerInput>();
 
         _airJumpsLeft = _maxAirJumps;
@@ -43,7 +43,7 @@ public class PlayerControllerMK2 : MonoBehaviour
 
     void Move()
     {
-        float moveX = Input.ControlHorizontal.Value;
+        float moveX = Input.Control_X.Value;
 
         if (_physicsObject.isGrounded)
         {
@@ -67,7 +67,7 @@ public class PlayerControllerMK2 : MonoBehaviour
 
     void Jump()
     {
-        if (_physicsObject.collisionState.hitGroundLastFrame)
+        if (_physicsObject.collisionState.groundedLastFrame)
             _airJumpsLeft = _maxAirJumps;
 
         if (Input.Jump.Down)
