@@ -6,6 +6,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(BoxCollider2D))]
+[DisallowMultipleComponent]
 public class PhysicsObject : MonoBehaviour
 {
     #region Internal Types

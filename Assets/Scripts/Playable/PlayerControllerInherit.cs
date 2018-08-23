@@ -7,6 +7,11 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerControllerInherit : PhysicsObject
 {
+    public enum CurrentState
+    { Standing, Crouching, Dashing, Aerial, Fallen, Hitstun }
+
+    public CurrentState _currentState;
+
     [SerializeField] float _runAcceleration = 4f;
     [SerializeField] float _maxRunSpeed = 7f;
     [Space]
@@ -34,6 +39,8 @@ public class PlayerControllerInherit : PhysicsObject
 
     PlayerInput Input;
 
+    public bool facingRight { get; protected set; }
+
     private void Start()
     {
         Input = GetComponent<PlayerInput>();
@@ -49,6 +56,9 @@ public class PlayerControllerInherit : PhysicsObject
         Jump();
         Dash();
         Fall();
+
+        if (Input.Control_X.Snap)
+            print("Snapped");
     }
 
     void Move()
@@ -63,6 +73,9 @@ public class PlayerControllerInherit : PhysicsObject
             float newVelocityX = _projectedVelocity.x + addedVelocity.x;
             if (newVelocityX <= _maxRunSpeed && newVelocityX >= -_maxRunSpeed)
                 MoveRigidbody(moveX, 0);
+
+            if (newVelocityX > 0) facingRight = true;
+            else if (newVelocityX < 0) facingRight = false;
         }
         else
         {
@@ -130,5 +143,20 @@ public class PlayerControllerInherit : PhysicsObject
         dash *= _dashSpeed;
 
         ForceRigidbody(dash, true, true);
+    }
+
+    public void UpdateState(CurrentState newState)
+    {
+        if (isGrounded)
+        {
+            if (Input.Control_Y.Value < -0.5f)
+            {
+                _currentState = CurrentState.Crouching;
+            }
+        }
+        else
+        {
+
+        }
     }
 }

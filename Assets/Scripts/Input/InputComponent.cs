@@ -55,20 +55,22 @@ public abstract class InputComponent : MonoBehaviour
         public bool Held { get; protected set; }
         public bool Up { get; protected set; }
         public bool Enabled { get { return _enabled; } }
+        public bool input { get { return Down || Held || Up; } }
+
 
         protected static readonly Dictionary<int, string> k_buttonsToName = new Dictionary<int, string>
-    {
-        { (int)ControllerButtons.FaceTop, "FaceTop" },
-        { (int)ControllerButtons.FaceBottom, "FaceBottom" },
-        { (int)ControllerButtons.FaceLeft, "FaceLeft" },
-        { (int)ControllerButtons.FaceRight, "FaceRight" },
-        { (int)ControllerButtons.Start, "Start" },
-        { (int)ControllerButtons.Select, "Select" },
-        { (int)ControllerButtons.LeftStick, "LeftStick" },
-        { (int)ControllerButtons.RightStick, "RightStick" },
-        { (int)ControllerButtons.LeftBumper, "LeftBumper" },
-        { (int)ControllerButtons.RightBumper, "RightBumper" }
-    };
+        {
+            { (int)ControllerButtons.FaceTop, "FaceTop" },
+            { (int)ControllerButtons.FaceBottom, "FaceBottom" },
+            { (int)ControllerButtons.FaceLeft, "FaceLeft" },
+            { (int)ControllerButtons.FaceRight, "FaceRight" },
+            { (int)ControllerButtons.Start, "Start" },
+            { (int)ControllerButtons.Select, "Select" },
+            { (int)ControllerButtons.LeftStick, "LeftStick" },
+            { (int)ControllerButtons.RightStick, "RightStick" },
+            { (int)ControllerButtons.LeftBumper, "LeftBumper" },
+            { (int)ControllerButtons.RightBumper, "RightBumper" }
+        };
 
         public InputButton(KeyCode key, ControllerButtons controlBtn)
         { this.key = key; controllerButton = controlBtn; }
@@ -143,20 +145,25 @@ public abstract class InputComponent : MonoBehaviour
     [Serializable]
     public class InputAxis
     {
+        public float value;
         public KeyCode positive, negative;
         public ControllerAxes controllerAxis;
+        public float deadzoneValue = Single.Epsilon;
         [HideInInspector]
         public int _playerNumber;
 
         [SerializeField] protected bool _enabled = true;
         protected bool _gettingInput = true;
 
+        protected float _prevValue;
+
         public float Value { get; protected set; }
+        public bool Snap { get; protected set; }
         public bool Enabled { get { return _enabled; } }
         public bool ReceivingInput { get; protected set; }
 
         protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
-    {
+        {
         { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
         { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
         { (int)ControllerAxes.RightStick_X, "RightStick X" },
@@ -165,18 +172,25 @@ public abstract class InputComponent : MonoBehaviour
         { (int)ControllerAxes.Dpad_Y, "Dpad Y" },
         { (int)ControllerAxes.LeftTrigger, "Left Trigger" },
         { (int)ControllerAxes.RightTrigger, "Right Trigger" }
-    };
+        };
 
         public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis)
         { positive = posi; negative = nega; contrAxis = controllerAxis; }
 
+        public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis, float deadzone)
+        { positive = posi; negative = nega; contrAxis = controllerAxis; deadzoneValue = deadzone; }
+
         public void StateUpdate(InputType inputType)
         {
+            Snap = false;
+
             if (!_enabled)
             {
                 Value = 0;
                 return;
             }
+
+            _prevValue = Value;
 
             if (!_gettingInput) return;
 
@@ -185,8 +199,17 @@ public abstract class InputComponent : MonoBehaviour
             if (inputType == InputType.Controller)
             {
                 float value = Input.GetAxisRaw(k_axisToName[(int)controllerAxis]);
-                positiveHeld = value > Single.Epsilon;
-                negativeHeld = value < -Single.Epsilon;
+                positiveHeld = value > deadzoneValue;
+                negativeHeld = value < -deadzoneValue;
+
+                if (positiveHeld || negativeHeld)
+                {
+                    Value = value;
+                }
+                else
+                {
+                    Value = 0;
+                }
             }
             else if (inputType == InputType.Keyboard)
             {
@@ -202,7 +225,17 @@ public abstract class InputComponent : MonoBehaviour
                     Value = -1f;
             }
 
+           // print(Value);
+
             ReceivingInput = positiveHeld || negativeHeld;
+
+            if (ReceivingInput && inputType == InputType.Controller)
+            {
+                if (_prevValue < deadzoneValue && Value == 1f)
+                    Snap = true;
+            }
+
+            value = Value;
         }
 
         public void Enable() { _enabled = true; }
@@ -239,6 +272,8 @@ public abstract class InputComponent : MonoBehaviour
     {
         _fixedUpdateHappened = true;
     }
+
+    protected abstract void FurtherUpdate();
 
     protected abstract void GetInputs(bool fixedUpdateHappened);
 
