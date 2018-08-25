@@ -5,21 +5,24 @@ using UnityEngine;
 // DO NOT USE:
 // Awake, FixedUpdate, OnTriggerEnter2D, OnTriggerStay2D, OnTriggerExit2D
 [RequireComponent(typeof(PlayerInput))]
-public class PlayerControllerInherit : PhysicsObject
+public class PlayerController : PhysicsObject
 {
     public enum CurrentState
-    { Standing, Crouching, Dashing, Aerial, Fallen, Hitstun }
+    { Standing, Crouching, Dashing, Running, Aerial, Fallen, Hitstun }
 
     public CurrentState _currentState;
 
+    [SerializeField] float _walkAcceleration = 3f;
+    [SerializeField] float _maxWalkSpeed = 3f;
+
     [SerializeField] float _runAcceleration = 4f;
     [SerializeField] float _maxRunSpeed = 7f;
-    [Space]
+
+    [SerializeField] float _groundDashSpeed = 10f;
 
     [SerializeField]
     float _airAcceleration = 6f;
     [SerializeField] float _maxAirSpeed = 5f;
-    [Space]
 
     [SerializeField]
     float _groundJumpForce = 7f;
@@ -27,7 +30,6 @@ public class PlayerControllerInherit : PhysicsObject
     [SerializeField] int _maxAirJumps = 2;
     [SerializeField] Vector2 _wallJumpForce = new Vector2(2f, 6f);
     int _airJumpsLeft;
-    [Space]
 
     [SerializeField]
     float _dashSpeed = 6f;
@@ -38,6 +40,8 @@ public class PlayerControllerInherit : PhysicsObject
     [SerializeField] float _fastFallSpeed = 7f;
 
     PlayerInput Input;
+
+    InputCombo _currInputCombo;
 
     public bool facingRight { get; protected set; }
 
@@ -53,7 +57,6 @@ public class PlayerControllerInherit : PhysicsObject
     private void Update()
     {
         Move();
-        Jump();
         Dash();
         Fall();
 
@@ -61,42 +64,69 @@ public class PlayerControllerInherit : PhysicsObject
             print("Snapped");
     }
 
+    public bool ReceiveInput(InputCombo inputCombo)
+    {
+        bool toReturn = false;
+
+        _currInputCombo = inputCombo;
+
+        toReturn |= Jump();
+        
+        return toReturn;
+    }
+
     void Move()
     {
-        float moveX = Input.Control_X.Value;
-
         if (isGrounded)
         {
-            moveX *= _runAcceleration;
-            Vector2 addedVelocity = MoveRigidbody(moveX, 0, false);
+            if (Input.Control.X.Snap)
+            {
+                if (_currentState == CurrentState.Standing || _currentState == CurrentState.Crouching || _currentState == CurrentState.Dashing)
+                {
+                    ForceRigidbody(_groundDashSpeed, 0, true);
+                    _currentState = CurrentState.Dashing;
+                }
+            }
+            else if (Input.Control.X.Hard)
+            {
+                Vector2 addedVelocity = MoveRigidbody(Input.Control.X.Value * _runAcceleration, 0, false);
 
-            float newVelocityX = _projectedVelocity.x + addedVelocity.x;
-            if (newVelocityX <= _maxRunSpeed && newVelocityX >= -_maxRunSpeed)
-                MoveRigidbody(moveX, 0);
+                float newVelocityX = _projectedVelocity.x + addedVelocity.x;
+                if (Mathf.Abs(newVelocityX) <= _maxRunSpeed)
+                    MoveRigidbody(Input.Control.X.Value * _runAcceleration, 0);
+            }
+            else if (Input.Control.X.Soft)
+            {
+                Vector2 addedVelocity = MoveRigidbody(Input.Control.X.Value * _walkAcceleration, 0, false);
 
-            if (newVelocityX > 0) facingRight = true;
-            else if (newVelocityX < 0) facingRight = false;
+                float newVelocityX = _projectedVelocity.x + addedVelocity.x;
+                if (Mathf.Abs(newVelocityX) <= _maxWalkSpeed)
+                    MoveRigidbody(Input.Control.X.Value * _walkAcceleration, 0);
+            }
+
+            if (_projectedVelocity.x > 0) facingRight = true;
+            else if (_projectedVelocity.x < 0) facingRight = false;
         }
         else
         {
-            moveX *= _airAcceleration;
+            float moveX = Input.Control.X.Value * _airAcceleration;
             Vector2 addedVelocity = MoveRigidbody(moveX, 0, false);
 
             float newVelocityX = _projectedVelocity.x + addedVelocity.x;
-            if (newVelocityX <= _maxAirSpeed && newVelocityX >= -_maxAirSpeed)
+            if (Mathf.Abs(newVelocityX) <= _maxAirSpeed)
                 MoveRigidbody(moveX, 0);
         }
     }
 
-    void Jump()
+    bool Jump()
     {
         if (_collisionState.groundedLastFrame)
             _airJumpsLeft = _maxAirJumps;
 
         if (WallJump())
-            return;
+            return true;
 
-        if (Input.Jump.Down)
+        if (_currInputCombo.inputButton == PlayerInput.Button.Jump)
         {
             if (isGrounded)
             {
@@ -108,6 +138,8 @@ public class PlayerControllerInherit : PhysicsObject
                 _airJumpsLeft--;
             }
         }
+
+        return true;
     }
 
     bool WallJump()

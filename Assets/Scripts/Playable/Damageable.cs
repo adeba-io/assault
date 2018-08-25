@@ -34,4 +34,11 @@ public class Damageable : MonoBehaviour
             _hurtboxes.transform.parent = transform;
         }
     }
+
+    public bool ReceiveInput(InputCombo inputCombo)
+    {
+
+
+        return true;
+    }
 }

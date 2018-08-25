@@ -8,7 +8,7 @@ public class Techniqu : ScriptableObject
 {
     [SerializeField] string _name;
 
-    PlayerControllerInherit _userController;
+    PlayerController _userController;
     [SerializeField] PlayerFighter _userFighter;
     HitboxPool _userHitboxPool;
     Damageable _userDefender;
@@ -38,7 +38,7 @@ public class Techniqu : ScriptableObject
         set
         {
             _userFighter = value;
-            _userController = _userFighter.GetComponent<PlayerControllerInherit>();
+            _userController = _userFighter.GetComponent<PlayerController>();
             _userHitboxPool = _userFighter.GetComponent<HitboxPool>();
             _userDefender = _userFighter.GetComponent<Damageable>();
         }

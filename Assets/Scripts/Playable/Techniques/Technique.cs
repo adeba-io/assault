@@ -8,7 +8,7 @@ public class Technique
 {
     [SerializeField] string _name;
 
-    PlayerControllerInherit _userController;
+    PlayerController _userController;
     PlayerFighter _userFighter;
     Damageable _userDefender;
 
@@ -31,7 +31,7 @@ public class Technique
         set
         {
             _userFighter = value;
-            _userController = _userFighter.GetComponent<PlayerControllerInherit>();
+            _userController = _userFighter.GetComponent<PlayerController>();
             _userDefender = _userFighter.GetComponent<Damageable>();
         }
     }
@@ -48,7 +48,7 @@ public class Rekka
 {
     [SerializeField] string _name;
 
-    PlayerControllerInherit _userController;
+    PlayerController _userController;
     PlayerFighter _userFighter;
     Damageable _userDefender;
 
@@ -69,7 +69,7 @@ public class Rekka
         set
         {
             _userFighter = value;
-            _userController = _userFighter.GetComponent<PlayerControllerInherit>();
+            _userController = _userFighter.GetComponent<PlayerController>();
             _userDefender = _userFighter.GetComponent<Damageable>();
         }
     }

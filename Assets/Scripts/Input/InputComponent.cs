@@ -17,7 +17,8 @@ public abstract class InputComponent : MonoBehaviour
         FaceLeft, FaceRight,
         Start, Select,
         LeftStick, RightStick,
-        LeftBumper, RightBumper
+        LeftBumper, RightBumper,
+        LeftTrigger, RightTrigger
     }
 
     public enum ControllerAxes
@@ -25,15 +26,18 @@ public abstract class InputComponent : MonoBehaviour
         None,
         LeftStick_X, LeftStick_Y,
         RightStick_X, RightStick_Y,
-        Dpad_X, Dpad_Y,
-        LeftTrigger, RightTrigger
+        Dpad_X, Dpad_Y
+    }
+
+    public enum ControllerGrid
+    {
+        NULL,
+        LeftStick, RightStick, Dpad
     }
 
     #endregion
 
     #region Internal Classes
-
-    #region Button Control
 
     [Serializable]
     public class InputButton
@@ -69,7 +73,9 @@ public abstract class InputComponent : MonoBehaviour
             { (int)ControllerButtons.LeftStick, "LeftStick" },
             { (int)ControllerButtons.RightStick, "RightStick" },
             { (int)ControllerButtons.LeftBumper, "LeftBumper" },
-            { (int)ControllerButtons.RightBumper, "RightBumper" }
+            { (int)ControllerButtons.RightBumper, "RightBumper" },
+            { (int)ControllerButtons.LeftTrigger, "Left Trigger" },
+            { (int)ControllerButtons.RightTrigger, "Right Trigger" }
         };
 
         public InputButton(KeyCode key, ControllerButtons controlBtn)
@@ -80,7 +86,7 @@ public abstract class InputComponent : MonoBehaviour
             if (!_enabled)
             {
                 Down = false;
-                Held = false;
+                //Held = false;
                 Up = false;
                 return;
             }
@@ -89,27 +95,25 @@ public abstract class InputComponent : MonoBehaviour
 
             if (inputType == InputType.Controller)
             {
-                Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton]);
-                Held = Input.GetButton(k_buttonsToName[(int)controllerButton]);
+                Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton]) || Input.GetButton(k_buttonsToName[(int)controllerButton]);
                 Up = Input.GetButtonUp(k_buttonsToName[(int)controllerButton]);
             }
             else if (inputType == InputType.Keyboard)
             {
-                Down = Input.GetKeyDown(key);
-                Held = Input.GetKey(key);
+                Down = Input.GetKeyDown(key) || Input.GetKey(key);
                 Up = Input.GetKeyUp(key);
             }
 
             if (fixedUpdateHappened)
             {
                 _afterFixedUpdateDown = Down;
-                _afterFixedUpdateHeld = Held;
+                //_afterFixedUpdateHeld = Held;
                 _afterFixedUpdateUp = Up;
             }
             else
             {
                 _afterFixedUpdateDown |= Down;
-                _afterFixedUpdateHeld |= Held;
+                //_afterFixedUpdateHeld |= Held;
                 _afterFixedUpdateUp |= Up;
             }
         }
@@ -126,7 +130,7 @@ public abstract class InputComponent : MonoBehaviour
 
             if (Down) Up = true;
             Down = false;
-            Held = false;
+            //Held = false;
 
             _afterFixedUpdateDown = false;
             _afterFixedUpdateHeld = false;
@@ -137,11 +141,215 @@ public abstract class InputComponent : MonoBehaviour
             Up = false;
         }
     }
+
+    [Serializable]
+    public class InputGrid
+    {
+        public KeyCode positiveX, negativeX;
+        public KeyCode positiveY, negativeY;
+        public ControllerGrid controllerGrid;
+
+        ControllerAxes controllerAxisX, controllerAxisY;
+
+        [SerializeField] protected bool _enabled = true;
+        protected bool _gettingInput = true;
+
+        protected Vector2 _previousValue;
+
+        public Vector2 Value { get; protected set; }
+        
+        public Axis X { get; protected set; }
+        public Axis Y { get; protected set; }
+
+        public bool Soft
+        { get { return Value.x != 0 || Value.y != 0; } }
+        public bool Hard
+        { get { return Mathf.Abs(Value.x) == 1f || Mathf.Abs(Value.y) == 1f; } }
+        public bool Snap { get; protected set; }
+
+        public bool Enabled { get { return _enabled; } }
+        public bool ReceivingInput { get; protected set; }
+
+        protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
+        {
+        { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
+        { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
+        { (int)ControllerAxes.RightStick_X, "RightStick X" },
+        { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
+        { (int)ControllerAxes.Dpad_X, "Dpad X" },
+        { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
+        };
+
+        public InputGrid(KeyCode posiX, KeyCode negaX, KeyCode posiY, KeyCode negaY, ControllerGrid contrGrid)
+        {
+            positiveX = posiX; negativeX = negaX;
+            positiveY = posiY; negativeY = negaY;
+            controllerGrid = contrGrid;
+
+            switch (controllerGrid)
+            {
+                case ControllerGrid.LeftStick:
+                    controllerAxisX = ControllerAxes.LeftStick_X;
+                    controllerAxisY = ControllerAxes.LeftStick_Y;
+                    break;
+                case ControllerGrid.RightStick:
+                    controllerAxisX = ControllerAxes.RightStick_X;
+                    controllerAxisY = ControllerAxes.RightStick_Y;
+                    break;
+                case ControllerGrid.Dpad:
+                    controllerAxisX = ControllerAxes.Dpad_X;
+                    controllerAxisY = ControllerAxes.Dpad_Y;
+                    break;
+                default:
+                    controllerAxisX = ControllerAxes.None;
+                    controllerAxisY = ControllerAxes.None;
+                    break;
+            }
+        }
+
+        public InputGrid(InputAxis axisX, InputAxis axisY, ControllerGrid contrGrid)
+        {
+            positiveX = axisX.positive; negativeX = axisX.negative;
+            positiveY = axisY.positive; negativeY = axisY.negative;
+            controllerGrid = contrGrid;
+
+            switch (controllerGrid)
+            {
+                case ControllerGrid.LeftStick:
+                    controllerAxisX = ControllerAxes.LeftStick_X;
+                    controllerAxisY = ControllerAxes.LeftStick_Y;
+                    break;
+                case ControllerGrid.RightStick:
+                    controllerAxisX = ControllerAxes.RightStick_X;
+                    controllerAxisY = ControllerAxes.RightStick_Y;
+                    break;
+                case ControllerGrid.Dpad:
+                    controllerAxisX = ControllerAxes.Dpad_X;
+                    controllerAxisY = ControllerAxes.Dpad_Y;
+                    break;
+                default:
+                    controllerAxisX = ControllerAxes.None;
+                    controllerAxisY = ControllerAxes.None;
+                    break;
+            }
+        }
+
+        public void StateUpdate(InputType inputType)
+        {
+            Snap = false;
+
+            if (!_enabled)
+            {
+                Value = Vector2.zero;
+                _previousValue = Value;
+                return;
+            }
+
+            _previousValue = Value;
+
+            if (!_gettingInput) return;
+
+            Vector2 val = Vector2.zero;
+            Axis x, y;
+            if (inputType == InputType.Controller)
+            {
+                float[] values = { Input.GetAxis(k_axisToName[(int)controllerAxisX]), Input.GetAxis(k_axisToName[(int)controllerAxisY]) };
+
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (values[i] > 0.9f || values[i] < -0.9f)
+                    {
+                        values[i] = Mathf.Sign(values[i]) * 1f;
+                    }
+                    else if (values[i] > 0.3f || values[i] < -0.3f)
+                    {
+                        values[i] = Mathf.Sign(values[i]) * 0.5f;
+                    }
+                    else
+                    {
+                        values[i] = 0;
+                    }
+                }
+
+                val = new Vector2(values[0], values[1]);
+            }
+            else if (inputType == InputType.Keyboard)
+            {
+                bool positiveHeldX = Input.GetKey(positiveX), negativeHeldX = Input.GetKey(negativeX);
+                bool positiveHeldY = Input.GetKey(positiveY), negativeHeldY = Input.GetKey(negativeY);
+
+                if (positiveHeldX == negativeHeldX)
+                    val.x = 0;
+                else if (positiveHeldX)
+                    val.x = 1f;
+                else if (negativeHeldX)
+                    val.x = -1f;
+
+                if (positiveHeldY = negativeHeldY)
+                    val.y = 0;
+                else if (positiveHeldY)
+                    val.y = 1f;
+                else if (negativeHeldY)
+                    val.y = -1f;
+            }
+
+            Value = val;
+
+            x.Value = Value.x;
+            y.Value = Value.y;
+
+            x.Snap = false; y.Snap = false;
+
+            ReceivingInput = Value.x != 0 || Value.y != 0;
+
+            if (ReceivingInput && inputType == InputType.Controller)
+            {
+                if (_previousValue == Vector2.zero)
+                {
+                    if (Value.x == 1f)
+                    {
+                        Snap = true;
+                        x.Snap = true;
+                    }
+                    else if (Value.y == 1f)
+                    {
+                        Snap = true;
+                        y.Snap = true;
+                    }
+                }
+            }
+
+            X = x;
+            Y = y;
+        }
+
+        public void Enable() { _enabled = true; }
+        public void Disable() { _enabled = false; }
+
+        public void GainControl() { _gettingInput = true; }
+        public void ReleaseControl(bool resetValues)
+        {
+            _gettingInput = false;
+            if (resetValues)
+            {
+                Value = Vector2.zero;
+                ReceivingInput = false;
+            }
+            _previousValue = Vector2.zero;
+        }
+
+        public struct Axis
+        {
+            public float Value;
+            public bool Snap;
+
+            public bool Hard
+            { get { return Mathf.Abs(Value) == 1f || Mathf.Abs(Value) == 1f; } }
+            public bool Soft
+            { get { return Value != 0 || Value != 0; } }
+        }
+    }
     
-    #endregion
-
-    #region Axes Control
-
     [Serializable]
     public class InputAxis
     {
@@ -155,10 +363,14 @@ public abstract class InputComponent : MonoBehaviour
         [SerializeField] protected bool _enabled = true;
         protected bool _gettingInput = true;
 
-        protected float _prevValue;
+        protected float _previousValue;
 
         public float Value { get; protected set; }
+
+        public bool Soft { get { return Mathf.Abs(Value) != 0; } }
+        public bool Hard { get { return Mathf.Abs(Value) == 1f; } }
         public bool Snap { get; protected set; }
+
         public bool Enabled { get { return _enabled; } }
         public bool ReceivingInput { get; protected set; }
 
@@ -169,16 +381,14 @@ public abstract class InputComponent : MonoBehaviour
         { (int)ControllerAxes.RightStick_X, "RightStick X" },
         { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
         { (int)ControllerAxes.Dpad_X, "Dpad X" },
-        { (int)ControllerAxes.Dpad_Y, "Dpad Y" },
-        { (int)ControllerAxes.LeftTrigger, "Left Trigger" },
-        { (int)ControllerAxes.RightTrigger, "Right Trigger" }
+        { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
         };
 
         public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis)
         { positive = posi; negative = nega; contrAxis = controllerAxis; }
 
         public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis, float deadzone)
-        { positive = posi; negative = nega; contrAxis = controllerAxis; deadzoneValue = deadzone; }
+        { positive = posi; negative = nega; controllerAxis = contrAxis; deadzoneValue = deadzone; }
 
         public void StateUpdate(InputType inputType)
         {
@@ -187,29 +397,27 @@ public abstract class InputComponent : MonoBehaviour
             if (!_enabled)
             {
                 Value = 0;
+                _previousValue = Value;
                 return;
             }
 
-            _prevValue = Value;
+            _previousValue = Value;
 
             if (!_gettingInput) return;
 
             bool positiveHeld = false, negativeHeld = false;
 
+            float val = 0;
             if (inputType == InputType.Controller)
             {
-                float value = Input.GetAxisRaw(k_axisToName[(int)controllerAxis]);
-                positiveHeld = value > deadzoneValue;
-                negativeHeld = value < -deadzoneValue;
+                val = Input.GetAxis(k_axisToName[(int)controllerAxis]);
 
-                if (positiveHeld || negativeHeld)
-                {
-                    Value = value;
-                }
+                if (val > 0.9f || val < -0.9f)
+                    val = Mathf.Sign(val) * 1f;
+                else if (val > 0.3f || val < -0.3f)
+                    val = Mathf.Sign(val) * 0.5f;
                 else
-                {
-                    Value = 0;
-                }
+                    val = 0;
             }
             else if (inputType == InputType.Keyboard)
             {
@@ -218,21 +426,23 @@ public abstract class InputComponent : MonoBehaviour
 
                 // To prevent double inputs
                 if (positiveHeld == negativeHeld)
-                    Value = 0;
+                    val = 0;
                 else if (positiveHeld)
-                    Value = 1f;
+                    val = 1f;
                 else
-                    Value = -1f;
+                    val = -1f;
             }
-
-           // print(Value);
-
-            ReceivingInput = positiveHeld || negativeHeld;
+            Value = val;
+            
+            ReceivingInput = Value != 0;
 
             if (ReceivingInput && inputType == InputType.Controller)
             {
-                if (_prevValue < deadzoneValue && Value == 1f)
-                    Snap = true;
+                if (_previousValue == 0)
+                {
+                    if (Value == Mathf.Abs(Value))
+                        Snap = true;
+                }
             }
 
             value = Value;
@@ -250,10 +460,9 @@ public abstract class InputComponent : MonoBehaviour
                 Value = 0f;
                 ReceivingInput = false;
             }
+            _previousValue = Value;
         }
     }
-
-    #endregion
 
     #endregion
 
@@ -266,6 +475,8 @@ public abstract class InputComponent : MonoBehaviour
         GetInputs(_fixedUpdateHappened || Mathf.Approximately(Time.timeScale, 0));
 
         _fixedUpdateHappened = false;
+
+        FurtherUpdate();
     }
 
     private void FixedUpdate()
@@ -291,6 +502,11 @@ public abstract class InputComponent : MonoBehaviour
         inputAxis.GainControl();
     }
 
+    protected void GainControl(InputGrid inputGrid)
+    {
+        inputGrid.GainControl();
+    }
+
     protected void ReleaseControl(InputButton inputButton, bool resetValues)
     {
         StartCoroutine(inputButton.ReleaseControl(resetValues));
@@ -299,5 +515,10 @@ public abstract class InputComponent : MonoBehaviour
     protected void ReleaseControl(InputAxis inputAxis, bool resetValues)
     {
         inputAxis.ReleaseControl(resetValues);
+    }
+
+    protected void ReleaseControl(InputGrid inputGrid, bool resetValues)
+    {
+        inputGrid.ReleaseControl(resetValues);
     }
 }

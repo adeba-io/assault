@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class PlayerInput : InputComponent
 {
+    #region Enums
+
     public enum FighterInput
     {
         None,
@@ -16,15 +18,19 @@ public class PlayerInput : InputComponent
     { Any, Neutral, Forward, Back, Up, Down, ForwardUp, ForwardDown, BackUp, BackDown }
 
     public enum DirectionManeuver
-    { Any, Soft, Hard, DoubleSnap }
+    { Any, Soft, Hard, Snap }
     
     public enum Button
     { Any, Jump, AttackLight, AttackHeavy, Special, Meter, Defend }
 
     public enum ButtonManeuver
-    { Any, Down, Up, DoubleTap }
+    { Any, Down, Up }
+
+    #endregion
 
     [SerializeField] int _playerNumber = 1;
+
+    public InputGrid Control = new InputGrid(KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow, ControllerGrid.LeftStick);
 
     public InputAxis Control_X = new InputAxis(KeyCode.RightArrow, KeyCode.LeftArrow, ControllerAxes.LeftStick_X);
     public InputAxis Control_Y = new InputAxis(KeyCode.UpArrow, KeyCode.DownArrow, ControllerAxes.LeftStick_Y);
@@ -37,6 +43,12 @@ public class PlayerInput : InputComponent
     public InputButton Defend = new InputButton(KeyCode.V, ControllerButtons.LeftBumper);
 
     protected bool _haveControl = true;
+
+    protected PlayerController _playerController;
+    protected PlayerFighter _playerFighter;
+    protected Damageable _playerDefender;
+
+    protected InputFeed _inputFeed;
 
     public FighterInput generalInput { get; protected set; }
     public InputCombo currentInputCombo { get; protected set; }
@@ -51,70 +63,112 @@ public class PlayerInput : InputComponent
         }
     }
 
-    PlayerControllerInherit _controller;
-
     private void Start()
     {
-        _controller = GetComponent<PlayerControllerInherit>();
+        _playerController = GetComponent<PlayerController>();
+        _playerFighter = GetComponent<PlayerFighter>();
+        _playerDefender = GetComponent<Damageable>();
+
+        Control = new InputGrid(Control_X, Control_Y, ControllerGrid.LeftStick);
+
+        _inputFeed.Setup();
     }
 
     protected override void FurtherUpdate()
     {
-        InputCombo newInputCombo;
+        UpdateInputFeed();
+        Feed();
 
+        _inputFeed.Clear();
+    }
+
+    void UpdateInputFeed()
+    {
         Direction newDirec = Direction.Neutral;
-        DirectionManeuver newDirecManeu = DirectionManeuver.Hard;
-        Button newBtn = Button.Any;
-        ButtonManeuver newBtnManeu = ButtonManeuver.Any;
+        DirectionManeuver newDirecManeu = DirectionManeuver.Any;
 
-        if (Control_Y.Value > 0) newDirec = Direction.Up;
-        else if (Control_Y.Value < 0) newDirec = Direction.Down;
+        if (Control.Y.Value > 0) newDirec = Direction.Up;
+        else if (Control.Y.Value < 0) newDirec = Direction.Down;
 
-        if (Control_X.Value > 0)
+        if (Control.X.Value > 0) // We're pointing right
         {
             if (newDirec == Direction.Up)
             {
-                if (_controller.facingRight) newDirec = Direction.ForwardUp;
-                else newDirec = Direction.BackUp;
+                newDirec = (_playerController.facingRight ? Direction.ForwardUp : Direction.BackUp);
             }
             else if (newDirec == Direction.Down)
             {
-                if (_controller.facingRight) newDirec = Direction.ForwardDown;
-                else newDirec = Direction.BackDown;
+                newDirec = (_playerController.facingRight ? Direction.ForwardDown : Direction.BackDown);
+            }
+            else
+            {
+                newDirec = (_playerController.facingRight ? Direction.Forward : Direction.Back);
+            }
+        }
+        else if (Control.X.Value < 0) // Pointing left
+        {
+            if (newDirec == Direction.Up)
+            {
+                newDirec = ( ! _playerController.facingRight ? Direction.ForwardUp : Direction.BackUp);
+            }
+            else if (newDirec == Direction.Down)
+            {
+                newDirec = ( ! _playerController.facingRight ? Direction.ForwardDown : Direction.BackDown);
+            }
+            else
+            {
+                newDirec = ( ! _playerController.facingRight ? Direction.Forward : Direction.Back);
             }
         }
 
-        if (Special.input && _controller._currentState != PlayerControllerInherit.CurrentState.Hitstun)
-        {
-            newBtn = Button.Special;
-        }
-        else if (AttackHeavy.input && _controller._currentState != PlayerControllerInherit.CurrentState.Hitstun)
-        {
-            newBtn = Button.AttackHeavy;
-        }
-        else if (AttackLight.input && _controller._currentState != PlayerControllerInherit.CurrentState.Hitstun)
-        {
-            newBtn = Button.AttackLight;
-        }
-        else if (Jump.input && _controller._currentState != PlayerControllerInherit.CurrentState.Hitstun)
-        {
-            newBtn = Button.Jump;
-        }
-        else if (Meter.input && _controller._currentState != PlayerControllerInherit.CurrentState.Hitstun)
-        {
-            newBtn = Button.Meter;
-        }
-        else if (Defend.input)
-        {
-            newBtn = Button.Defend;
-        }
+        if (Control.Snap) newDirecManeu = DirectionManeuver.Snap;
+        else if (Control.Hard) newDirecManeu = DirectionManeuver.Hard;
+        else if (Control.Soft) newDirecManeu = DirectionManeuver.Soft;
 
-        newInputCombo.majorDirection = newDirec;
+        InputButton[] buttonInputs = { Special, AttackHeavy, AttackLight, Jump, Meter, Defend };
+        Button newBtn = Button.Any;
+        ButtonManeuver newBtnManeu = ButtonManeuver.Any;
+        
+        for (int i = 0; i < buttonInputs.Length; i++)
+        {
+            InputButton current = buttonInputs[i];
+
+            if (!current.input) continue;
+            
+            if (_playerController._currentState != PlayerController.CurrentState.Hitstun)
+            {
+                if (current == Special) newBtn = Button.Special;
+                else if (current == AttackHeavy) newBtn = Button.AttackHeavy;
+                else if (current == AttackLight) newBtn = Button.AttackLight;
+                else if (current == Jump) newBtn = Button.Jump;
+                else if (current == Meter) newBtn = Button.Meter;
+                else if (current == Defend) newBtn = Button.Defend;
+                else continue;
+
+                if (current.Down) newBtnManeu = ButtonManeuver.Down;
+                else if (current.Up) newBtnManeu = ButtonManeuver.Up;
+                else newBtnManeu = ButtonManeuver.Any;
+
+                _inputFeed.Add(_playerController._currentState, newDirec, newDirecManeu, newBtn, newBtnManeu);
+            }
+            else if (current == Defend)
+            {
+                newBtn = Button.Defend;
+
+                if (current.Down) newBtnManeu = ButtonManeuver.Down;
+                else if (current.Up) newBtnManeu = ButtonManeuver.Up;
+                else newBtnManeu = ButtonManeuver.Any;
+
+                _inputFeed.Add(_playerController._currentState, newDirec, newDirecManeu, newBtn, newBtnManeu);
+            }
+        }
     }
 
     public override void GainControl()
     {
         _haveControl = true;
+
+        GainControl(Control);
 
         GainControl(Control_X);
         GainControl(Control_Y);
@@ -131,6 +185,8 @@ public class PlayerInput : InputComponent
     {
         _haveControl = false;
 
+        ReleaseControl(Control, resetValues);
+
         ReleaseControl(Control_X, resetValues);
         ReleaseControl(Control_Y, resetValues);
 
@@ -144,6 +200,8 @@ public class PlayerInput : InputComponent
 
     protected override void GetInputs(bool fixedUpdateHappened)
     {
+        Control.StateUpdate(_inputType);
+
         Control_X.StateUpdate(_inputType);
         Control_Y.StateUpdate(_inputType);
 
@@ -155,6 +213,30 @@ public class PlayerInput : InputComponent
         Defend.StateUpdate(fixedUpdateHappened, _inputType);
     }
 
+    void Feed()
+    {
+        bool cont = false;
+
+        for (int i = 0; i < _inputFeed.Count; i++)
+        {
+            InputCombo currCombo = _inputFeed[i];
+
+            if (!cont)
+            {
+                cont = _playerFighter.ReceiveInput(currCombo);
+
+                if (cont) continue;
+
+                cont = _playerController.ReceiveInput(currCombo);
+                cont = _playerDefender.ReceiveInput(currCombo);
+            }
+            else
+            {
+                _playerFighter.ReceiveInput(currCombo);
+            }
+        }
+    }
+
     void AssignPlayerNumberToInputs()
     {
         Control_X._playerNumber = _playerNumber;
@@ -162,20 +244,96 @@ public class PlayerInput : InputComponent
 
         Jump._playerNumber = _playerNumber;
         AttackLight._playerNumber = _playerNumber;
+
+        
+    }
+
+    protected struct InputFeed
+    {
+        PlayerController.CurrentState _currentState;
+
+        Direction _direction;
+        DirectionManeuver _directionManeuver;
+
+        List<Button> _inputButtons;
+        List<ButtonManeuver> _buttonManeuvers;
+
+        int _count;
+
+        public int Count { get { return _count; } }
+
+        public InputCombo this[int index]
+        {
+            get
+            {
+                if (index >= _count) return default(InputCombo);
+
+                InputCombo combo = new InputCombo
+                {
+                    requiredState = _currentState,
+                    majorDirection = _direction,
+                    directionManeuver = _directionManeuver,
+
+                    inputButton = _inputButtons[index],
+                    buttonManeuver = _buttonManeuvers[index]
+                };
+                return combo;
+            }
+        }
+
+        public void Setup()
+        {
+            _inputButtons = new List<Button>();
+            _buttonManeuvers = new List<ButtonManeuver>();
+
+            _count = 0;
+        }
+
+        public void Add(PlayerController.CurrentState state, Direction direc,
+            DirectionManeuver direcManeu, Button button, ButtonManeuver buttonManeu)
+        {
+            _currentState = state;
+            _direction = direc;
+            _directionManeuver = direcManeu;
+
+            _inputButtons.Add(button);
+            _buttonManeuvers.Add(buttonManeu);
+            _count++;
+        }
+
+        public void Add(InputCombo inputCombo)
+        {
+            _currentState = inputCombo.requiredState;
+            _direction = inputCombo.majorDirection;
+            _directionManeuver = inputCombo.directionManeuver;
+
+            _inputButtons.Add(inputCombo.inputButton);
+            _buttonManeuvers.Add(inputCombo.buttonManeuver);
+            _count++;
+        }
+
+        public void Clear()
+        {
+            _inputButtons.Clear();
+            _buttonManeuvers.Clear();
+
+            _count = 0;
+        }
     }
 }
 
 [Serializable]
 public struct InputCombo
 {
-    public PlayerControllerInherit.CurrentState requiredState;
-
+    public PlayerController.CurrentState requiredState;
+    
     public PlayerInput.Direction majorDirection;
     public AcceptedDirections acceptedDirection;
     public PlayerInput.DirectionManeuver directionManeuver;
 
     public PlayerInput.Button inputButton;
     public PlayerInput.ButtonManeuver buttonManeuver;
+    
 
     /// <summary>
     /// Checks to see if the presented InputCombo matches this one
@@ -277,7 +435,7 @@ public struct InputCombo
             case PlayerInput.DirectionManeuver.Any:
                 direcManeu = "";
                 break;
-            case PlayerInput.DirectionManeuver.DoubleSnap:
+            case PlayerInput.DirectionManeuver.Snap:
                 direcManeu = "Double Snap ";
                 break;
             default:
@@ -306,9 +464,6 @@ public struct InputCombo
         {
             case PlayerInput.ButtonManeuver.Any:
                 btnManeu = "";
-                break;
-            case PlayerInput.ButtonManeuver.DoubleTap:
-                btnManeu = "Double Tap ";
                 break;
             default:
                 btnManeu = buttonManeuver.ToString() + " ";

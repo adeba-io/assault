@@ -1,17 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!4 &2956154974042138333 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2956154973004724994, guid: 01daf8497b4bf764388b042e30a935b3,
-    type: 3}
-  m_PrefabInstance: {fileID: 2956154974042138332}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1045811276 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3349913331422115662, guid: bef0e2bc79190e04293c0df21c4a6f8f,
-    type: 3}
-  m_PrefabInstance: {fileID: 3349913331318613762}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &318656
 GameObject:
   m_ObjectHideFlags: 0
@@ -200,7 +188,6 @@ GameObject:
   - component: {fileID: 188519234}
   - component: {fileID: 188519237}
   - component: {fileID: 188519239}
-  - component: {fileID: 188519238}
   m_Layer: 0
   m_Name: Player Inherit
   m_TagString: Untagged
@@ -221,6 +208,7 @@ Transform:
   m_Children:
   - {fileID: 2119679326}
   - {fileID: 318657}
+  - {fileID: 976960345}
   m_Father: {fileID: 513482233}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -394,8 +382,11 @@ MonoBehaviour:
     m_RotationOrder: 4
   _minMoveDistance: 0.01
   _currentState: 0
+  _walkAcceleration: 3
+  _maxWalkSpeed: 3
   _runAcceleration: 8
   _maxRunSpeed: 7
+  _groundDashSpeed: 10
   _airAcceleration: 9.5
   _maxAirSpeed: 5
   _groundJumpForce: 10
@@ -417,21 +408,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21eee69a0dd2fee4fb5c7c73b67f2f67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _inputType: 1
+  _inputType: 0
   _playerNumber: 1
+  Control:
+    positiveX: 275
+    negativeX: 276
+    positiveY: 273
+    negativeY: 274
+    controllerGrid: 1
+    _enabled: 1
   Control_X:
     value: 0
     positive: 275
     negative: 276
-    controllerAxis: 3
-    deadzoneValue: 0.1
+    controllerAxis: 0
+    deadzoneValue: 1e-45
     _playerNumber: 0
     _enabled: 1
   Control_Y:
     value: 0
     positive: 273
     negative: 274
-    controllerAxis: 4
+    controllerAxis: 0
     deadzoneValue: 1e-45
     _playerNumber: 0
     _enabled: 1
@@ -478,27 +476,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _canDamage: 0
-  _currentTechnique: {fileID: 0}
+  _currentTechnique:
+    _name: 
+    _attacks: []
+    _rekkaLinks:
+      _count: 0
+      _keys: 
+      _values: []
   moveset:
     _count: 0
     _keys: []
     _values: []
---- !u!114 &188519238
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 188519231}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bf82b96c1f9dfa04c895ddb42cd54855, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _poolName: '--- Pooled Objects ---'
-  _pooledObject: {fileID: 0}
-  _pooledAmount: 10
-  _willGrow: 1
 --- !u!1 &501769860
 GameObject:
   m_ObjectHideFlags: 0
@@ -963,6 +951,42 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 3.5, y: 1.5}
   m_EdgeRadius: 0
+--- !u!1 &976960344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 976960345}
+  m_Layer: 0
+  m_Name: '--- Pooled Objects ---'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &976960345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 976960344}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -3.3218288, y: -3.5902271, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 188519232}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &2956154974042138333 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2956154973004724994, guid: 01daf8497b4bf764388b042e30a935b3,
+    type: 3}
+  m_PrefabInstance: {fileID: 2956154974042138332}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1265626478
 GameObject:
   m_ObjectHideFlags: 0
@@ -1149,6 +1173,12 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 3.5, y: 1.5}
   m_EdgeRadius: 0
+--- !u!4 &1045811276 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3349913331422115662, guid: bef0e2bc79190e04293c0df21c4a6f8f,
+    type: 3}
+  m_PrefabInstance: {fileID: 3349913331318613762}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1885269400
 GameObject:
   m_ObjectHideFlags: 0
@@ -1556,6 +1586,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _inputType: 0
   _playerNumber: 1
+  Control:
+    positiveX: 0
+    negativeX: 0
+    positiveY: 0
+    negativeY: 0
+    controllerGrid: 0
+    _enabled: 0
   Control_X:
     value: 0
     positive: 275
@@ -1615,7 +1652,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _canDamage: 0
-  _currentTechnique: {fileID: 0}
+  _currentTechnique:
+    _name: 
+    _attacks: []
+    _rekkaLinks:
+      _count: 0
+      _keys: 
+      _values: []
   moveset:
     _count: 0
     _keys: []

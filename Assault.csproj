@@ -316,7 +316,7 @@
     <Compile Include="Assets\Scripts\Playable\Boxes\HitBox.cs" />
     <Compile Include="Assets\Scripts\Playable\Damageable.cs" />
     <Compile Include="Assets\Scripts\Playable\PhysicsObject.cs" />
-    <Compile Include="Assets\Scripts\Playable\PlayerControllerInherit.cs" />
+    <Compile Include="Assets\Scripts\Playable\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Playable\PlayerFighter.cs" />
     <Compile Include="Assets\Scripts\Playable\Technique.cs" />
     <Compile Include="Assets\Scripts\Playable\Techniques\Technique.cs" />
