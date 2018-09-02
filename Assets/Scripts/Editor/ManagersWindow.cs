@@ -25,7 +25,6 @@ public class ManagersWindow : EditorWindow
     private void OnGUI()
     {
         PhysicsManager.gravity = EditorGUILayout.Vector2Field(gui_gravity, PhysicsManager.gravity);
-        PhysicsManager.airFriction = EditorGUILayout.Vector2Field(gui_airFriction, PhysicsManager.airFriction);
-
+        PhysicsManager.externalFriction = EditorGUILayout.Vector2Field(gui_airFriction, PhysicsManager.externalFriction);
     }
 }

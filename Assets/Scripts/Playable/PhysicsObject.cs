@@ -29,7 +29,8 @@ public class PhysicsObject : MonoBehaviour
     [SerializeField] protected bool _useGravity = true;
     [SerializeField] protected bool _useFriction = true;
     [SerializeField] protected float _gravityMultiplier = 1f;
-    [SerializeField] protected Vector2 _projectedVelocity;
+    [SerializeField] protected Vector2 _internalVelocity;
+    [SerializeField] Vector2 _externalVelocity;
     [SerializeField] Vector2 _currentVelocity;
     [Space]
 
@@ -81,8 +82,7 @@ public class PhysicsObject : MonoBehaviour
 
     public bool isGrounded { get { return _collisionState.below && _collisionState.belowPlatform; } }
     public CollisionState collisionState { get { return _collisionState; } }
-
-    public Vector2 projectedVelocity { get { return _projectedVelocity; } }
+    
     public Vector2 velocity { get { return _currentVelocity; } }
 
     const float k_skinWidthBuffer = 0.001f;
@@ -107,7 +107,7 @@ public class PhysicsObject : MonoBehaviour
         // Take external forces into account
         Gravity();
         GroundFriction();
-        AirFriction();
+        ExternalFriction();
 
         // Setup for new FixedUpdate
         _collisionState.Reset();
@@ -116,7 +116,7 @@ public class PhysicsObject : MonoBehaviour
 
         // Calc _deltaMovement
         _prevPosition = _rigidbody.position;
-        _currPosition = _prevPosition + (_projectedVelocity * Time.deltaTime);
+        _currPosition = _prevPosition + ((_internalVelocity + _externalVelocity ) * Time.deltaTime);
         _deltaMovement = _currPosition - _prevPosition;
 
         if (_deltaMovement.magnitude < _minMoveDistance) _deltaMovement = Vector2.zero;
@@ -150,10 +150,10 @@ public class PhysicsObject : MonoBehaviour
             _collisionState.hitRightWallThisFrame = true;
 
         if (_collisionState.groundedThisFrame || _collisionState.hitCeilingThisFrame)
-            _projectedVelocity.y = 0;
+            _internalVelocity.y = 0;
 
         if (_collisionState.hitLeftWallThisFrame || _collisionState.hitRightWallThisFrame)
-            _projectedVelocity.x = 0;
+            _internalVelocity.x = 0;
 
     }
 
@@ -185,11 +185,17 @@ public class PhysicsObject : MonoBehaviour
     /// <param name="move">The Vector2 to accelerate by</param>
     /// <param name="alterVelocity">Should we alter the valocity with?</param>
     /// <returns></returns>
-    public Vector2 MoveRigidbody(Vector2 move, bool alterVelocity = true)
+    public Vector2 MoveRigidbody(Component affector, Vector2 move, bool alterVelocity = true)
     {
         Vector2 toAdd = move * Time.deltaTime;
 
-        if (alterVelocity) _projectedVelocity += toAdd;
+        if (alterVelocity)
+        {
+            if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
+                _internalVelocity += toAdd;
+            else
+                _externalVelocity += toAdd;
+        }
 
         return toAdd;
     }
@@ -201,30 +207,68 @@ public class PhysicsObject : MonoBehaviour
     /// <param name="moveY">The Y component to accelerate by</param>
     /// <param name="alterVelocity">Should we alter the velocity?</param>
     /// <returns></returns>
-    public Vector2 MoveRigidbody(float moveX, float moveY, bool alterVelocity = true)
+    public Vector2 MoveRigidbody(Component affector, float moveX, float moveY, bool alterVelocity = true)
     {
         Vector2 toAdd = new Vector2(moveX, moveY) * Time.deltaTime;
 
-        if (alterVelocity) _projectedVelocity += toAdd;
+        if (alterVelocity)
+        {
+            if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
+                _internalVelocity += toAdd;
+            else
+                _externalVelocity += toAdd;
+        }
 
         return toAdd;
     }
 
-    public void ForceRigidbody(Vector2 force, bool resetX = false, bool resetY = false)
+    /// <summary>
+    /// Applies a force to the the GameObject. Not multiplied by Time.deltaTime
+    /// </summary>
+    /// <param name="affector">Always pass in a reference to the object applying the force</param>
+    /// <param name="force"></param>
+    /// <param name="resetX"></param>
+    /// <param name="resetY"></param>
+    public void ForceRigidbody(Component affector, Vector2 force, bool resetX = false, bool resetY = false, bool external = true)
     {
-        if (resetX) _projectedVelocity.x = 0;
-        if (resetY) _projectedVelocity.y = 0;
+        if (CheckIfConnected(affector))
+        {
+            if (resetX) _internalVelocity.x = 0;
+            if (resetY) _internalVelocity.y = 0;
+            print("internal");
 
-        _projectedVelocity += force;
+            _internalVelocity += force;
+        }
+        else
+        {
+            if (resetX) _externalVelocity.x = 0;
+            if (resetY) _externalVelocity.y = 0;
+            print("external");
+
+            _externalVelocity += force;
+        }
     }
 
-    public void ForceRigidbody(float forceX, float forceY, bool resetX = false, bool resetY = false)
+    public void ForceRigidbody(Component affector, float forceX, float forceY, bool resetX = false, bool resetY = false, bool external = true)
     {
-        if (resetX) _projectedVelocity.x = 0;
-        if (resetY) _projectedVelocity.y = 0;
+        if (CheckIfConnected(affector))
+        {
+            if (resetX) _internalVelocity.x = 0;
+            if (resetY) _internalVelocity.y = 0;
 
-        _projectedVelocity += new Vector2(forceX, forceY);
+            _internalVelocity += new Vector2(forceX, forceY);
+        }
+        else
+        {
+            if (resetX) _externalVelocity.x = 0;
+            if (resetY) _externalVelocity.y = 0;
+
+            _externalVelocity += new Vector2(forceX, forceY);
+        }
     }
+
+    bool CheckIfConnected(Component toCheck)
+    { return toCheck.GetComponent<PlayerController>() == this; }
 
     /// <summary>
     /// Moves the GameObject without any implied velocity changes
@@ -591,7 +635,7 @@ public class PhysicsObject : MonoBehaviour
 
         Vector2 toMove = PhysicsManager.gravity * _gravityMultiplier * Time.deltaTime;
 
-        _projectedVelocity += toMove;
+        _internalVelocity += toMove;
     }
 
     void GroundFriction()
@@ -600,25 +644,23 @@ public class PhysicsObject : MonoBehaviour
         if (!_collisionState.belowPlatform) return;
         if (!_useFriction) return;
 
-        if (_projectedVelocity.x > 0)
-            _projectedVelocity.x -= _collisionState.belowPlatform.friction * Time.deltaTime;
-        else if (_projectedVelocity.x < 0)
-            _projectedVelocity.x += _collisionState.belowPlatform.friction * Time.deltaTime;
+        if (_internalVelocity.x > 0)
+            _internalVelocity.x -= _collisionState.belowPlatform.friction * Time.deltaTime;
+        else if (_internalVelocity.x < 0)
+            _internalVelocity.x += _collisionState.belowPlatform.friction * Time.deltaTime;
     }
 
-    void AirFriction()
+    void ExternalFriction()
     {
-        if (_collisionState.below) return;
-        if (_collisionState.groundedLastFrame) return;
-        if (!_useFriction) return;
+        if (_externalVelocity.x > 0)
+            _externalVelocity.x -= PhysicsManager.externalFriction.x * Time.deltaTime;
+        else if (_externalVelocity.x < 0)
+            _externalVelocity.x += PhysicsManager.externalFriction.x * Time.deltaTime;
 
-        if (_projectedVelocity.x > 0)
-            _projectedVelocity.x -= PhysicsManager.airFriction.x * Time.deltaTime;
-        else if (_projectedVelocity.x < 0)
-            _projectedVelocity.x += PhysicsManager.airFriction.x * Time.deltaTime;
-
-        if (_projectedVelocity.y < 0)
-            _projectedVelocity.y += PhysicsManager.airFriction.y * Time.deltaTime;
+        if (_externalVelocity.y > 0)
+            _externalVelocity.y -= PhysicsManager.externalFriction.y * Time.deltaTime;
+        else if (_externalVelocity.y < 0)
+            _externalVelocity.y += PhysicsManager.externalFriction.y * Time.deltaTime;
     }
 
     #endregion

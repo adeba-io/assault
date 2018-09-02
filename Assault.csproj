@@ -318,12 +318,11 @@
     <Compile Include="Assets\Scripts\Playable\PhysicsObject.cs" />
     <Compile Include="Assets\Scripts\Playable\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Playable\PlayerFighter.cs" />
-    <Compile Include="Assets\Scripts\Playable\Technique.cs" />
     <Compile Include="Assets\Scripts\Playable\Techniques\Technique.cs" />
-    <Compile Include="Assets\Scripts\PlayerControllerComponent.cs" />
     <Compile Include="Assets\Scripts\Terrain\Platform.cs" />
     <Compile Include="Assets\Scripts\Utility\ObjectPool.cs" />
     <Compile Include="Assets\Scripts\Utility\SerialDictionary.cs" />
+    <Compile Include="Assets\Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="C:\Users\adeba_iy0jonw\AppData\Local\Unity\cache\packages\packages.unity.com\com.unity.package-manager-ui@1.9.10\Editor\Resources\Styles\Main_Dark.uss" />

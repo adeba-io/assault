@@ -7,15 +7,15 @@ using UnityEditor;
 public class PhysicsManagerEditor : Editor
 {
     SerializedProperty _gravity;
-    SerializedProperty _airFriction;
+    SerializedProperty _externalFriction;
 
     readonly GUIContent gui_gravity = new GUIContent("Gravity");
-    readonly GUIContent gui_airFriction = new GUIContent("Air Friction");
+    readonly GUIContent gui_externalFriction = new GUIContent("External Friction");
 
     private void OnEnable()
     {
         _gravity = serializedObject.FindProperty("_gravity");
-        _airFriction = serializedObject.FindProperty("_airFriction");
+        _externalFriction = serializedObject.FindProperty("_externalFriction");
     }
 
     public override void OnInspectorGUI()
@@ -25,7 +25,7 @@ public class PhysicsManagerEditor : Editor
         serializedObject.Update();
 
         EditorGUILayout.PropertyField(_gravity, gui_gravity);
-        EditorGUILayout.PropertyField(_airFriction, gui_airFriction);
+        EditorGUILayout.PropertyField(_externalFriction, gui_externalFriction);
 
         serializedObject.ApplyModifiedProperties();
     }

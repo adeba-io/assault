@@ -3,10 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class Technique
+[CreateAssetMenu(menuName = "Assault/Technique")]
+public class Technique : ScriptableObject
 {
     [SerializeField] string _name;
+
+    bool _canCancel;
 
     PlayerController _userController;
     PlayerFighter _userFighter;
@@ -14,7 +16,13 @@ public class Technique
 
     [SerializeField] Attack[] _attacks;
 
-    public RekkaLinks _rekkaLinks = new RekkaLinks();
+    [SerializeField] MoveSet _links = new MoveSet();
+
+    // Animation fields
+    int _totalFrameCount;
+    int _currentFrame = 0;
+
+    int _cancelStart = 0, _cancelEnd = 0;
 
     public Attack this[int index]
     {
@@ -36,48 +44,35 @@ public class Technique
         }
     }
 
-    public void Execute()
+    public bool canCancel { get { return _canCancel; } }
+    public MoveSet links { get { return _links; } }
+
+    public void Initialize()
     {
         for (int i = 0; i < _attacks.Length; i++)
-            _attacks[i].Initialize();
-    }
-}
-
-[Serializable]
-public class Rekka
-{
-    [SerializeField] string _name;
-
-    PlayerController _userController;
-    PlayerFighter _userFighter;
-    Damageable _userDefender;
-
-    [SerializeField] Attack[] _attacks;
-
-    public Attack this[int index]
-    {
-        get
-        {
-            try { return _attacks[index]; }
-            catch { return null; }
-        }
+            _attacks[i].Enable();
     }
 
-    public PlayerFighter user
-    {
-        get { return _userFighter; }
-        set
-        {
-            _userFighter = value;
-            _userController = _userFighter.GetComponent<PlayerController>();
-            _userDefender = _userFighter.GetComponent<Damageable>();
-        }
-    }
-
-    public void Execute()
+    public void Update()
     {
         for (int i = 0; i < _attacks.Length; i++)
-            _attacks[i].Initialize();
+        {
+            if (_currentFrame == _attacks[i].enableFrame)
+            {
+                _attacks[i].Enable();
+            }
+            else if (_currentFrame == _attacks[i].disableFrame)
+            {
+                _attacks[i].Disable();
+            }
+        }
+
+        _currentFrame++;
+    }
+
+    public void End()
+    {
+        _currentFrame = 0;
     }
 }
 
@@ -86,6 +81,9 @@ public class Attack
 {
     public enum HitstunType
     { Standard, Chain, Burst, NoDI }
+
+    public int enableFrame = 0;
+    public int disableFrame = 0;
 
     public float damage = 1f;
     public float damageMultiplier = 1f;
@@ -102,14 +100,32 @@ public class Attack
     public bool useWeight = true;
     public bool knockbackSet = false;
 
-    public void Initialize()
+    public void Enable()
     {
         for (int i = 0; i < hitbox.Length; i++)
+        {
             hitbox[i].OnHitboxEnter += Assault;
+            hitbox[i].enabled = true;
+        }
+    }
+
+    public void Disable()
+    {
+        for (int i = 0; i < hitbox.Length; i++)
+        {
+            hitbox[i].OnHitboxEnter -= Assault;
+            hitbox[i].enabled = true;
+        }
     }
 
     public void Assault(Collider2D collision, Damageable hitboxOwner)
     {
 
     }
+
+    #region Animation Methods
+    
+
+
+    #endregion 
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+[RequireComponent(typeof(HitboxPool))]
 public class PlayerFighter : MonoBehaviour
 {
     [Serializable]
@@ -18,11 +19,13 @@ public class PlayerFighter : MonoBehaviour
 
     PlayerController _playerController;
     Damageable _playerDefender;
-    PlayerInput Input;
+    HitboxPool _hitboxPool;
 
     public Technique _currentTechnique = null;
     Queue<InputCombo> _inputQueue = new Queue<InputCombo>();
+
     public MoveSet moveset = new MoveSet();
+    public List<Technique> _techniques = new List<Technique>();
     
     public void EnableFighter() { _canDamage = true; }
     public void DisableFighter() { _canDamage = false; }
@@ -32,9 +35,44 @@ public class PlayerFighter : MonoBehaviour
 
     }
 
+    private void Update()
+    {
+        if (_currentTechnique == null)
+        {
+            InputCombo curr = _inputQueue.Dequeue();
+            int currNode = moveset[curr];
+
+            _currentTechnique = _techniques[currNode];
+            if (_currentTechnique != null) _currentTechnique.Initialize();
+        }
+        else if (_currentTechnique.canCancel)
+        {
+            InputCombo curr = _inputQueue.Dequeue();
+            int currNode = _currentTechnique.links[curr];
+
+            _currentTechnique = _techniques[currNode];
+            if (_currentTechnique != null) _currentTechnique.Initialize();
+        }
+
+        _currentTechnique.Update();
+    }
+
     public bool ReceiveInput(InputCombo inputCombo)
     {
+        if (_currentTechnique == null)
+        {
+            if (!_inputQueue.Contains(inputCombo))
+                _inputQueue.Enqueue(inputCombo);
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 }
+
+
+[Serializable]
+public class MoveSet : SerialDictionary<InputCombo, int>
+{ }
+

@@ -86,7 +86,7 @@ public abstract class InputComponent : MonoBehaviour
             if (!_enabled)
             {
                 Down = false;
-                //Held = false;
+                Held = false;
                 Up = false;
                 return;
             }
@@ -95,25 +95,27 @@ public abstract class InputComponent : MonoBehaviour
 
             if (inputType == InputType.Controller)
             {
-                Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton]) || Input.GetButton(k_buttonsToName[(int)controllerButton]);
+                Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton]);
+                Held = Input.GetButton(k_buttonsToName[(int)controllerButton]);
                 Up = Input.GetButtonUp(k_buttonsToName[(int)controllerButton]);
             }
             else if (inputType == InputType.Keyboard)
             {
-                Down = Input.GetKeyDown(key) || Input.GetKey(key);
+                Down = Input.GetKeyDown(key);
+                Held = Input.GetKey(key);
                 Up = Input.GetKeyUp(key);
             }
 
             if (fixedUpdateHappened)
             {
                 _afterFixedUpdateDown = Down;
-                //_afterFixedUpdateHeld = Held;
+                _afterFixedUpdateHeld = Held;
                 _afterFixedUpdateUp = Up;
             }
             else
             {
                 _afterFixedUpdateDown |= Down;
-                //_afterFixedUpdateHeld |= Held;
+                _afterFixedUpdateHeld |= Held;
                 _afterFixedUpdateUp |= Up;
             }
         }
@@ -130,7 +132,7 @@ public abstract class InputComponent : MonoBehaviour
 
             if (Down) Up = true;
             Down = false;
-            //Held = false;
+            Held = false;
 
             _afterFixedUpdateDown = false;
             _afterFixedUpdateHeld = false;
@@ -172,12 +174,12 @@ public abstract class InputComponent : MonoBehaviour
 
         protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
         {
-        { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
-        { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
-        { (int)ControllerAxes.RightStick_X, "RightStick X" },
-        { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
-        { (int)ControllerAxes.Dpad_X, "Dpad X" },
-        { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
+            { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
+            { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
+            { (int)ControllerAxes.RightStick_X, "RightStick X" },
+            { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
+            { (int)ControllerAxes.Dpad_X, "Dpad X" },
+            { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
         };
 
         public InputGrid(KeyCode posiX, KeyCode negaX, KeyCode posiY, KeyCode negaY, ControllerGrid contrGrid)

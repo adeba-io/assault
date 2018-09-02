@@ -24,17 +24,14 @@ public class PlayerInput : InputComponent
     { Any, Jump, AttackLight, AttackHeavy, Special, Meter, Defend }
 
     public enum ButtonManeuver
-    { Any, Down, Up }
+    { Any, Down, Held, Up }
 
     #endregion
 
     [SerializeField] int _playerNumber = 1;
 
     public InputGrid Control = new InputGrid(KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow, ControllerGrid.LeftStick);
-
-    public InputAxis Control_X = new InputAxis(KeyCode.RightArrow, KeyCode.LeftArrow, ControllerAxes.LeftStick_X);
-    public InputAxis Control_Y = new InputAxis(KeyCode.UpArrow, KeyCode.DownArrow, ControllerAxes.LeftStick_Y);
-
+    
     public InputButton Jump = new InputButton(KeyCode.Space, ControllerButtons.FaceBottom);
     public InputButton AttackLight = new InputButton(KeyCode.F, ControllerButtons.FaceLeft);
     public InputButton AttackHeavy = new InputButton(KeyCode.E, ControllerButtons.FaceTop);
@@ -68,8 +65,6 @@ public class PlayerInput : InputComponent
         _playerController = GetComponent<PlayerController>();
         _playerFighter = GetComponent<PlayerFighter>();
         _playerDefender = GetComponent<Damageable>();
-
-        Control = new InputGrid(Control_X, Control_Y, ControllerGrid.LeftStick);
 
         _inputFeed.Setup();
     }
@@ -146,6 +141,7 @@ public class PlayerInput : InputComponent
                 else continue;
 
                 if (current.Down) newBtnManeu = ButtonManeuver.Down;
+                else if (current.Held) newBtnManeu = ButtonManeuver.Held;
                 else if (current.Up) newBtnManeu = ButtonManeuver.Up;
                 else newBtnManeu = ButtonManeuver.Any;
 
@@ -156,6 +152,7 @@ public class PlayerInput : InputComponent
                 newBtn = Button.Defend;
 
                 if (current.Down) newBtnManeu = ButtonManeuver.Down;
+                else if (current.Held) newBtnManeu = ButtonManeuver.Held;
                 else if (current.Up) newBtnManeu = ButtonManeuver.Up;
                 else newBtnManeu = ButtonManeuver.Any;
 
@@ -169,10 +166,7 @@ public class PlayerInput : InputComponent
         _haveControl = true;
 
         GainControl(Control);
-
-        GainControl(Control_X);
-        GainControl(Control_Y);
-
+        
         GainControl(Jump);
         GainControl(AttackLight);
         GainControl(AttackHeavy);
@@ -186,10 +180,7 @@ public class PlayerInput : InputComponent
         _haveControl = false;
 
         ReleaseControl(Control, resetValues);
-
-        ReleaseControl(Control_X, resetValues);
-        ReleaseControl(Control_Y, resetValues);
-
+        
         ReleaseControl(Jump, resetValues);
         ReleaseControl(AttackLight, resetValues);
         ReleaseControl(AttackHeavy, resetValues);
@@ -201,10 +192,7 @@ public class PlayerInput : InputComponent
     protected override void GetInputs(bool fixedUpdateHappened)
     {
         Control.StateUpdate(_inputType);
-
-        Control_X.StateUpdate(_inputType);
-        Control_Y.StateUpdate(_inputType);
-
+        
         Jump.StateUpdate(fixedUpdateHappened, _inputType);
         AttackLight.StateUpdate(fixedUpdateHappened, _inputType);
         AttackHeavy.StateUpdate(fixedUpdateHappened, _inputType);
@@ -228,7 +216,8 @@ public class PlayerInput : InputComponent
                 if (cont) continue;
 
                 cont = _playerController.ReceiveInput(currCombo);
-                cont = _playerDefender.ReceiveInput(currCombo);
+               // cont = _playerDefender.ReceiveInput(currCombo);
+                break;
             }
             else
             {
@@ -239,9 +228,6 @@ public class PlayerInput : InputComponent
 
     void AssignPlayerNumberToInputs()
     {
-        Control_X._playerNumber = _playerNumber;
-        Control_Y._playerNumber = _playerNumber;
-
         Jump._playerNumber = _playerNumber;
         AttackLight._playerNumber = _playerNumber;
 

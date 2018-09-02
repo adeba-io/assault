@@ -17,11 +17,11 @@ public class PlayerController : PhysicsObject
 
     [SerializeField] float _runAcceleration = 4f;
     [SerializeField] float _maxRunSpeed = 7f;
-
+    
     [SerializeField] float _groundDashSpeed = 10f;
 
-    [SerializeField]
-    float _airAcceleration = 6f;
+    [SerializeField] float _airAcceleration = 6f;
+    [SerializeField] float _airDeceleration = 4f;
     [SerializeField] float _maxAirSpeed = 5f;
 
     [SerializeField]
@@ -56,21 +56,19 @@ public class PlayerController : PhysicsObject
 
     private void Update()
     {
-        Move();
-        Dash();
         Fall();
 
-        if (Input.Control_X.Snap)
+        if (Input.Control.X.Snap)
             print("Snapped");
     }
 
+    // Use for 
     public bool ReceiveInput(InputCombo inputCombo)
     {
         bool toReturn = false;
-
         _currInputCombo = inputCombo;
 
-        toReturn |= Jump();
+        toReturn = toReturn || Jump();
         
         return toReturn;
     }
@@ -83,38 +81,43 @@ public class PlayerController : PhysicsObject
             {
                 if (_currentState == CurrentState.Standing || _currentState == CurrentState.Crouching || _currentState == CurrentState.Dashing)
                 {
-                    ForceRigidbody(_groundDashSpeed, 0, true);
+                    ForceRigidbody(this, _groundDashSpeed, 0, true);
                     _currentState = CurrentState.Dashing;
                 }
             }
             else if (Input.Control.X.Hard)
             {
-                Vector2 addedVelocity = MoveRigidbody(Input.Control.X.Value * _runAcceleration, 0, false);
+                Vector2 addedVelocity = MoveRigidbody(this, Input.Control.X.Value * _runAcceleration, 0, false);
 
-                float newVelocityX = _projectedVelocity.x + addedVelocity.x;
+                float newVelocityX = _internalVelocity.x + addedVelocity.x;
                 if (Mathf.Abs(newVelocityX) <= _maxRunSpeed)
-                    MoveRigidbody(Input.Control.X.Value * _runAcceleration, 0);
+                    MoveRigidbody(this, Input.Control.X.Value * _runAcceleration, 0);
             }
             else if (Input.Control.X.Soft)
             {
-                Vector2 addedVelocity = MoveRigidbody(Input.Control.X.Value * _walkAcceleration, 0, false);
+                Vector2 addedVelocity = MoveRigidbody(this, Input.Control.X.Value * _walkAcceleration, 0, false);
 
-                float newVelocityX = _projectedVelocity.x + addedVelocity.x;
+                float newVelocityX = _internalVelocity.x + addedVelocity.x;
                 if (Mathf.Abs(newVelocityX) <= _maxWalkSpeed)
-                    MoveRigidbody(Input.Control.X.Value * _walkAcceleration, 0);
+                    MoveRigidbody(this, Input.Control.X.Value * _walkAcceleration, 0);
             }
 
-            if (_projectedVelocity.x > 0) facingRight = true;
-            else if (_projectedVelocity.x < 0) facingRight = false;
+            if (_internalVelocity.x > 0) facingRight = true;
+            else if (_internalVelocity.x < 0) facingRight = false;
         }
         else
         {
             float moveX = Input.Control.X.Value * _airAcceleration;
-            Vector2 addedVelocity = MoveRigidbody(moveX, 0, false);
+            Vector2 addedVelocity = MoveRigidbody(this, moveX, 0, false);
 
-            float newVelocityX = _projectedVelocity.x + addedVelocity.x;
+            float newVelocityX = _internalVelocity.x + addedVelocity.x;
             if (Mathf.Abs(newVelocityX) <= _maxAirSpeed)
-                MoveRigidbody(moveX, 0);
+                MoveRigidbody(this, moveX, 0);
+            else
+            {
+                moveX = -Input.Control.X.Value * _airDeceleration;
+                MoveRigidbody(this, moveX, 0);
+            }
         }
     }
 
@@ -122,69 +125,73 @@ public class PlayerController : PhysicsObject
     {
         if (_collisionState.groundedLastFrame)
             _airJumpsLeft = _maxAirJumps;
-
-        if (WallJump())
-            return true;
-
-        if (_currInputCombo.inputButton == PlayerInput.Button.Jump)
+        
+        if (_currInputCombo.inputButton == PlayerInput.Button.Jump && _currInputCombo.buttonManeuver == PlayerInput.ButtonManeuver.Down)
         {
             if (isGrounded)
             {
-                ForceRigidbody(0, _groundJumpForce, false, true);
+                ForceRigidbody(this, 0, _groundJumpForce, false, true);
             }
-            else
+            else if (_airJumpsLeft > 0)
             {
-                ForceRigidbody(0, _airJumpForce, false, true);
+                if (WallJump())
+                    return true;
+
+                ForceRigidbody(this, 0, _airJumpForce, false, true);
                 _airJumpsLeft--;
             }
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     bool WallJump()
     {
-        if (!Input.Jump.Down) return false;
         if (!_collisionState.touchingWall) return false;
 
-        if (_collisionState.rightPlatform && Input.Control_X.Value > 0)
-            ForceRigidbody(-_wallJumpForce.x, _wallJumpForce.y, true, true);
+        if (_collisionState.rightPlatform && Input.Control.X.Value < 0)
+        {
+            ForceRigidbody(this, -_wallJumpForce.x, _wallJumpForce.y, true, true);
+            return true;
+        }
+        else if (_collisionState.leftPlatform && Input.Control.X.Value > 0)
+        {
+            ForceRigidbody(this, _wallJumpForce, true, true);
+            return true;
+        }
 
-        else if (_collisionState.leftPlatform && Input.Control_X.Value < 0)
-            ForceRigidbody(_wallJumpForce, true, true);
-
-        return true;
+        return false;
     }
-
+    
     void Fall()
     {
-        float currFallSpeed = -_projectedVelocity.y;
+        float currFallSpeed = -_internalVelocity.y;
+        float fallSpeed = (Input.Control.X.Value < 0 ? _fastFallSpeed : _fallSpeed);
 
-        if (currFallSpeed > _fallSpeed)
+        if (currFallSpeed > fallSpeed)
         {
-            ForceRigidbody(0, -_fallSpeed, false, true);
+            ForceRigidbody(this, 0, -fallSpeed , false, true);
         }
     }
 
     void Dash()
     {
         if (!Input.Meter.Down) return;
-        if (Input.Control_X.Value == 0 && Input.Control_Y.Value == 0) return;
+        if (Input.Control.X.Value == 0 && Input.Control.Y.Value == 0) return;
 
-        Vector2 dash = new Vector2(Input.Control_X.Value, Input.Control_Y.Value);
+        Vector2 dash = new Vector2(Input.Control.X.Value, Input.Control.Y.Value);
         dash *= _dashSpeed;
 
-        ForceRigidbody(dash, true, true);
+        ForceRigidbody(this, dash, true, true);
     }
 
     public void UpdateState(CurrentState newState)
     {
         if (isGrounded)
         {
-            if (Input.Control_Y.Value < -0.5f)
-            {
-                _currentState = CurrentState.Crouching;
-            }
+            
         }
         else
         {
