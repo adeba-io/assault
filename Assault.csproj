@@ -308,6 +308,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\ControlStickBox.cs" />
     <Compile Include="Assets\Scripts\HitboxPool.cs" />
     <Compile Include="Assets\Scripts\Input\InputComponent.cs" />
     <Compile Include="Assets\Scripts\Input\PlayerInput.cs" />

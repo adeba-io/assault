@@ -79,6 +79,8 @@ public class PlayerInput : InputComponent
 
     void UpdateInputFeed()
     {
+        if (!_playerController) return;
+
         Direction newDirec = Direction.Neutral;
         DirectionManeuver newDirecManeu = DirectionManeuver.Any;
 

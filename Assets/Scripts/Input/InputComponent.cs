@@ -156,12 +156,14 @@ public abstract class InputComponent : MonoBehaviour
         [SerializeField] protected bool _enabled = true;
         protected bool _gettingInput = true;
 
-        protected Vector2 _previousValue;
+        protected Vector2[] _previousValue = new Vector2[3];
 
         public Vector2 Value { get; protected set; }
         
         public Axis X { get; protected set; }
         public Axis Y { get; protected set; }
+
+        public Raw Raws { get; protected set; }
 
         public bool Soft
         { get { return Value.x != 0 || Value.y != 0; } }
@@ -243,27 +245,33 @@ public abstract class InputComponent : MonoBehaviour
             if (!_enabled)
             {
                 Value = Vector2.zero;
-                _previousValue = Value;
+                _previousValue = new Vector2[3];
                 return;
             }
 
-            _previousValue = Value;
+            _previousValue[0] = Value;
+            _previousValue[1] = _previousValue[0];
+            _previousValue[2] = _previousValue[1];
 
             if (!_gettingInput) return;
 
             Vector2 val = Vector2.zero;
+            Vector2 rawVal = Vector2.zero;
+
             Axis x, y;
+            Raw r = new Raw();
             if (inputType == InputType.Controller)
             {
                 float[] values = { Input.GetAxis(k_axisToName[(int)controllerAxisX]), Input.GetAxis(k_axisToName[(int)controllerAxisY]) };
+                rawVal = new Vector2(values[0], values[1]);
 
                 for (int i = 0; i < values.Length; i++)
                 {
-                    if (values[i] > 0.9f || values[i] < -0.9f)
+                    if (values[i] >= 1f || values[i] <= -1f)
                     {
                         values[i] = Mathf.Sign(values[i]) * 1f;
                     }
-                    else if (values[i] > 0.3f || values[i] < -0.3f)
+                    else if (values[i] > 0.7f || values[i] < -0.7f)
                     {
                         values[i] = Mathf.Sign(values[i]) * 0.5f;
                     }
@@ -287,15 +295,18 @@ public abstract class InputComponent : MonoBehaviour
                 else if (negativeHeldX)
                     val.x = -1f;
 
-                if (positiveHeldY = negativeHeldY)
-                    val.y = 0;
+                if (positiveHeldY == negativeHeldY)
+                { val.y = 0; }
                 else if (positiveHeldY)
-                    val.y = 1f;
+                { val.y = 1f; }
                 else if (negativeHeldY)
-                    val.y = -1f;
+                { val.y = -1f; }
+
+                rawVal = val;
             }
 
             Value = val;
+            r.Value = rawVal;
 
             x.Value = Value.x;
             y.Value = Value.y;
@@ -306,14 +317,14 @@ public abstract class InputComponent : MonoBehaviour
 
             if (ReceivingInput && inputType == InputType.Controller)
             {
-                if (_previousValue == Vector2.zero)
+                if (_previousValue[2] == Vector2.zero)
                 {
-                    if (Value.x == 1f)
+                    if (Mathf.Abs(Value.x) >= 1f)
                     {
                         Snap = true;
                         x.Snap = true;
                     }
-                    else if (Value.y == 1f)
+                    else if (Mathf.Abs(Value.y) >= 1f)
                     {
                         Snap = true;
                         y.Snap = true;
@@ -323,6 +334,7 @@ public abstract class InputComponent : MonoBehaviour
 
             X = x;
             Y = y;
+            Raws = r;
         }
 
         public void Enable() { _enabled = true; }
@@ -337,7 +349,7 @@ public abstract class InputComponent : MonoBehaviour
                 Value = Vector2.zero;
                 ReceivingInput = false;
             }
-            _previousValue = Vector2.zero;
+            _previousValue = new Vector2[3];
         }
 
         public struct Axis
@@ -349,6 +361,25 @@ public abstract class InputComponent : MonoBehaviour
             { get { return Mathf.Abs(Value) == 1f || Mathf.Abs(Value) == 1f; } }
             public bool Soft
             { get { return Value != 0 || Value != 0; } }
+        }
+
+        public struct Raw
+        {
+            public Vector2 _value;
+
+            public Vector2 Value
+            {
+                get { return _value; }
+                set
+                {
+                    _value = value;
+                    X = (float)Math.Round(_value.x, 2);
+                    Y = (float)Math.Round(_value.y, 2);
+                }
+            }
+
+            public float X;
+            public float Y;
         }
     }
     
