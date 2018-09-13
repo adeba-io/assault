@@ -2,61 +2,64 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+namespace Assault
 {
-    public static GameManager _instance;
-
-    [SerializeField] float _FPSUpdateInterval = 0.5f;
-
-    double _lastInterval;
-    int _frames = 0;
-    float _fps;
-
-    private void Awake()
+    public class GameManager : MonoBehaviour
     {
-        if (_instance != null && _instance != this)
-            Destroy(gameObject);
-        else
-            _instance = this;
+        public static GameManager _instance;
 
-        Application.targetFrameRate = 60;
-    }
+        [SerializeField] float _FPSUpdateInterval = 0.5f;
 
-    private void Start()
-    {
-        _lastInterval = Time.realtimeSinceStartup;
-        _frames = 0;
-    }
+        double _lastInterval;
+        int _frames = 0;
+        float _fps;
 
-    private void Update()
-    {
-        FrameCount();
-    }
-
-    void FrameCount()
-    {
-        _frames++;
-        float timeNow = Time.realtimeSinceStartup;
-        
-        if (timeNow > _lastInterval + _FPSUpdateInterval)
+        private void Awake()
         {
-            _fps = (float)(_frames / (timeNow - _lastInterval));
-            _frames = 0;
-            _lastInterval = timeNow;
+            if (_instance != null && _instance != this)
+                Destroy(gameObject);
+            else
+                _instance = this;
+
+            Application.targetFrameRate = 60;
         }
-    }
 
-    private void OnGUI()
-    {
-        const float height = 50f;
+        private void Start()
+        {
+            _lastInterval = Time.realtimeSinceStartup;
+            _frames = 0;
+        }
 
-        GUILayout.BeginArea(new Rect(10, 10, 150, height));
+        private void Update()
+        {
+            FrameCount();
+        }
 
-        GUILayout.BeginVertical("box");
+        void FrameCount()
+        {
+            _frames++;
+            float timeNow = Time.realtimeSinceStartup;
 
-        GUILayout.Label("FPS: " + _fps);
+            if (timeNow > _lastInterval + _FPSUpdateInterval)
+            {
+                _fps = (float)(_frames / (timeNow - _lastInterval));
+                _frames = 0;
+                _lastInterval = timeNow;
+            }
+        }
 
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
+        private void OnGUI()
+        {
+            const float height = 50f;
+
+            GUILayout.BeginArea(new Rect(10, 10, 150, height));
+
+            GUILayout.BeginVertical("box");
+
+            GUILayout.Label("FPS: " + _fps);
+
+            GUILayout.EndVertical();
+            GUILayout.EndArea();
+        }
     }
 }

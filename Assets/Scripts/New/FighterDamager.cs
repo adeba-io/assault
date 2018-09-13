@@ -4,8 +4,11 @@ using UnityEngine;
 
 namespace Assault
 {
-    public class HitboxPool : ObjectPool
+    public class FighterDamager : MonoBehaviour
     {
+        public void Assault(Collider2D collider)
+        {
 
+        }
     }
 }

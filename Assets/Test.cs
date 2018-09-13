@@ -2,17 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Test : MonoBehaviour {
+namespace Assault
+{
+    public class Test : MonoBehaviour
+    {
 
-    public PlayerController toTest;
+        public PlayerController toTest;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-        toTest.ForceRigidbody(this, Vector2.zero);
-	}
+        // Use this for initialization
+        void Start()
+        {
+
+        }
+
+        // Update is called once per frame
+        void Update()
+        {
+            toTest.ForceRigidbody(this, Vector2.zero);
+        }
+    }
 }

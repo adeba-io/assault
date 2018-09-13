@@ -3,49 +3,51 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(Platform))]
-public class PlatformEditor : Editor
+namespace Assault
 {
-    Platform platform;
-    Collider2D collider;
-    bool _physicsMaterialFoldout = false;
-
-    SerializedProperty _platformType;
-    SerializedProperty _slopeAngle;
-    SerializedProperty _physicsMaterial;
-
-    readonly GUIContent gui_platformType = new GUIContent("Platform Type");
-    readonly GUIContent gui_slopeAngle = new GUIContent("Slope Angle", "The rotation of the attached transform");
-    readonly GUIContent gui_physicsMaterial = new GUIContent("Physics Material");
-
-    private void OnEnable()
+    [CustomEditor(typeof(Platform))]
+    public class PlatformEditor : Editor
     {
-        platform = (Platform)target;
-        collider = platform.GetComponent<Collider2D>();
+        Platform platform;
+        Collider2D collider;
 
-        _platformType = serializedObject.FindProperty("_platformType");
-        _slopeAngle = serializedObject.FindProperty("_slopeAngle");
-        _physicsMaterial = serializedObject.FindProperty("_physicsMaterial");
-    }
+        SerializedProperty _platformType;
+        SerializedProperty _slopeAngle;
+        SerializedProperty _physicsMaterial;
 
-    public override void OnInspectorGUI()
-    {
-        serializedObject.Update();
+        readonly GUIContent gui_platformType = new GUIContent("Platform Type");
+        readonly GUIContent gui_slopeAngle = new GUIContent("Slope Angle", "The rotation of the attached transform");
+        readonly GUIContent gui_physicsMaterial = new GUIContent("Physics Material");
 
-        int indent = EditorGUI.indentLevel;
+        private void OnEnable()
+        {
+            platform = (Platform)target;
+            collider = platform.GetComponent<Collider2D>();
 
-        EditorGUILayout.PropertyField(_platformType, gui_platformType);
+            _platformType = serializedObject.FindProperty("_platformType");
+            _slopeAngle = serializedObject.FindProperty("_slopeAngle");
+            _physicsMaterial = serializedObject.FindProperty("_physicsMaterial");
+        }
 
-        EditorGUILayout.Slider(_slopeAngle, -90f, 90f, gui_slopeAngle);
-        platform.transform.rotation = Quaternion.Euler(0, 0, _slopeAngle.floatValue);
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
 
-        EditorGUILayout.PropertyField(_physicsMaterial, gui_physicsMaterial);
+            int indent = EditorGUI.indentLevel;
 
-        if (platform.physicsMaterial && !collider.sharedMaterial)
-            collider.sharedMaterial = platform.physicsMaterial;
-        else if (collider.sharedMaterial && !platform.physicsMaterial)
-            platform.physicsMaterial = collider.sharedMaterial;
+            EditorGUILayout.PropertyField(_platformType, gui_platformType);
 
-        serializedObject.ApplyModifiedProperties();
+            EditorGUILayout.Slider(_slopeAngle, -90f, 90f, gui_slopeAngle);
+            platform.transform.rotation = Quaternion.Euler(0, 0, _slopeAngle.floatValue);
+
+            EditorGUILayout.PropertyField(_physicsMaterial, gui_physicsMaterial);
+
+            if (platform.physicsMaterial && !collider.sharedMaterial)
+                collider.sharedMaterial = platform.physicsMaterial;
+            else if (collider.sharedMaterial && !platform.physicsMaterial)
+                platform.physicsMaterial = collider.sharedMaterial;
+
+            serializedObject.ApplyModifiedProperties();
+        }
     }
 }

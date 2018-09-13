@@ -3,54 +3,57 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ObjectPool : MonoBehaviour
+namespace Assault
 {
-    public string _poolName = "--- Pooled Objects ---";
-    public GameObject _pooledObject;
-    [SerializeField] protected int _pooledAmount = 10;
-    public bool _willGrow = true;
-
-    protected Transform _poolParent;
-    protected List<GameObject> _objects;
-    
-    private void Reset()
+    public class ObjectPool : MonoBehaviour
     {
-        _poolParent = transform.Find(_poolName);
-        GameObject pool = new GameObject(_poolName);
-        pool.transform.parent = transform;
-        _poolParent = pool.transform;
-    }
+        public string _poolName = "--- Pooled Objects ---";
+        public GameObject _pooledObject;
+        [SerializeField] protected int _pooledAmount = 10;
+        public bool _willGrow = true;
 
-    private void Start()
-    {
-        _objects = new List<GameObject>();
-        for (int i = 0; i < _pooledAmount; i++)
+        protected Transform _poolParent;
+        protected List<GameObject> _objects;
+
+        private void Reset()
         {
-            GameObject obj = (GameObject)Instantiate(_pooledObject);
-            obj.SetActive(false);
-            obj.transform.parent = transform;
-
-            _objects.Add(obj);
+            _poolParent = transform.Find(_poolName);
+            GameObject pool = new GameObject(_poolName);
+            pool.transform.parent = transform;
+            _poolParent = pool.transform;
         }
-    }
 
-    public GameObject GetPooledObject()
-    {
-        for (int i = 0; i < _objects.Count; i++)
+        private void Start()
         {
-            if (!_objects[i].activeInHierarchy)
+            _objects = new List<GameObject>();
+            for (int i = 0; i < _pooledAmount; i++)
             {
-                return _objects[i];
+                GameObject obj = (GameObject)Instantiate(_pooledObject);
+                obj.SetActive(false);
+                obj.transform.parent = transform;
+
+                _objects.Add(obj);
             }
         }
 
-        if (_willGrow)
+        public GameObject GetPooledObject()
         {
-            GameObject obj = (GameObject)Instantiate(_pooledObject);
-            _objects.Add(obj);
-            return obj;
-        }
+            for (int i = 0; i < _objects.Count; i++)
+            {
+                if (!_objects[i].activeInHierarchy)
+                {
+                    return _objects[i];
+                }
+            }
 
-        return null;
+            if (_willGrow)
+            {
+                GameObject obj = (GameObject)Instantiate(_pooledObject);
+                _objects.Add(obj);
+                return obj;
+            }
+
+            return null;
+        }
     }
 }

@@ -3,30 +3,33 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(PhysicsManager))]
-public class PhysicsManagerEditor : Editor
+namespace Assault
 {
-    SerializedProperty _gravity;
-    SerializedProperty _externalFriction;
-
-    readonly GUIContent gui_gravity = new GUIContent("Gravity");
-    readonly GUIContent gui_externalFriction = new GUIContent("External Friction");
-
-    private void OnEnable()
+    [CustomEditor(typeof(PhysicsManager))]
+    public class PhysicsManagerEditor : Editor
     {
-        _gravity = serializedObject.FindProperty("_gravity");
-        _externalFriction = serializedObject.FindProperty("_externalFriction");
-    }
+        SerializedProperty _gravity;
+        SerializedProperty _externalFriction;
 
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
+        readonly GUIContent gui_gravity = new GUIContent("Gravity");
+        readonly GUIContent gui_externalFriction = new GUIContent("External Friction");
 
-        serializedObject.Update();
+        private void OnEnable()
+        {
+            _gravity = serializedObject.FindProperty("_gravity");
+            _externalFriction = serializedObject.FindProperty("_externalFriction");
+        }
 
-        EditorGUILayout.PropertyField(_gravity, gui_gravity);
-        EditorGUILayout.PropertyField(_externalFriction, gui_externalFriction);
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
 
-        serializedObject.ApplyModifiedProperties();
+            serializedObject.Update();
+
+            EditorGUILayout.PropertyField(_gravity, gui_gravity);
+            EditorGUILayout.PropertyField(_externalFriction, gui_externalFriction);
+
+            serializedObject.ApplyModifiedProperties();
+        }
     }
 }
