@@ -25,6 +25,8 @@ namespace Assault
 
         protected InputFeed _inputFeed;
 
+        public Maneuver maneu;
+
         public bool haveControl { get { return _haveControl; } }
 
         private void Start()

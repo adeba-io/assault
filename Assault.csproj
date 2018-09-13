@@ -328,6 +328,7 @@
     <Compile Include="Assets\Scripts\Playable\Techniques\Technique.cs" />
     <Compile Include="Assets\Scripts\Terrain\Platform.cs" />
     <Compile Include="Assets\Scripts\Types.cs" />
+    <Compile Include="Assets\Scripts\Utility\IntRange.cs" />
     <Compile Include="Assets\Scripts\Utility\ObjectPool.cs" />
     <Compile Include="Assets\Scripts\Utility\SerialDictionary.cs" />
     <Compile Include="Assets\Test.cs" />

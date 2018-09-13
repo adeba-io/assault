@@ -8,8 +8,24 @@ public class VectorFramesDrawer : PropertyDrawer
 {
     float _buffer = 5f;
 
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+    {
+        return EditorGUIUtility.singleLineHeight;
+    }
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        Rect vectorLabel = new Rect(position.x, position.y, position.width / 8f, position.height);
+        Rect vectorRect = new Rect(vectorLabel.x + vectorLabel.width, position.y, (position.width * (5f / 8f)) - _buffer, position.height);
+        Rect frameLabel = new Rect(vectorRect.x + vectorRect.width + _buffer, position.y, position.width / 8f, position.height);
+        Rect frameRect = new Rect(frameLabel.x + frameLabel.width, position.y, position.width / 8f, position.height);
+
+        EditorGUI.LabelField(vectorLabel, new GUIContent("Vector"));
+        EditorGUI.PropertyField(vectorRect, property.FindPropertyRelative("vector"), GUIContent.none);
+        EditorGUI.LabelField(frameLabel, new GUIContent("Frame"));
+        EditorGUI.PropertyField(frameRect, property.FindPropertyRelative("frame"), GUIContent.none);
+
+        /*
         float inspectorWidth = EditorGUIUtility.currentViewWidth;
         float propWidth = (inspectorWidth / 3f) - _buffer;
         propWidth = (propWidth > 100f) ? 100f : propWidth;
@@ -31,18 +47,7 @@ public class VectorFramesDrawer : PropertyDrawer
 
         EditorGUI.LabelField(new Rect(framRect.x, framRect.y, 40f, vectRect.height), "Frame");
         EditorGUI.PropertyField(new Rect(framRect.x + 40f + _buffer, framRect.y, framRect.width - 80f, framRect.height), property.FindPropertyRelative("frame"), GUIContent.none);
-
-        /* + 40f + _buffer
-        EditorGUI.PrefixLabel(new Rect(position.x, position.y, 100f, position.height), label);
-
-        position.x += 100f + _buffer;
-        Rect vectorRect = new Rect(position.x, position.y, propWidth * 2, position.height);
-        position.x += propWidth + propWidth + _buffer + _buffer;
-        Rect frameRect = new Rect(position.x, position.y, propWidth, position.height);
-
-        EditorGUI.PropertyField(vectorRect, property.FindPropertyRelative("vector"), GUIContent.none);
-        EditorGUI.PropertyField(frameRect, property.FindPropertyRelative("frame"), new GUIContent("Frame"));
-        */
-        EditorGUI.EndProperty();
+        
+        EditorGUI.EndProperty();*/
     }
 }

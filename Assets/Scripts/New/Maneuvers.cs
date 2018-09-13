@@ -49,8 +49,7 @@ namespace Assault
             protected int _currentFrame = 0;
             
             public bool canCancel;
-            [SerializeField] int _cancelStart = 0;
-            [SerializeField] int _cancelEnd = 0;
+            [IntRange(0, 60)] public IntRange _cancelRegion;
 
             protected FighterController _fighterController;
             protected FighterPhysics _fighterPhysics;
@@ -89,8 +88,8 @@ namespace Assault
                 _fighterController.currentAccelerate =
                     new Vector2(_accelerateCurveX.Evaluate(_currentFrame), _accelerateCurveY.Evaluate(_currentFrame));
 
-                if (_currentFrame >= _cancelStart) canCancel = true;
-                if (_currentFrame > _cancelEnd) canCancel = false;
+                if (_currentFrame >= _cancelRegion.rangeStart) canCancel = true;
+                if (_currentFrame > _cancelRegion.rangeEnd) canCancel = false;
             }
 
             public virtual void End()

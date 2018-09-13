@@ -10,7 +10,7 @@ using Assault.Maneuvers;
 [CustomEditor(typeof(FighterController))]
 public class FighterControllerEditor : Editor
 {
-    uint lastNode = 0;
+    static List<int> _nodeList = new List<int>();
 
     FighterController _targetController;
 
@@ -93,7 +93,6 @@ public class FighterControllerEditor : Editor
 
     void Maneuvers()
     {
-        // Dealing with ManeuverNode
         _maneuvers = new ReorderableList(serializedObject, serializedObject.FindProperty("_maneuvers"), true, true, true, true)
         {
             elementHeight = 60,
@@ -212,6 +211,13 @@ public class FighterControllerEditor : Editor
         EditorGUILayout.PropertyField(_maxAirSpeed, gui_maxAirSpeed);
 
         EditorGUILayout.PropertyField(_maxAirJumps, gui_maxAirJumps);
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.BeginHorizontal(GUI.skin.box);
+
+
+        EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.Space();
 
