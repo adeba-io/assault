@@ -12,6 +12,9 @@ public class FighterControllerEditor : Editor
 {
     static List<int> _nodeList = new List<int>();
 
+    const string assetExtension = ".asset";
+    string maneuverDirectory = "Assets/Entities/";
+
     FighterController _targetController;
 
     SerializedProperty _currentState;
@@ -46,6 +49,7 @@ public class FighterControllerEditor : Editor
     private void OnEnable()
     {
         _targetController = (FighterController)serializedObject.targetObject;
+        maneuverDirectory += _targetController.name + "/Maneuvers/";
 
         _currentState = serializedObject.FindProperty("currentState");
 
@@ -221,46 +225,16 @@ public class FighterControllerEditor : Editor
 
         EditorGUILayout.Space();
 
+        
+
         _moveset.DoLayoutList();
         _maneuvers.DoLayoutList();
 
         serializedObject.ApplyModifiedProperties();
     }
-    /*
-    void DrawMoveset()
-    {
-        if (!_moveset.isArray || !_maneuvers.isArray)
-        {/*
-            EditorGUILayout.BeginVertical(GUI.skin.box);
-            EditorGUILayout.LabelField("Moveset fields are not arrays");
-            EditorGUILayout.EndVertical();*
-            return;
-        }
 
-        SerialPropToArray<InputComboNode>(_moveset);
-    }
-
-    List<T> SerialPropToArray<T>(SerializedProperty array)
+    void SetupFolders()
     {
-        if (!array.isArray) return new List<T>();
         
-        array.Next(true); // skip generic field
-        array.Next(true); // advance to size field
-
-        int arrayLength = array.intValue;
-
-        array.Next(true); // advance to first array index
-
-        // Write values to list
-        List<T> values = new List<T>(arrayLength);
-        int lastIndex = arrayLength - 1;/*
-        for (int i = 0;  i < arrayLength; i++)
-        {
-            Debug.Log(array.arrayElementType);
-        }*
-
-        Debug.Log(serializedObject.FindProperty("_moveset.Array.data[0].inputCombo").objectReferenceValue);
-
-        return new List<T>();
-    }*/
+    }
 }

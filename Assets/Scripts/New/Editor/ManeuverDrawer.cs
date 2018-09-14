@@ -1,9 +1,11 @@
 ﻿using System.Collections;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using Assault.Maneuvers;
+using System;
 
 [CustomPropertyDrawer(typeof(Maneuver))]
 public class ManeuverDrawer : PropertyDrawer
@@ -19,8 +21,8 @@ public class ManeuverDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         //base.OnGUI(position, property, label);
-
-        //Enable(property);
+        //if (!initialize)
+            //Enable(property);
 
         Rect foldoutRect = new Rect(position.position, new Vector2(position.width, EditorGUIUtility.singleLineHeight));
 
@@ -52,15 +54,17 @@ public class ManeuverDrawer : PropertyDrawer
             posi.y += _moveFrames.headerHeight + (_moveFrames.elementHeight * Mathf.Max(_moveFrames.serializedProperty.arraySize, 1)) + _moveFrames.footerHeight + (_moveFrames.displayAdd || _moveFrames.displayRemove ? 10f : 0) + _buffer;
 
             _forceFrames.DoList(posi);
+            
         }
     }
 
     void Enable(SerializedProperty property)
     {
+        initialize = true;
+
         _moveFrames = new ReorderableList(property.serializedObject, property.FindPropertyRelative("_moveFrames"), true, true, true, true)
         {
             elementHeight = 20,
-            footerHeight = 20,
 
             drawHeaderCallback = (Rect rect) =>
             {
@@ -73,7 +77,6 @@ public class ManeuverDrawer : PropertyDrawer
                 var element = _moveFrames.serializedProperty.GetArrayElementAtIndex(index);
 
                 EditorGUI.PropertyField(rect, element);
-                
                 /*
                 for (int i = 1; i < _moveFrames.serializedProperty.arraySize; i++)
                 {
@@ -84,38 +87,15 @@ public class ManeuverDrawer : PropertyDrawer
                             int temp = _moveFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue;
                             _moveFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue = _moveFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue;
                             _moveFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue = temp;
-
-                            if (j == index) _moveFrames.index++;
-                            else if (j + 1 == index) _moveFrames.index--;
                         }
                     }
                 }*/
             },
-            /*
+
             drawFooterCallback = (Rect rect) =>
             {
-                if (GUI.Button(rect, new GUIContent("Organize")))
-                {
-                    int index = _moveFrames.index;
-
-                    for (int i = 1; i < _moveFrames.serializedProperty.arraySize; i++)
-                    {
-                        for (int j = 0; j < i; j++)
-                        {
-                            if (_moveFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue > _moveFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue)
-                            {
-                                int temp = _moveFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue;
-                                _moveFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue = _moveFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue;
-                                _moveFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue = temp;
-
-                                if (j == index) _moveFrames.index++;
-                                else if (j + 1 == index) _moveFrames.index--;
-                            }
-                        }
-                    }
-                }
-            }*/
-
+                DrawRLFooter(rect, _moveFrames);
+            }
         };
 
         _forceFrames = new ReorderableList(property.serializedObject, property.FindPropertyRelative("_forceFrames"), true, true, true, true)
@@ -134,29 +114,59 @@ public class ManeuverDrawer : PropertyDrawer
 
                 EditorGUI.PropertyField(rect, element);
 
-                for (int i = 1; i < _forceFrames.serializedProperty.arraySize; i++)
-                {
-                    for (int j = 0; j < i; j++)
-                    {
-                        if (_forceFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue > _forceFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue)
-                        {
-                            int temp = _forceFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue;
-                            _forceFrames.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue = _forceFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue;
-                            _forceFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue = temp;
+               // OrganizeReorderableList(_forceFrames);
+            }
+        };
+    }
 
-                            if (j == index) _forceFrames.index++;
-                            else if (j + 1 == index) _forceFrames.index--;
-                        }
-                    }
+    void OrganizeReorderableList(ReorderableList list)
+    {
+        for (int i = 1; i < list.serializedProperty.arraySize; i++)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (list.serializedProperty.GetArrayElementAtIndex(j).FindPropertyRelative("frame").intValue > list.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue)
+                {
+                    list.serializedProperty.MoveArrayElement(j, j + 1);
                 }
             }
+        }
+    }
 
-        };
+    void DrawRLFooter(Rect rect, ReorderableList list)
+    {
+        rect.x += rect.width * 0.4f;
+        Rect addRect = new Rect(rect.x, rect.y, (rect.width * 0.3f) - _buffer, rect.height);
+        Rect delRect = new Rect(rect.x + addRect.width + _buffer, rect.y, addRect.width, rect.height);
+        
+        if (GUI.Button(addRect, "Add Maneuver"))
+        {
+            list.serializedProperty.arraySize++;
+        }
+
+        if (GUI.Button(delRect, "Delete Maneuver"))
+        {
+            var menu = new GenericMenu();
+
+            for (int i = 0; i < list.serializedProperty.arraySize; i++)
+            {
+                var current = list.serializedProperty.GetArrayElementAtIndex(i);
+                menu.AddItem(new GUIContent("(" + current.FindPropertyRelative("vector").vector2Value.x.ToString() + ", " + current.FindPropertyRelative("vector").vector2Value.y.ToString() + ") : Frame " + current.FindPropertyRelative("frame").intValue.ToString()),
+                    false, DelHandler, new DelStruct { List = list, index = i });
+            }
+
+            menu.DropDown(delRect);
+        }
+    }
+
+    private void DelHandler(object target)
+    {
+        DelStruct delStruct = (DelStruct)target;
+        delStruct.List.serializedProperty.DeleteArrayElementAtIndex(delStruct.index);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        Debug.Log("Called");
         Enable(property);
 
         IntRangeDrawer rangeDrawer = new IntRangeDrawer();
@@ -171,5 +181,9 @@ public class ManeuverDrawer : PropertyDrawer
         return height;
     }
 
-    
+    struct DelStruct
+    {
+        public ReorderableList List;
+        public int index;
+    }
 }

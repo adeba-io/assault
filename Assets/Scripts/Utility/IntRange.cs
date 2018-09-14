@@ -5,7 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class IntRange
 {
-    public int rangeStart, rangeEnd;
+    public int rangeStart = 0, rangeEnd = 1;
     
     int GetRandomValue()
     {

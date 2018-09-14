@@ -17,7 +17,6 @@ namespace Assault
         public InputButton Special = new InputButton(KeyCode.W, ControllerButtons.FaceRight);
         public InputButton Meter = new InputButton(KeyCode.A, ControllerButtons.RightBumper);
         public InputButton Defend = new InputButton(KeyCode.V, ControllerButtons.LeftBumper);
-        public VectorFrame test;
 
         protected bool _haveControl = true;
 

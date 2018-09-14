@@ -32,7 +32,8 @@ namespace Assault
         #region Maneuver Classes
 
         [Serializable]
-        public class Maneuver
+        [CreateAssetMenu(fileName = "New Maneuver", menuName = "Assault/Maneuvers/Maneuver")]
+        public class Maneuver : ScriptableObject
         {
             [SerializeField] string _name = "New Maneuver";
             [SerializeField] FighterState _toSet;
@@ -98,8 +99,8 @@ namespace Assault
                 _currentFrame = 0;
             }
         }
-
-       // [CreateAssetMenu(fileName = "Technique", menuName = "Assault/Technique")]
+        /*
+        [CreateAssetMenu(fileName = "Technique", menuName = "Assault/Technique")]
         public class Technique : Maneuver
         {
             [SerializeField] Attack[] _attacks;
@@ -143,7 +144,7 @@ namespace Assault
                 }
             }
         }
-
+        */
         #endregion
 
         #region Collision Box Structs
