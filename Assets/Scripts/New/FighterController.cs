@@ -14,7 +14,6 @@ namespace Assault
     [RequireComponent(typeof(Damageable))]
     public class FighterController : MonoBehaviour
     {
-        public SDict<int, string> hello;
         public FighterState currentState;
 
         public Vector2 nextMove;

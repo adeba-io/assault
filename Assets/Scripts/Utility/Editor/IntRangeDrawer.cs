@@ -6,6 +6,15 @@ using UnityEditor;
 [CustomPropertyDrawer(typeof(IntRangeAttribute))]
 public class IntRangeDrawer : PropertyDrawer
 {
+    IntRangeAttribute _attribute;
+
+    public IntRangeDrawer() { }
+
+    public IntRangeDrawer(IntRangeAttribute attribute)
+    {
+        _attribute = attribute;
+    }
+
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
         return EditorGUIUtility.singleLineHeight + 16f;
@@ -21,7 +30,10 @@ public class IntRangeDrawer : PropertyDrawer
             return;
         }
 
-        IntRangeAttribute range = (IntRangeAttribute)attribute;
+        IntRangeAttribute range;
+
+        if (_attribute != null) range = _attribute;
+        else range = (IntRangeAttribute)attribute;
 
         position.height = EditorGUIUtility.singleLineHeight;
         float buffer = position.width * 0.02f;

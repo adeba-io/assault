@@ -9,9 +9,9 @@ namespace Assault
 
         public PlayerController toTest;
 
-        [IntRange(10, 30)] public IntRange test;
+        public Maneuvers.Maneuver manu;
 
-        public Maneuvers.Maneuver maneu;
+        [IntRange(10, 30)] public IntRange test;
 
         // Use this for initialization
         void Start()

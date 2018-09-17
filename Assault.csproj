@@ -318,7 +318,7 @@
     <Compile Include="Assets\Scripts\New\FighterController.cs" />
     <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
     <Compile Include="Assets\Scripts\New\FighterInput.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuvers.cs" />
+    <Compile Include="Assets\Scripts\New\Maneuver.cs" />
     <Compile Include="Assets\Scripts\New\Technique.cs" />
     <Compile Include="Assets\Scripts\Physics\FighterPhysics.cs" />
     <Compile Include="Assets\Scripts\Physics\PhysicsObject.cs" />

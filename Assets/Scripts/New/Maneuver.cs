@@ -35,7 +35,9 @@ namespace Assault
         [CreateAssetMenu(fileName = "New Maneuver", menuName = "Assault/Maneuvers/Maneuver")]
         public class Maneuver : ScriptableObject
         {
-            [SerializeField] string _name = "New Maneuver";
+            public string path;
+
+            public new string name;
             [SerializeField] FighterState _toSet;
             FighterState _previous;
             
@@ -70,6 +72,7 @@ namespace Assault
             {
                 _previous = _fighterController.currentState;
                 _fighterController.currentState = _toSet;
+                
             }
 
             public virtual void Update()
