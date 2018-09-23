@@ -6,8 +6,6 @@ using Assault.Maneuvers;
 
 namespace Assault
 {
-    // DO NOT USE:
-    // Awake, FixedUpdate, OnTriggerEnter2D, OnTriggerStay2D, OnTriggerExit2D
     [RequireComponent(typeof(FighterPhysics))]
     [RequireComponent(typeof(FighterInput))]
     [RequireComponent(typeof(FighterDamager))]
@@ -15,10 +13,13 @@ namespace Assault
     public class FighterController : MonoBehaviour
     {
         public FighterState currentState;
+        public string path;
 
         public Vector2 nextMove;
         public Vector2 nextForce;
         public Vector2 currentAccelerate;
+
+        public Maneuver currentManeuver = null;
 
         [SerializeField] float _maxWalkSpeed = 3f;
 
@@ -45,24 +46,48 @@ namespace Assault
         FighterDamager _damager;
         Damageable _damageable;
 
+        Animator _animator;
+        AnimatorOverrideController _animatorOverride;
+        
         public bool facingRight { get; protected set; }
         public List<InputComboNode> moveset { get { return _moveset; } }
 
+        public AnimatorOverrideController editorController
+        {
+            get
+            {
+                return new AnimatorOverrideController(_animator.runtimeAnimatorController);
+            }
+        }
+
         private void Reset()
+        {
+            Setup();
+
+        }
+
+        private void Start()
+        {
+            Setup();
+        }
+
+        private void Setup()
         {
             _physics = GetComponent<FighterPhysics>();
             _damager = GetComponent<FighterDamager>();
             _damageable = GetComponent<Damageable>();
+            _animator = GetComponent<Animator>();
         }
 
         private void Update()
         {
             ApplyManeuverPhysics();
-
+            /*
             if (_physics.isGrounded)
                 currentState = FighterState.Standing;
             else
                 currentState = FighterState.Aerial;
+                */
         }
 
         void ApplyManeuverPhysics()
@@ -83,8 +108,40 @@ namespace Assault
                 _physics.AccelerateRigidbody(this, currentAccelerate);
         }
 
+        public void UpdateManeuver()
+        {
+            if (currentManeuver)
+            {
+                currentManeuver.Update();
+                Debug.Log("Updating Maneuver");
+            }
+        }
+
         public bool ReceiveInput(InputCombo inputCombo)
         {
+            if (!currentManeuver.canCancel) return false;
+
+            for (int i = 0; i < _moveset.Count; i++)
+            {
+                InputCombo currCombo = _moveset[i].inputCombo;
+
+                if (inputCombo == currCombo)
+                {
+                    Debug.Log("Found a match");
+                    int currNode = _moveset[i].node;
+
+                    for (int j = 0; j < _maneuvers.Count; i++)
+                    {
+                        if (_maneuvers[i] == currNode)
+                        {
+                            currentManeuver = _maneuvers[i].maneuver;
+                            currentManeuver.Initialize();
+                            return true;
+                        }
+                    }
+                }
+            }
+
             return false;
         }
 

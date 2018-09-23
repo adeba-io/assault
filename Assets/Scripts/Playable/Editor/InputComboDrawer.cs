@@ -21,12 +21,16 @@ namespace Assault
 
             EditorGUI.BeginProperty(position, label, property);
 
-            position = EditorGUI.PrefixLabel(position, label);
             int indent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
-            position.x = enumIndent;
 
-            position.y += EditorGUIUtility.singleLineHeight;
+            if (label != GUIContent.none)
+            {
+                position = EditorGUI.PrefixLabel(position, label);
+                EditorGUI.indentLevel = 0;
+                position.x = enumIndent;
+
+                position.y += EditorGUIUtility.singleLineHeight;
+            }
 
             EditorGUI.LabelField(new Rect(position.x + 20f, position.y, (propWidth * 2f) + (enumBuffer * 2f), EditorGUIUtility.singleLineHeight), new GUIContent("Directions"));
             EditorGUI.LabelField(new Rect(position.x + (propWidth * 2f) + (enumBuffer * 2f) + 20f, position.y, (propWidth * 2f) + (enumBuffer * 2f), EditorGUIUtility.singleLineHeight), new GUIContent("Buttons"));
@@ -51,7 +55,7 @@ namespace Assault
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             // return base.GetPropertyHeight(property, label);
-            return EditorGUIUtility.singleLineHeight + 34f;
+            return (label == GUIContent.none ? 0 : EditorGUIUtility.singleLineHeight) + 34f;
         }
     }
 }

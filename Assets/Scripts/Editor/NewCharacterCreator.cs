@@ -52,16 +52,21 @@ namespace Assault
                 path += "/" + _newCharacterName;
 
                 AssetDatabase.CreateFolder(path, "Maneuvers");
+                Debug.Log("Ya");
 
                 AssetDatabase.CreateFolder(path, "Techniques");
                 string techPath = path + "/Techniques";
                 AssetDatabase.CreateFolder(techPath, "Ground");
                 AssetDatabase.CreateFolder(techPath, "Aerial");
-                
-                GameObject prefab = (GameObject)AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/FighterTemplate.prefab");
+                Debug.Log("Ya 2");
+                GameObject prefab = (GameObject)AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/FighterTemplate/FighterTemplate.prefab");
+                Debug.Log(prefab.name);
                 prefab.name = _newCharacterName;
-                AssetDatabase.CopyAsset("Assets/Prefabs/FighterTemplate.prefab", path + "/" + _newCharacterName + ".prefab");
+                AssetDatabase.CopyAsset("Assets/Prefabs/FighterTemplate/FighterTemplate.prefab", path + "/" + _newCharacterName + ".prefab");
+                
 
+                FighterController controller = prefab.GetComponent<FighterController>();
+                controller.path = path;
             }
         }
     }

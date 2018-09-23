@@ -11,17 +11,32 @@ namespace Assault
     {
         #region Node Structs
 
-        [Serializable]
-        public struct InputComboNode
-        { public InputCombo inputCombo; public int node; }
+        public class Node
+        {
+            public int node;
+
+            public static bool operator ==(Node node, int i)
+            {
+                return (node.node == i);
+            }
+
+            public static bool operator !=(Node node, int i)
+            {
+                return !(node == i);
+            }
+        }
 
         [Serializable]
-        public struct ManeuverNode
-        { public Maneuver maneuver; public int node; }
+        public class InputComboNode : Node
+        { public InputCombo inputCombo; }
 
         [Serializable]
-        public struct TechniqueNode
-        { public Technique technique; public int node; }
+        public class ManeuverNode : Node
+        { public Maneuver maneuver; }
+
+        [Serializable]
+        public class TechniqueNode : Node
+        { public Technique technique; }
 
         [Serializable]
         public struct VectorFrame
@@ -40,6 +55,8 @@ namespace Assault
             public new string name;
             [SerializeField] FighterState _toSet;
             FighterState _previous;
+
+            public AnimationClip animationClip;
             
             [SerializeField] VectorFrame[] _moveFrames;
             [SerializeField] VectorFrame[] _forceFrames;
@@ -59,6 +76,7 @@ namespace Assault
 
             public FighterController fighterController
             {
+                get { return _fighterController; }
                 set
                 {
                     _fighterController = value;
@@ -72,13 +90,16 @@ namespace Assault
             {
                 _previous = _fighterController.currentState;
                 _fighterController.currentState = _toSet;
-                
+                _currentFrame = 0;
+
+                Debug.Log(name + " has Initialized");
             }
 
             public virtual void Update()
             {
                 _currentFrame++;
-                
+                Debug.Log(name + " is Updating");
+
                 for (int i = 0; i < _moveFrames.Length; i++)
                 {
                     if (_moveFrames[i].frame == _currentFrame) _fighterController.nextMove = _moveFrames[i].vector;
@@ -100,6 +121,7 @@ namespace Assault
             {
                 _fighterController.currentState = _previous;
                 _currentFrame = 0;
+                Debug.Log(name + " has Ended");
             }
         }
         /*

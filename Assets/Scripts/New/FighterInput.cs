@@ -24,8 +24,6 @@ namespace Assault
 
         protected InputFeed _inputFeed;
 
-        public Maneuver maneu;
-
         public bool haveControl { get { return _haveControl; } }
 
         private void Start()
@@ -158,10 +156,13 @@ namespace Assault
             for (int i = 0; i < _inputFeed.Count; i++)
             {
                 InputCombo current = _inputFeed[i];
+                Debug.Log("Feeding");
 
                 if (_fighterController.ReceiveInput(current))
                     break;
             }
+
+            _fighterController.ReceiveInput(_inputFeed.GetControl());
         }
 
         protected struct InputFeed
@@ -206,6 +207,18 @@ namespace Assault
             {
                 direction = direc;
                 directionManeuver = direcManeu;
+            }
+
+            public InputCombo GetControl()
+            {
+                return new InputCombo
+                {
+                    direction = direction,
+                    directionManeuver = directionManeuver,
+
+                    button = Button.NULL,
+                    buttonManeuver = ButtonManeuver.ANY
+                };
             }
 
             public void Add(Button button, ButtonManeuver buttonManeu)

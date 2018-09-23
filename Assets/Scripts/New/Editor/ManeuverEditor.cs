@@ -10,11 +10,13 @@ namespace Assault.Editors
     [CustomEditor(typeof(Maneuver))]
     public class ManeuverEditor : Editor
     {
+        FighterController _ownerController;
         Maneuver _targetManeuver;
 
         SerializedProperty _name;
         string newName;
         SerializedProperty _toSet;
+        SerializedProperty _animationClip;
 
         SerializedProperty _accelerateCurveX;
         SerializedProperty _accelerateCurveY;
@@ -28,9 +30,10 @@ namespace Assault.Editors
 
         readonly GUIContent gui_name = new GUIContent("Name");
         readonly GUIContent gui_toSet = new GUIContent("State to Set to");
+        readonly GUIContent gui_animationClip = new GUIContent("Animation Clip");
 
-        readonly GUIContent gui_accelerateCurveX = new GUIContent("Acceleration Curve X");
-        readonly GUIContent gui_accelerateCurveY = new GUIContent("Acceleration Curve Y");
+        readonly GUIContent gui_accelerateCurveX = new GUIContent("Accelerate X");
+        readonly GUIContent gui_accelerateCurveY = new GUIContent("Accelerate Y");
 
         readonly GUIContent gui_totalFrameCount = new GUIContent("Total Frame Count");
         readonly GUIContent gui_cancelRegion = new GUIContent("Cancel Region");
@@ -43,6 +46,10 @@ namespace Assault.Editors
         private void OnEnable()
         {
             _targetManeuver = (Maneuver)serializedObject.targetObject;
+
+            if (_targetManeuver.fighterController != null)
+                _ownerController = _targetManeuver.fighterController;
+            else _ownerController = null;
 
             _name = serializedObject.FindProperty("name");
             _toSet = serializedObject.FindProperty("_toSet");
@@ -124,24 +131,71 @@ namespace Assault.Editors
 
         #endregion
 
+        void ClipSelector(object target)
+        {
+            AnimationClip clip = (AnimationClip)target;
+            _targetManeuver.animationClip = clip;
+
+            int clipFrameCount = (int)(clip.length * 60f);
+            _totalFrameCount.intValue = clipFrameCount;
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
         public override void OnInspectorGUI()
         {
             //base.OnInspectorGUI();
 
             serializedObject.Update();
             newName = EditorGUILayout.TextField(gui_name, _targetManeuver.name);
-           // EditorGUILayout.PropertyField(_name, gui_name);
             EditorGUILayout.PropertyField(_toSet, gui_toSet);
 
-            EditorGUILayout.PropertyField(_accelerateCurveX, gui_accelerateCurveX);
-            EditorGUILayout.PropertyField(_accelerateCurveY, gui_accelerateCurveY);
+            // Animation Clip Selection
+            EditorGUILayout.LabelField(gui_animationClip);
 
+            Rect clipRect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight + 2f);
+            clipRect.x += clipRect.width * 0.05f;
+            clipRect.width -= clipRect.width * 0.05f;
+            clipRect.height = EditorGUIUtility.singleLineHeight;
+
+            Rect labelRect = new Rect(clipRect.x, clipRect.y, (clipRect.width * 0.5f) - clipRect.width * 0.02f, clipRect.height);
+            Rect buttonRect = new Rect(clipRect.x + (clipRect.width * 0.5f), clipRect.y, labelRect.width, clipRect.height);
+
+            string clipLabel = "No Clip Selected";
+            if (_targetManeuver.animationClip != null)
+                clipLabel = _targetManeuver.animationClip.name;
+
+            EditorGUI.LabelField(labelRect, clipLabel);
+            if (GUI.Button(buttonRect, "Select Animation"))
+            {
+                if (_ownerController != null)
+                {
+                    GenericMenu menu = new GenericMenu();
+
+                    AnimatorOverrideController animator = _ownerController.editorController;
+                    
+                    for (int i = 0; i < animator.animationClips.Length; i++)
+                    {
+                        AnimationClip currClip = animator.animationClips[i];
+
+                        menu.AddItem(new GUIContent(currClip.name), false, ClipSelector, currClip);
+                    }
+
+                    menu.ShowAsContext();
+                }
+            }
+            
             EditorGUILayout.PropertyField(_totalFrameCount, gui_totalFrameCount);
 
             IntRangeDrawer rangeDrawer = new IntRangeDrawer(new IntRangeAttribute(0, _totalFrameCount.intValue));
             Rect rangeRect = new Rect(EditorGUILayout.GetControlRect(false, rangeDrawer.GetPropertyHeight(null, GUIContent.none)));
 
             rangeDrawer.OnGUI(rangeRect, _cancelRegion, gui_cancelRegion);
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.PropertyField(_accelerateCurveX, gui_accelerateCurveX);
+            EditorGUILayout.PropertyField(_accelerateCurveY, gui_accelerateCurveY);
 
             EditorGUILayout.Space();
 

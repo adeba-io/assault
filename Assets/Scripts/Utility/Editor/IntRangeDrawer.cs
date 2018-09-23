@@ -46,6 +46,7 @@ public class IntRangeDrawer : PropertyDrawer
         SerializedProperty maxValue = property.FindPropertyRelative("rangeEnd");
 
         position.y += EditorGUIUtility.singleLineHeight;
+        position.width *= 0.98f;
 
         Rect minLimitRect = new Rect(position.x + (position.width * 0.1f), position.y, (position.width * 0.1f) - buffer, position.height);
         Rect minValueRect = new Rect(position.x + (position.width * 0.2f), position.y, (position.width * 0.1f) - buffer, position.height);
