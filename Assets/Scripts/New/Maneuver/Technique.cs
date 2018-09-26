@@ -29,9 +29,9 @@ namespace Assault.Maneuvers
 
         public Technique() { }
 
-        public override void Initialize()
+        public override void Initialize(FighterController controller)
         {
-            base.Initialize();
+            base.Initialize(controller);
         }
 
         public override void Update()

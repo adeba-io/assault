@@ -79,7 +79,7 @@ PrefabInstance:
     - target: {fileID: 5920398257224922875, guid: d9fb66ea9ccf42d44af8984d4f2d679d,
         type: 3}
       propertyPath: path
-      value: 
+      value: Assets/Entities/Fighters/Test
       objectReference: {fileID: 0}
     - target: {fileID: 5920398257224922875, guid: d9fb66ea9ccf42d44af8984d4f2d679d,
         type: 3}
@@ -103,5 +103,15 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 22100000, guid: fde608dc31dd5514ea46b1c51d54cfdc,
         type: 2}
+    - target: {fileID: 5920398257224922875, guid: d9fb66ea9ccf42d44af8984d4f2d679d,
+        type: 3}
+      propertyPath: _moveset.Array.data[0].inputCombo.button
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5920398257224922875, guid: d9fb66ea9ccf42d44af8984d4f2d679d,
+        type: 3}
+      propertyPath: _moveset.Array.data[0].inputCombo.direction
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d9fb66ea9ccf42d44af8984d4f2d679d, type: 3}

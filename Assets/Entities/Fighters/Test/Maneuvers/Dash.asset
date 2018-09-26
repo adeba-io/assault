@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c7017f04a126cb4795b16986956b299, type: 3}
-  m_Name: Run
+  m_Name: Dash
   m_EditorClassIdentifier: 
-  path: Assets/Entities/Fighters/Test/Maneuvers/Run.asset
-  name: Run
+  path: Assets/Entities/Fighters/Test/Maneuvers/Dash.asset
+  name: Dash
   _toSet: 0
-  animationClip: {fileID: 7400000, guid: 7274c850fcaa25e4abc837ac632661dc, type: 2}
-  _moveFrames:
-  - vector: {x: 0, y: 3}
-    frame: 12
-  _forceFrames: []
+  animationClip: {fileID: 0}
+  _moveFrames: []
+  _forceFrames:
+  - vector: {x: 10, y: 0}
+    frame: 7
   _accelerateCurveX:
     serializedVersion: 2
     m_Curve:
@@ -68,8 +68,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _totalFrameCount: 60
+  _totalFrameCount: 20
   _cancellable: 0
   _cancelRegion:
     rangeStart: 0
-    rangeEnd: 60
+    rangeEnd: 1

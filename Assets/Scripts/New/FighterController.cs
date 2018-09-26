@@ -23,6 +23,7 @@ namespace Assault
 
         [SerializeField] float _maxWalkSpeed = 3f;
 
+        [SerializeField] float _runAcceleration = 6f;
         [SerializeField] float _maxRunSpeed = 7f;
 
         // Aerial drifts can be cancelled at any point unlike a dash or technique,
@@ -47,28 +48,22 @@ namespace Assault
         Damageable _damageable;
 
         Animator _animator;
-        AnimatorOverrideController _animatorOverride;
         
         public bool facingRight { get; protected set; }
         public List<InputComboNode> moveset { get { return _moveset; } }
 
-        public AnimatorOverrideController editorController
-        {
-            get
-            {
-                return new AnimatorOverrideController(_animator.runtimeAnimatorController);
-            }
-        }
+        public Animator animator
+        { get { return _animator; } }
 
         private void Reset()
         {
             Setup();
-
         }
 
         private void Start()
         {
             Setup();
+            currentState = FighterState.NULL;
         }
 
         private void Setup()
@@ -81,13 +76,22 @@ namespace Assault
 
         private void Update()
         {
+            UpdateState();
+
+            UpdateManeuver();
             ApplyManeuverPhysics();
-            /*
+        }
+
+        void UpdateState()
+        {
             if (_physics.isGrounded)
+            {
                 currentState = FighterState.Standing;
+            }
             else
+            {
                 currentState = FighterState.Aerial;
-                */
+            }
         }
 
         void ApplyManeuverPhysics()
@@ -100,26 +104,38 @@ namespace Assault
 
             if (nextForce != Vector2.zero)
             {
+                Debug.Log("Next Force " + nextForce);
                 _physics.ForceRigidbody(this, nextForce);
                 nextForce = Vector2.zero;
             }
 
+            print("Current Accel: " + currentAccelerate);
             if (currentAccelerate != Vector2.zero)
-                _physics.AccelerateRigidbody(this, currentAccelerate);
+            {
+                _physics.InAccelerateRigidbody(currentAccelerate);
+                currentAccelerate = Vector2.zero;
+            }
         }
 
         public void UpdateManeuver()
         {
             if (currentManeuver)
             {
+                print("Maneuver updating");
+
                 currentManeuver.Update();
-                Debug.Log("Updating Maneuver");
+                if (currentManeuver.currentFrame >= currentManeuver.totalFrameCount)
+                {
+                    currentManeuver.End();
+                    currentManeuver = null;
+                }
             }
         }
 
         public bool ReceiveInput(InputCombo inputCombo)
         {
-            if (!currentManeuver.canCancel) return false;
+            if (currentManeuver)
+                if (!currentManeuver.canCancel) return true;
 
             for (int i = 0; i < _moveset.Count; i++)
             {
@@ -135,7 +151,7 @@ namespace Assault
                         if (_maneuvers[i] == currNode)
                         {
                             currentManeuver = _maneuvers[i].maneuver;
-                            currentManeuver.Initialize();
+                            currentManeuver.Initialize(this);
                             return true;
                         }
                     }
@@ -148,7 +164,8 @@ namespace Assault
         public void Flip(bool flipX = true, bool flipY = false)
         {
             _physics.Flip(flipX, flipY);
-            facingRight = !facingRight;
+            if (flipX)
+                facingRight = !facingRight;
         }
     }
 }

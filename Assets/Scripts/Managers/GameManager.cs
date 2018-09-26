@@ -21,7 +21,7 @@ namespace Assault
             else
                 _instance = this;
 
-            Application.targetFrameRate = 60;
+            //Application.targetFrameRate = 60;
         }
 
         private void Start()

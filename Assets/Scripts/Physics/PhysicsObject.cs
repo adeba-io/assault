@@ -181,6 +181,20 @@ namespace Assault
 
         #region Public
 
+        public void InForceRigidbody(Vector2 force, bool resetX = false, bool resetY = false)
+        {
+            if (resetX) _internalVelocity.x = 0;
+            if (resetY) _internalVelocity.y = 0;
+
+            _internalVelocity += force;
+        }
+
+        public void InAccelerateRigidbody(Vector2 accelerate)
+        {
+            _internalVelocity += accelerate * Time.deltaTime;
+        }
+
+
         /// <summary>
         /// Moves the rigidbody without altering the velocity
         /// </summary>
@@ -290,7 +304,7 @@ namespace Assault
         }
 
         bool CheckIfConnected(Component toCheck)
-        { return toCheck.GetComponent<PlayerController>() == this; }
+        { return toCheck.GetComponent<FighterController>() == this; }
 
         /// <summary>
         /// Moves the GameObject without any implied velocity changes

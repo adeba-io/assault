@@ -23,6 +23,7 @@ namespace Assault.Editors
 
         SerializedProperty _totalFrameCount;
 
+        SerializedProperty _canCancel;
         SerializedProperty _cancelRegion;
 
         VectorFramesReorderableList _moveFrames;
@@ -37,6 +38,8 @@ namespace Assault.Editors
 
         readonly GUIContent gui_totalFrameCount = new GUIContent("Total Frame Count");
         readonly GUIContent gui_cancelRegion = new GUIContent("Cancel Region");
+
+        readonly GUIContent gui_canCancel = new GUIContent("Cancellable?");
 
         readonly GUIContent gui_moveFrames = new GUIContent("Move Frames");
         readonly GUIContent gui_forceFrames = new GUIContent("Force Frames");
@@ -59,6 +62,7 @@ namespace Assault.Editors
 
             _totalFrameCount = serializedObject.FindProperty("_totalFrameCount");
 
+            _canCancel = serializedObject.FindProperty("_cancellable");
             _cancelRegion = serializedObject.FindProperty("_cancelRegion");
 
             MoveFrames();
@@ -139,6 +143,9 @@ namespace Assault.Editors
             int clipFrameCount = (int)(clip.length * 60f);
             _totalFrameCount.intValue = clipFrameCount;
 
+            _moveFrames.maxFrame = clipFrameCount;
+            _forceFrames.maxFrame = clipFrameCount;
+
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -172,7 +179,7 @@ namespace Assault.Editors
                 {
                     GenericMenu menu = new GenericMenu();
 
-                    AnimatorOverrideController animator = _ownerController.editorController;
+                    AnimatorOverrideController animator = new AnimatorOverrideController(_ownerController.animator.runtimeAnimatorController);
                     
                     for (int i = 0; i < animator.animationClips.Length; i++)
                     {
@@ -187,24 +194,44 @@ namespace Assault.Editors
             
             EditorGUILayout.PropertyField(_totalFrameCount, gui_totalFrameCount);
 
-            IntRangeDrawer rangeDrawer = new IntRangeDrawer(new IntRangeAttribute(0, _totalFrameCount.intValue));
-            Rect rangeRect = new Rect(EditorGUILayout.GetControlRect(false, rangeDrawer.GetPropertyHeight(null, GUIContent.none)));
+            EditorGUILayout.PropertyField(_canCancel, gui_canCancel);
 
-            rangeDrawer.OnGUI(rangeRect, _cancelRegion, gui_cancelRegion);
+            if (_canCancel.boolValue)
+            {
+                IntRangeDrawer rangeDrawer = new IntRangeDrawer(new IntRangeAttribute(1, _totalFrameCount.intValue));
+                Rect rangeRect = new Rect(EditorGUILayout.GetControlRect(false, rangeDrawer.GetPropertyHeight(null, GUIContent.none)));
+
+                rangeDrawer.OnGUI(rangeRect, _cancelRegion, gui_cancelRegion);
+            }
 
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(_accelerateCurveX, gui_accelerateCurveX);
+
+            Rect accelRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            accelRect.x += accelRect.width * 0.3f;
+            accelRect.width -= accelRect.width * 0.3f;
+            if (GUI.Button(accelRect, "Reset X?"))
+            {
+                _accelerateCurveX.animationCurveValue = new AnimationCurve(new Keyframe(0, 0), new Keyframe(100f, 0));
+            }
+
             EditorGUILayout.PropertyField(_accelerateCurveY, gui_accelerateCurveY);
+
+            accelRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            accelRect.x += accelRect.width * 0.3f;
+            accelRect.width -= accelRect.width * 0.3f;
+            if (GUI.Button(accelRect, "Reset Y?"))
+            {
+                _accelerateCurveY.animationCurveValue = new AnimationCurve(new Keyframe(0, 0), new Keyframe(100f, 0));
+            }
 
             EditorGUILayout.Space();
 
-            _moveFrames.maxFrame = _totalFrameCount.intValue;
             _moveFrames.DoLayoutList();
 
             EditorGUILayout.Space();
-
-            _forceFrames.maxFrame = _totalFrameCount.intValue;
+            
             _forceFrames.DoLayoutList();
             /*
             if (Event.current.isKey)

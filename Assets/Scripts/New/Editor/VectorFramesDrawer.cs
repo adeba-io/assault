@@ -25,7 +25,7 @@ public class VectorFramesDrawer : PropertyDrawer
         EditorGUI.LabelField(vectorLabel, new GUIContent("Vector"));
         EditorGUI.PropertyField(vectorRect, property.FindPropertyRelative("vector"), GUIContent.none);
         EditorGUI.LabelField(frameLabel, new GUIContent("Frame"));
-        EditorGUI.IntSlider(frameRect, property.FindPropertyRelative("frame"), 0, maxFrame, GUIContent.none);
+        EditorGUI.IntSlider(frameRect, property.FindPropertyRelative("frame"), 1, maxFrame, GUIContent.none);
 
         /*
         float inspectorWidth = EditorGUIUtility.currentViewWidth;

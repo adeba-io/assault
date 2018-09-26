@@ -318,8 +318,12 @@
     <Compile Include="Assets\Scripts\New\FighterController.cs" />
     <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
     <Compile Include="Assets\Scripts\New\FighterInput.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuver.cs" />
-    <Compile Include="Assets\Scripts\New\Technique.cs" />
+    <Compile Include="Assets\Scripts\New\InputCombo.cs" />
+    <Compile Include="Assets\Scripts\New\Maneuver\Crouch.cs" />
+    <Compile Include="Assets\Scripts\New\Maneuver\GroundDash.cs" />
+    <Compile Include="Assets\Scripts\New\Maneuver\Maneuver.cs" />
+    <Compile Include="Assets\Scripts\New\Maneuver\Technique.cs" />
+    <Compile Include="Assets\Scripts\New\Utility\AssaultAnimator.cs" />
     <Compile Include="Assets\Scripts\Physics\FighterPhysics.cs" />
     <Compile Include="Assets\Scripts\Physics\PhysicsObject.cs" />
     <Compile Include="Assets\Scripts\Playable\Boxes\HitBox.cs" />

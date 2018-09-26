@@ -45,21 +45,20 @@ namespace Assault
         #endregion
 
         #region Maneuver Classes
-
-        [Serializable]
+        
         [CreateAssetMenu(fileName = "New Maneuver", menuName = "Assault/Maneuvers/Maneuver")]
         public class Maneuver : ScriptableObject
         {
             public string path;
 
             public new string name;
-            [SerializeField] FighterState _toSet;
+            [SerializeField] protected FighterState _toSet;
             FighterState _previous;
 
             public AnimationClip animationClip;
             
-            [SerializeField] VectorFrame[] _moveFrames;
-            [SerializeField] VectorFrame[] _forceFrames;
+            [SerializeField] protected VectorFrame[] _moveFrames;
+            [SerializeField] protected VectorFrame[] _forceFrames;
             
             [SerializeField] AnimationCurve _accelerateCurveX = new AnimationCurve(new Keyframe(0, 0), new Keyframe(100f, 0));
             [SerializeField] AnimationCurve _accelerateCurveY = new AnimationCurve(new Keyframe(0, 0), new Keyframe(100f, 0));
@@ -68,12 +67,18 @@ namespace Assault
             [SerializeField] int _totalFrameCount;
             protected int _currentFrame = 0;
             
-            public bool canCancel;
+            [SerializeField] protected bool _cancellable = false;
             [IntRange(0, 60)] public IntRange _cancelRegion;
 
             protected FighterController _fighterController;
             protected FighterPhysics _fighterPhysics;
 
+            public int currentFrame { get; protected set; }
+            public int totalFrameCount { get { return _totalFrameCount; } }
+
+            public bool canCancel { get; protected set; }
+
+            public bool cancellable { get { return _cancellable; } }
             public FighterController fighterController
             {
                 get { return _fighterController; }
@@ -86,90 +91,49 @@ namespace Assault
 
             public Maneuver() { }
 
-            public virtual void Initialize()
+            public virtual void Initialize(FighterController controller)
             {
+                fighterController = controller;
                 _previous = _fighterController.currentState;
                 _fighterController.currentState = _toSet;
-                _currentFrame = 0;
 
-                Debug.Log(name + " has Initialized");
+                canCancel = false;
+                currentFrame = 0;
             }
 
             public virtual void Update()
             {
-                _currentFrame++;
-                Debug.Log(name + " is Updating");
+                currentFrame++;
+                //Debug.Log(name + " is Updating: Frame: " + currentFrame);
 
                 for (int i = 0; i < _moveFrames.Length; i++)
                 {
-                    if (_moveFrames[i].frame == _currentFrame) _fighterController.nextMove = _moveFrames[i].vector;
+                    if (_moveFrames[i].frame == currentFrame) _fighterController.nextMove = _moveFrames[i].vector;
                 }
 
                 for (int i = 0; i < _forceFrames.Length; i++)
                 {
-                    if (_forceFrames[i].frame == _currentFrame) _fighterController.nextForce = _moveFrames[i].vector;
+                    if (_forceFrames[i].frame == currentFrame) _fighterController.nextForce = _forceFrames[i].vector;
                 }
 
                 _fighterController.currentAccelerate =
-                    new Vector2(_accelerateCurveX.Evaluate(_currentFrame), _accelerateCurveY.Evaluate(_currentFrame));
+                    new Vector2(_accelerateCurveX.Evaluate(currentFrame), _accelerateCurveY.Evaluate(_currentFrame)) * 1000;
 
-                if (_currentFrame >= _cancelRegion.rangeStart) canCancel = true;
-                if (_currentFrame > _cancelRegion.rangeEnd) canCancel = false;
+                if (cancellable)
+                {
+                    if (currentFrame >= _cancelRegion.rangeStart) canCancel = true;
+                    if (currentFrame > _cancelRegion.rangeEnd) canCancel = false;
+                }
             }
 
             public virtual void End()
             {
                 _fighterController.currentState = _previous;
-                _currentFrame = 0;
-                Debug.Log(name + " has Ended");
+                _fighterController.currentManeuver = null;
+                //Debug.Log(name + " has Ended");
             }
         }
-        /*
-        [CreateAssetMenu(fileName = "Technique", menuName = "Assault/Technique")]
-        public class Technique : Maneuver
-        {
-            [SerializeField] Attack[] _attacks;
-            
-            [SerializeField] List<InputComboNode> _links;
 
-            FighterDamager _fighterDamager;
-            Damageable _fighterDamageable;
-
-            new public FighterController fighterController
-            {
-                set
-                {
-                    _fighterController = value;
-                    _fighterPhysics = _fighterController.GetComponent<FighterPhysics>();
-                    _fighterDamager = _fighterController.GetComponent<FighterDamager>();
-                    _fighterDamageable = _fighterController.GetComponent<Damageable>();
-                }
-            }
-
-            public List<InputComboNode> links { get { return _links; } }
-
-            public Technique() { }
-
-            public override void Initialize()
-            {
-                base.Initialize();
-            }
-
-            public override void Update()
-            {
-                base.Update();
-
-                for (int i = 0; i < _attacks.Length; i++)
-                {
-                    if (_currentFrame == _attacks[i].enableFrame)
-                        _attacks[i].Enable(_fighterDamager);
-
-                    else if (_currentFrame == _attacks[i].disableFrame)
-                        _attacks[i].Disable();
-                }
-            }
-        }
-        */
         #endregion
 
         #region Collision Box Structs
