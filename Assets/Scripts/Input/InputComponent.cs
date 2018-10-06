@@ -121,6 +121,8 @@ namespace Assault
         {
             public KeyCode positiveX, negativeX;
             public KeyCode positiveY, negativeY;
+            public KeyCode softInputToggle;
+
             public ControllerGrid controllerGrid;
 
             ControllerAxes controllerAxisX, controllerAxisY;
@@ -147,19 +149,20 @@ namespace Assault
             public bool ReceivingInput { get; protected set; }
 
             protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
-        {
-            { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
-            { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
-            { (int)ControllerAxes.RightStick_X, "RightStick X" },
-            { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
-            { (int)ControllerAxes.Dpad_X, "Dpad X" },
-            { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
-        };
+            {
+                { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
+                { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
+                { (int)ControllerAxes.RightStick_X, "RightStick X" },
+                { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
+                { (int)ControllerAxes.Dpad_X, "Dpad X" },
+                { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
+            };
 
-            public InputGrid(KeyCode posiX, KeyCode negaX, KeyCode posiY, KeyCode negaY, ControllerGrid contrGrid)
+            public InputGrid(KeyCode posiX, KeyCode negaX, KeyCode posiY, KeyCode negaY, KeyCode softInput, ControllerGrid contrGrid)
             {
                 positiveX = posiX; negativeX = negaX;
                 positiveY = posiY; negativeY = negaY;
+                softInputToggle = softInput;
                 controllerGrid = contrGrid;
 
                 switch (controllerGrid)
@@ -260,20 +263,23 @@ namespace Assault
                     bool positiveHeldX = Input.GetKey(positiveX), negativeHeldX = Input.GetKey(negativeX);
                     bool positiveHeldY = Input.GetKey(positiveY), negativeHeldY = Input.GetKey(negativeY);
 
+                    bool soft = Input.GetKey(softInputToggle);
+
                     if (positiveHeldX == negativeHeldX)
                         val.x = 0;
                     else if (positiveHeldX)
-                        val.x = 1f;
+                        val.x = soft ? 0.5f : 1f;
                     else if (negativeHeldX)
-                        val.x = -1f;
+                        val.x = soft ? -0.5f : -1f;
 
                     if (positiveHeldY == negativeHeldY)
-                    { val.y = 0; }
+                        val.y = 0;
                     else if (positiveHeldY)
-                    { val.y = 1f; }
+                        val.y = soft ? 0.5f : 1f;
                     else if (negativeHeldY)
-                    { val.y = -1f; }
+                        val.y = soft ? -0.5f : -1f;
 
+                    
                     rawVal = val;
                 }
 
@@ -293,10 +299,29 @@ namespace Assault
                     {
                         if (Mathf.Abs(Value.x) >= 1f)
                         {
+                            x.Snap = true;
+                        }
+                            
+                        if (Mathf.Abs(Value.y) >= 1f)
+                        {
+                            Snap = true;
+                            y.Snap = true;
+
+                        }
+                    }
+                }
+                else if (ReceivingInput && inputType == InputType.Keyboard)
+                {
+                    if (_previousValue[2] == Vector2.zero)
+                    {
+
+                        if (Mathf.Abs(Value.x) >= 1f)
+                        {
                             Snap = true;
                             x.Snap = true;
                         }
-                        else if (Mathf.Abs(Value.y) >= 1f)
+
+                        if (Mathf.Abs(Value.y) >= 1f)
                         {
                             Snap = true;
                             y.Snap = true;

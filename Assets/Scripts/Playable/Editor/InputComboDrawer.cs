@@ -15,7 +15,8 @@ namespace Assault
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             float inspectorWidth = EditorGUIUtility.currentViewWidth;
-            float propWidth = (position.width / 4f) - enumBuffer;
+            float ropWidth = (position.width / 4f) - enumBuffer;
+            float propWidth = position.width / 11f;
 
             position = new Rect(position.x, position.y, position.width, 10f);
 
@@ -32,17 +33,21 @@ namespace Assault
                 position.y += EditorGUIUtility.singleLineHeight;
             }
 
-            EditorGUI.LabelField(new Rect(position.x + 20f, position.y, (propWidth * 2f) + (enumBuffer * 2f), EditorGUIUtility.singleLineHeight), new GUIContent("Directions"));
-            EditorGUI.LabelField(new Rect(position.x + (propWidth * 2f) + (enumBuffer * 2f) + 20f, position.y, (propWidth * 2f) + (enumBuffer * 2f), EditorGUIUtility.singleLineHeight), new GUIContent("Buttons"));
+            EditorGUI.LabelField(new Rect(position.x + 20f, position.y, (ropWidth * 2f) + (enumBuffer * 2f), EditorGUIUtility.singleLineHeight), new GUIContent("Directions"));
+            EditorGUI.LabelField(new Rect(position.x + (ropWidth * 2f) + (enumBuffer * 2f) + 20f, position.y, (ropWidth * 2f) + (enumBuffer * 2f), EditorGUIUtility.singleLineHeight), new GUIContent("Buttons"));
 
             position.y += EditorGUIUtility.singleLineHeight;
 
-            Rect directionRect = new Rect(position.x, position.y, propWidth, position.height);
-            Rect directionManeuRect = new Rect(position.x + propWidth + enumBuffer, position.y, propWidth, position.height);
-            Rect buttonRect = new Rect(position.x + (propWidth * 2f) + (enumBuffer * 3f), position.y, propWidth, position.height);
-            Rect maneuverRect = new Rect(position.x + (propWidth * 3f) + (enumBuffer * 4f), position.y, propWidth, position.height);
+            Rect horiRect = new Rect(position.x, position.y, propWidth * 2 - enumBuffer, position.height);
+            Rect vertRect = new Rect(horiRect.x + horiRect.width + enumBuffer, position.y, propWidth * 2 - enumBuffer, position.height);
+            Rect directionManeuRect = new Rect(vertRect.x + vertRect.width + enumBuffer, position.y, propWidth * 2 - enumBuffer, position.height);
 
-            EditorGUI.PropertyField(directionRect, property.FindPropertyRelative("direction"), GUIContent.none);
+
+            Rect buttonRect = new Rect(directionManeuRect.xMax + enumBuffer + enumBuffer, position.y, ropWidth - enumBuffer - enumBuffer, position.height);
+            Rect maneuverRect = new Rect(buttonRect.xMax + enumBuffer, position.y, ropWidth - enumBuffer - enumBuffer, position.height);
+
+            EditorGUI.PropertyField(horiRect, property.FindPropertyRelative("horizontalControl"), GUIContent.none);
+            EditorGUI.PropertyField(vertRect, property.FindPropertyRelative("verticalControl"), GUIContent.none);
             EditorGUI.PropertyField(directionManeuRect, property.FindPropertyRelative("directionManeuver"), GUIContent.none);
             EditorGUI.PropertyField(buttonRect, property.FindPropertyRelative("button"), GUIContent.none);
             EditorGUI.PropertyField(maneuverRect, property.FindPropertyRelative("buttonManeuver"), GUIContent.none);

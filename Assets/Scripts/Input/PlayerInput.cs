@@ -10,7 +10,7 @@ namespace Assault
     {
         [SerializeField] int _playerNumber = 1;
 
-        public InputGrid Control = new InputGrid(KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow, ControllerGrid.LeftStick);
+        public InputGrid Control = new InputGrid(KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.Q, ControllerGrid.LeftStick);
 
         public InputButton Jump = new InputButton(KeyCode.Space, ControllerButtons.FaceBottom);
         public InputButton AttackLight = new InputButton(KeyCode.F, ControllerButtons.FaceLeft);
@@ -25,7 +25,7 @@ namespace Assault
         protected PlayerFighter _playerFighter;
         protected Damageable _playerDefender;
 
-        protected InputFeed _inputFeed;
+        //protected InputFeed _inputFeed;
 
         public FighterInput generalInput { get; protected set; }
         public InputCombo currentInputCombo { get; protected set; }
@@ -46,23 +46,23 @@ namespace Assault
             _playerFighter = GetComponent<PlayerFighter>();
             _playerDefender = GetComponent<Damageable>();
 
-            _inputFeed.Setup();
+          //  _inputFeed.Setup();
         }
 
         protected override void FurtherUpdate()
         {
-            UpdateInputFeed();
-            Feed();
+          //  UpdateInputFeed();
+           // Feed();
 
-            _inputFeed.Clear();
+          //  _inputFeed.Clear();
         }
-
+        /*
         void UpdateInputFeed()
         {
             if (!_playerController) return;
 
             ControlDirection newDirec = ControlDirection.NEUTRAL;
-            ControlDirectionManeuver newDirecManeu = ControlDirectionManeuver.ANY;
+            ControlManeuver newDirecManeu = ControlManeuver.ANY;
 
             if (Control.Y.Value > 0) newDirec = ControlDirection.Up;
             else if (Control.Y.Value < 0) newDirec = ControlDirection.Down;
@@ -98,9 +98,9 @@ namespace Assault
                 }
             }
 
-            if (Control.Snap) newDirecManeu = ControlDirectionManeuver.Snap;
-            else if (Control.Hard) newDirecManeu = ControlDirectionManeuver.Hard;
-            else if (Control.Soft) newDirecManeu = ControlDirectionManeuver.Soft;
+            if (Control.Snap) newDirecManeu = ControlManeuver.Snap;
+            else if (Control.Hard) newDirecManeu = ControlManeuver.Hard;
+            else if (Control.Soft) newDirecManeu = ControlManeuver.Soft;
 
             InputButton[] buttonInputs = { Special, AttackHeavy, AttackLight, Jump, Meter, Defend };
             Button newBtn = Button.Any;
@@ -142,7 +142,7 @@ namespace Assault
                 }
             }
         }
-
+        */
         public override void GainControl()
         {
             _haveControl = true;
@@ -182,7 +182,7 @@ namespace Assault
             Meter.StateUpdate(fixedUpdateHappened, _inputType);
             Defend.StateUpdate(fixedUpdateHappened, _inputType);
         }
-
+        /*
         void Feed()
         {
             bool cont = false;
@@ -207,7 +207,7 @@ namespace Assault
                 }
             }
         }
-
+        */
         void AssignPlayerNumberToInputs()
         {
             Jump._playerNumber = _playerNumber;
@@ -215,13 +215,13 @@ namespace Assault
 
 
         }
-
+        /*
         protected struct InputFeed
         {
             FighterState _currentState;
 
-            ControlDirection _direction;
-            ControlDirectionManeuver _directionManeuver;
+            //ControlDirection _direction;
+            ControlManeuver _directionManeuver;
 
             List<Button> _inputButtons;
             List<ButtonManeuver> _buttonManeuvers;
@@ -238,7 +238,7 @@ namespace Assault
 
                     InputCombo combo = new InputCombo
                     {
-                        direction = _direction,
+                        //direction = _direction,
                         directionManeuver = _directionManeuver,
 
                         button = _inputButtons[index],
@@ -257,7 +257,7 @@ namespace Assault
             }
 
             public void Add(FighterState state, ControlDirection direc,
-                ControlDirectionManeuver direcManeu, Button button, ButtonManeuver buttonManeu)
+                ControlManeuver direcManeu, Button button, ButtonManeuver buttonManeu)
             {
                 _currentState = state;
                 _direction = direc;
@@ -270,7 +270,7 @@ namespace Assault
 
             public void Add(InputCombo inputCombo)
             {
-                _direction = inputCombo.direction;
+               // _direction = inputCombo.direction;
                 _directionManeuver = inputCombo.directionManeuver;
 
                 _inputButtons.Add(inputCombo.button);
@@ -285,6 +285,6 @@ namespace Assault
 
                 _count = 0;
             }
-        }
+        }*/
     }
 }

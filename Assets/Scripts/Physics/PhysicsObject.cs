@@ -73,7 +73,7 @@ namespace Assault
         float _minMoveDistance = 0.01f;
 
         // Properties
-        public bool useGravity { get { return _useGravity; } set { useGravity = value; } }
+        public bool useGravity { get { return _useGravity; } set { _useGravity = value; } }
         public float gravityMultiplier { get { return _gravityMultiplier; } set { _gravityMultiplier = value; } }
 
         public float skinWidth
@@ -109,7 +109,9 @@ namespace Assault
             // Take external forces into account
             Gravity();
             GroundFriction();
+            AirFriction();
             ExternalFriction();
+            FurtherFixedUpdate();
 
             // Setup for new FixedUpdate
             _collisionState.Reset();
@@ -159,6 +161,8 @@ namespace Assault
 
         }
 
+        protected virtual void FurtherFixedUpdate() { }
+
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (OnTriggerEnterEvent != null)
@@ -180,21 +184,7 @@ namespace Assault
         #endregion
 
         #region Public
-
-        public void InForceRigidbody(Vector2 force, bool resetX = false, bool resetY = false)
-        {
-            if (resetX) _internalVelocity.x = 0;
-            if (resetY) _internalVelocity.y = 0;
-
-            _internalVelocity += force;
-        }
-
-        public void InAccelerateRigidbody(Vector2 accelerate)
-        {
-            _internalVelocity += accelerate * Time.deltaTime;
-        }
-
-
+        
         /// <summary>
         /// Moves the rigidbody without altering the velocity
         /// </summary>
@@ -220,7 +210,6 @@ namespace Assault
             {
                 if (resetX) _internalVelocity.x = 0;
                 if (resetY) _internalVelocity.y = 0;
-                print("internal");
 
                 _internalVelocity += force;
             }
@@ -228,7 +217,6 @@ namespace Assault
             {
                 if (resetX) _externalVelocity.x = 0;
                 if (resetY) _externalVelocity.y = 0;
-                print("external");
 
                 _externalVelocity += force;
             }
@@ -266,19 +254,19 @@ namespace Assault
         /// <param name="accelerate">The Vector2 to accelerate by</param>
         /// <param name="alterVelocity">Should we alter the velocity?</param>
         /// <returns></returns>
-        public Vector2 AccelerateRigidbody(Component affector, Vector2 accelerate, bool alterVelocity = true)
+        public void AccelerateRigidbody(Component affector, Vector2 accelerate, float maxVelocityX = Mathf.Infinity, float maxVelocityY = Mathf.Infinity)
         {
             Vector2 toAdd = accelerate * Time.deltaTime;
 
-            if (alterVelocity)
+            if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
             {
-                if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
-                    _internalVelocity += toAdd;
-                else
-                    _externalVelocity += toAdd;
-            }
+                if (Mathf.Abs(_internalVelocity.x) > Mathf.Abs(maxVelocityX)) return;
+                if (Mathf.Abs(_internalVelocity.y) > Mathf.Abs(maxVelocityY)) return;
 
-            return toAdd;
+                _internalVelocity += toAdd;
+            }
+            else
+                _externalVelocity += toAdd;
         }
 
         /// <summary>
@@ -288,23 +276,45 @@ namespace Assault
         /// <param name="accelerateY">The Y component to accelerate by</param>
         /// <param name="alterVelocity">Should we alter the velocity?</param>
         /// <returns></returns>
-        public Vector2 AccelerateRigidbody(Component affector, float accelerateX, float accelerateY, bool alterVelocity = true)
+        public void AccelerateRigidbody(Component affector, float accelerateX, float accelerateY, float maxVelocityX = Mathf.Infinity, float maxVelocityY = Mathf.Infinity)
         {
             Vector2 toAdd = new Vector2(accelerateX, accelerateY) * Time.deltaTime;
-
-            if (alterVelocity)
+            
+            if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
             {
-                if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
-                    _internalVelocity += toAdd;
-                else
-                    _externalVelocity += toAdd;
-            }
+                if (Mathf.Abs(_internalVelocity.x) > Mathf.Abs(maxVelocityX)) return;
+                if (Mathf.Abs(_internalVelocity.y) > Mathf.Abs(maxVelocityY)) return;
 
-            return toAdd;
+                _internalVelocity += toAdd;
+            }
+            else
+                _externalVelocity += toAdd;
+        }
+
+        public void ResetRigidbody(Component affector, bool resetX = true, bool resetY = true, bool externalAlso = false)
+        {
+            if (CheckIfConnected(affector))
+            {
+                if (resetX) _internalVelocity.x = 0;
+                if (resetY) _internalVelocity.y = 0;
+
+                if (externalAlso)
+                {
+                    if (resetX) _externalVelocity.x = 0;
+                    if (resetY) _externalVelocity.y = 0;
+                }
+            }
+            else
+            {
+                if (resetX) _externalVelocity.x = 0;
+                if (resetY) _externalVelocity.y = 0;
+            }
         }
 
         bool CheckIfConnected(Component toCheck)
-        { return toCheck.GetComponent<FighterController>() == this; }
+        {
+            return toCheck.gameObject.GetInstanceID() == gameObject.GetInstanceID();
+        }
 
         /// <summary>
         /// Moves the GameObject without any implied velocity changes
@@ -528,11 +538,26 @@ namespace Assault
             }
         }
 
+        /// <summary>
+        /// There will be some instances where the above and below rays will hit a wall they cannot collide with. This makes appropriate adjustments
+        /// </summary>
+        void AdjustForVerticalSlope(bool above, RaycastHit2D raycastHit)
+        {
+            DrawRay(raycastHit.point, raycastHit.normal * 0.3f, slopeRayColor);
+
+            float slopeAngle = Vector2.Angle(above ? Vector2.up : Vector2.down, raycastHit.normal);
+            bool moveRight = Mathf.Sign(raycastHit.normal.x) == 1;
+
+            float shiftX = Mathf.Tan(slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(_deltaMovement.y);
+
+            _deltaMovement.x -= moveRight ? shiftX : -shiftX;
+        }
+
         #endregion
 
         #region Collision
 
-        void CheckVerticalCollisions(bool above, ref float distancehToHit, ref Vector2 hitNormal)
+        void CheckVerticalCollisions(bool above, ref float distanceToHit, ref Vector2 hitNormal)
         {
             // Declare required variables
             Vector2 raycastStart, raycastDirection;
@@ -564,7 +589,11 @@ namespace Assault
                 // We calc against the reverse of raycastDirection
                 float currAngle = Vector2.Angle(-raycastDirection, raycastHit.normal);
                 // If the angle is greater that the appropriateSlopeLimit, bail
-                if (currAngle > appropriateSlopeLimit) return;
+                if (currAngle > appropriateSlopeLimit)
+                {
+                    AdjustForVerticalSlope(above, raycastHit);
+                    return;
+                }
 
                 Platform potentialPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
                 if (potentialPlatform)
@@ -583,7 +612,7 @@ namespace Assault
                     }
                 }
 
-                distancehToHit = raycastHit.distance;
+                distanceToHit = raycastHit.distance;
                 hitNormal = raycastHit.normal;
             }
         }
@@ -684,6 +713,17 @@ namespace Assault
                 _internalVelocity.x -= _collisionState.belowPlatform.friction * Time.deltaTime;
             else if (_internalVelocity.x < 0)
                 _internalVelocity.x += _collisionState.belowPlatform.friction * Time.deltaTime;
+        }
+
+        void AirFriction()
+        {
+            if (_collisionState.below) return;
+            if (_collisionState.belowPlatform) return;
+            
+            if (_internalVelocity.x > 0)
+                _internalVelocity.x -= Mathf.Abs(PhysicsManager.airFriction.x) * Time.deltaTime;
+            else if (_internalVelocity.x < 0)
+                _internalVelocity.x += Mathf.Abs(PhysicsManager.airFriction.x) * Time.deltaTime;
         }
 
         void ExternalFriction()

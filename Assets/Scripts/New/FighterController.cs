@@ -112,7 +112,7 @@ namespace Assault
             print("Current Accel: " + currentAccelerate);
             if (currentAccelerate != Vector2.zero)
             {
-                _physics.InAccelerateRigidbody(currentAccelerate);
+                _physics.AccelerateRigidbody(this, currentAccelerate);
                 currentAccelerate = Vector2.zero;
             }
         }

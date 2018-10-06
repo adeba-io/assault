@@ -316,6 +316,7 @@
     <Compile Include="Assets\Scripts\Managers\PhysicsManager.cs" />
     <Compile Include="Assets\Scripts\New\Boxes.cs" />
     <Compile Include="Assets\Scripts\New\FighterController.cs" />
+    <Compile Include="Assets\Scripts\New\FighterControllerMK2.cs" />
     <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
     <Compile Include="Assets\Scripts\New\FighterInput.cs" />
     <Compile Include="Assets\Scripts\New\InputCombo.cs" />

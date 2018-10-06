@@ -72,7 +72,7 @@ namespace Assault
 
             return toReturn;
         }
-
+        /*
         void Move()
         {
             if (isGrounded)
@@ -87,19 +87,11 @@ namespace Assault
                 }
                 else if (Input.Control.X.Hard)
                 {
-                    Vector2 addedVelocity = AccelerateRigidbody(this, Input.Control.X.Value * _runAcceleration, 0, false);
-
-                    float newVelocityX = _internalVelocity.x + addedVelocity.x;
-                    if (Mathf.Abs(newVelocityX) <= _maxRunSpeed)
-                        AccelerateRigidbody(this, Input.Control.X.Value * _runAcceleration, 0);
+                    Vector2 addedVelocity = AccelerateRigidbody(this, Input.Control.X.Value * _runAcceleration, 0, _maxRunSpeed);
                 }
                 else if (Input.Control.X.Soft)
                 {
-                    Vector2 addedVelocity = AccelerateRigidbody(this, Input.Control.X.Value * _walkAcceleration, 0, false);
-
-                    float newVelocityX = _internalVelocity.x + addedVelocity.x;
-                    if (Mathf.Abs(newVelocityX) <= _maxWalkSpeed)
-                        AccelerateRigidbody(this, Input.Control.X.Value * _walkAcceleration, 0);
+                    Vector2 addedVelocity = AccelerateRigidbody(this, Input.Control.X.Value * _walkAcceleration, 0, _maxWalkSpeed);
                 }
 
                 if (_internalVelocity.x > 0) facingRight = true;
@@ -108,7 +100,7 @@ namespace Assault
             else
             {
                 float moveX = Input.Control.X.Value * _airAcceleration;
-                Vector2 addedVelocity = AccelerateRigidbody(this, moveX, 0, false);
+                Vector2 addedVelocity = AccelerateRigidbody(this, moveX, 0, _maxAirSpeed);
 
                 float newVelocityX = _internalVelocity.x + addedVelocity.x;
                 if (Mathf.Abs(newVelocityX) <= _maxAirSpeed)
@@ -120,7 +112,7 @@ namespace Assault
                 }
             }
         }
-
+        */
         bool Jump()
         {
             if (_collisionState.groundedLastFrame)
