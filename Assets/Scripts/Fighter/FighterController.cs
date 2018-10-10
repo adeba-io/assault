@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Assault.Types;
+using Assault.Maneuvers;
 
 namespace Assault
 {
     [RequireComponent(typeof(FighterPhysics), typeof(FighterInput))]
-    public class FighterControllerMK2 : MonoBehaviour
+    public class FighterController : MonoBehaviour
     {
         const FighterState GROUNDED_IN_CONTROL = FighterState.Standing | FighterState.Crouching | FighterState.Running | FighterState.Dashing;
         const FighterState GROUNDED_HITTABLE = GROUNDED_IN_CONTROL | FighterState.Fallen | FighterState.JumpSquat;
@@ -20,6 +21,7 @@ namespace Assault
         readonly int anim_AIRJUMP = Animator.StringToHash("AirJump");
         readonly int anim_DASH = Animator.StringToHash("Dash");
         readonly int anim_TURNAROUND = Animator.StringToHash("Turnaround");
+        readonly int anim_WALLJUMP = Animator.StringToHash("WallJump");
 
         // Booleans
         readonly int anim_GROUNDED = Animator.StringToHash("isGrounded");
@@ -31,8 +33,13 @@ namespace Assault
 
         #endregion
 
-        public FighterState currentState { get; protected set; }
+        public Maneuver currentManeuver;
+
+        public FighterState currentState;
         public bool facingRight { get; protected set; }
+
+        public Vector2 nextForce;
+        public Vector2 currentAccelerate;
 
         [SerializeField] float _walkAcceleration = 4f, _maxWalkSpeed = 2f;
 
@@ -48,9 +55,12 @@ namespace Assault
 
         [SerializeField] float _dashForce = 5f;
 
+        [SerializeField] Vector2 _wallJumpForce = new Vector2(3f, 2f);
+
         bool _cancelToDash = true;
         bool canCancel = true;
         bool _canFastFall = false;
+        bool _cancelToRun = false;
 
         InputCombo _currentCombo;
 
@@ -69,12 +79,17 @@ namespace Assault
             _animator.SetBool(anim_GROUNDED, true);
 
             _airJumpsLeft = _maxAirJumps;
+            _wallJumpForce = new Vector2(Mathf.Abs(_wallJumpForce.x), Mathf.Abs(_wallJumpForce.y));
         }
 
         private void Update()
         {
             UpdateState();
-            // print(currentState);
+        }
+
+        public void UpdateManeuver()
+        {
+
         }
 
         void UpdateState()
@@ -101,7 +116,7 @@ namespace Assault
         public bool ReceiveInput(InputCombo inputCombo)
         {
             _currentCombo = inputCombo;
-            //print(inputCombo);
+           // print(inputCombo);
 
             switch (currentState)
             {
@@ -109,7 +124,7 @@ namespace Assault
 
                     if (JumpSquat()) return true;
                     if (Dash()) return true;
-                    if (Walk()) return true;
+                    if (WalkInit()) return true;
 
                     Stand();
 
@@ -128,9 +143,11 @@ namespace Assault
                     if (Walk()) return true;
                     if (Turnaround()) return true;
 
+                    Stand();
+
                     return false;
                 case FighterState.Running:
-
+                    
                     if (JumpSquat()) return true;
                     if (Run()) return true;
                     if (Turnaround()) return true;
@@ -148,7 +165,9 @@ namespace Assault
                 case FighterState.Skidding:
 
                     if (JumpSquat()) return true;
-                    if (Dash()) return true;
+                    //if (Dash()) return true;
+
+                    Turnaround();
 
                     return false;
                 case FighterState.JumpSquat:
@@ -159,6 +178,7 @@ namespace Assault
                     AirDrift();
 
                     if (AirJumpSquat()) return true;
+                    if (WallJumpSquat()) return true;
 
                     return false;
                 case FighterState.Aerial:
@@ -167,6 +187,7 @@ namespace Assault
                     FastFall();
 
                     if (AirJumpSquat()) return true;
+                    if (WallJumpSquat()) return true;
 
                     return false;
                 case FighterState.Tumble:
@@ -185,10 +206,16 @@ namespace Assault
         void NoGravity() { _physics.useGravity = false; }
         
         public void SetCanDash(bool canDash) { _cancelToDash = canDash; }
+        void CancelToRun() { _cancelToRun = true; }
         
         public void SetState(FighterState newState)
         {
             currentState = newState;
+
+            if (newState == FighterState.Standing || newState == FighterState.Crouching)
+            {
+                _physics.ResetRigidbody(this);
+            }
         }
 
         public void CanFastFall() { _canFastFall = true; }
@@ -200,8 +227,22 @@ namespace Assault
             currentState = FighterState.Jumping;
 
             float jump = _physics.isGrounded ? _jumpForce : _aerialJumpForce;
+
+            if (_physics.internalVelocity.x > 0 && _currentCombo == HorizontalControlGeneral.Left)
+                _physics.ResetRigidbody(this, resetY: false);
+
             _physics.ForceRigidbody(this, new Vector2(0, jump), resetY: true);
         }
+
+        void WallJump()
+        {
+            currentState = FighterState.Jumping;
+
+            _animator.ResetTrigger(anim_WALLJUMP);
+            Vector2 jump = facingRight ? _wallJumpForce : new Vector2(-_wallJumpForce.x, _wallJumpForce.y);
+            _physics.ForceRigidbody(this, jump, resetX: true, resetY: true);
+        }
+
 
         bool JumpSquat()
         {
@@ -223,6 +264,32 @@ namespace Assault
             _airJumpsLeft--;
 
             return true;
+        }
+
+        bool WallJumpSquat()
+        {
+            if (!_physics.collisionState.touchingWall) return false;
+            if (_physics.collisionState.leftPlatform && _physics.collisionState.rightPlatform) return false;
+            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
+            print("Wall JS " + Time.timeSinceLevelLoad);
+            _physics.ResetRigidbody(this);
+
+            if (_physics.collisionState.rightPlatform && _currentCombo == HorizontalControlGeneral.Left)
+            {
+                SetFacingDirection(false); // Now facing left
+
+                _animator.SetTrigger(anim_WALLJUMP);
+                return true;
+            }
+            else if (_physics.collisionState.leftPlatform && _currentCombo == HorizontalControlGeneral.Right)
+            {
+                SetFacingDirection(true); // Now facing left
+
+                _animator.SetTrigger(anim_WALLJUMP);
+                return true;
+            }
+
+            return false;
         }
 
         #endregion
@@ -250,6 +317,8 @@ namespace Assault
             dash.x *= _dashForce;
 
             _physics.ForceRigidbody(this, dash, true);
+            
+            _animator.SetBool(anim_SKIDDING, false);
             _animator.SetTrigger(anim_DASH);
 
             return true;
@@ -262,7 +331,8 @@ namespace Assault
             if (_currentCombo == HorizontalControl.NEUTRAL) return false;
             if (_currentCombo == ControlManeuver.Snap) return false;
             if (_currentCombo == ControlManeuver.Soft) return false;
-
+           // if (!_cancelToRun) return false;
+            
             Vector2 run = Vector2.zero;
 
             run.x = facingRight ? 1 : -1;
@@ -270,7 +340,10 @@ namespace Assault
 
             _physics.AccelerateRigidbody(this, run, maxVelocityX: _maxRunSpeed);
 
+
+            _animator.SetBool(anim_SKIDDING, false);
             _animator.SetInteger(anim_GROUNDMOVEMENT, 2);
+            _cancelToRun = false;
 
             return true;
         }
@@ -289,8 +362,6 @@ namespace Assault
 
             _physics.AccelerateRigidbody(this, run, maxVelocityX: _maxRunSpeed);
 
-            _animator.SetInteger(anim_GROUNDMOVEMENT, 2);
-
             return true;
         }
 
@@ -302,7 +373,7 @@ namespace Assault
         {
             if (_currentCombo == HorizontalControl.NEUTRAL) return false;
             if (_currentCombo != ControlManeuver.Soft) return false;
-
+            
             Vector2 walk = Vector2.zero;
 
             if (_currentCombo == HorizontalControl.Back)
@@ -331,8 +402,6 @@ namespace Assault
 
             _physics.AccelerateRigidbody(this, walk, maxVelocityX: _maxWalkSpeed);
 
-            _animator.SetInteger(anim_GROUNDMOVEMENT, 1);
-
             return true;
         }
 
@@ -341,7 +410,8 @@ namespace Assault
         void Skid()
         {
             if (_currentCombo != HorizontalControl.NEUTRAL) return;
-
+            
+            _animator.SetInteger(anim_GROUNDMOVEMENT, 0);
             _animator.SetBool(anim_SKIDDING, true);
 
             return;
@@ -353,6 +423,7 @@ namespace Assault
 
             Flip();
 
+            _animator.SetBool(anim_SKIDDING, false);
             _animator.SetTrigger(anim_TURNAROUND);
 
             return true;
@@ -366,7 +437,6 @@ namespace Assault
             {
                 _animator.SetBool(anim_CROUCHING, false);
                 _animator.SetInteger(anim_GROUNDMOVEMENT, 0);
-                //_physics.ResetRigidbody(this, true, false);
             }
             else if (_currentCombo == VerticalControl.Down && _currentCombo == HorizontalControl.NEUTRAL)
             {
@@ -378,7 +448,6 @@ namespace Assault
         void AirDrift()
         {
             if (_currentCombo == HorizontalControl.NEUTRAL) return;
-           // print("Drifting");
 
             Vector2 drift = Vector2.zero;
 
@@ -403,6 +472,13 @@ namespace Assault
                 facingRight = !facingRight;
                 transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y);
             }
+        }
+
+        public void SetFacingDirection(bool right)
+        {
+            facingRight = right;
+
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * (right ? 1 : -1), transform.localScale.y);
         }
     }
 }

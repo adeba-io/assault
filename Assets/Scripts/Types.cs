@@ -65,6 +65,9 @@ namespace Assault
         public enum HorizontalControl
         { NEUTRAL, Any, Forward, Back }
 
+        public enum HorizontalControlGeneral
+        { NEUTRAL, Left, Right }
+
         public enum VerticalControl
         { NEUTRAL, Any, Up, Down }
 

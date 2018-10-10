@@ -7,7 +7,7 @@ namespace Assault
 {
     public class ControlStickBox : MonoBehaviour
     {
-        public PlayerInput Input;
+        public FighterInput Input;
 
         public Image _stickPlacement;
         public Image _hardRegion;

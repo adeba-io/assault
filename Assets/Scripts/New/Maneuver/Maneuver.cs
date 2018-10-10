@@ -106,11 +106,6 @@ namespace Assault
                 currentFrame++;
                 //Debug.Log(name + " is Updating: Frame: " + currentFrame);
 
-                for (int i = 0; i < _moveFrames.Length; i++)
-                {
-                    if (_moveFrames[i].frame == currentFrame) _fighterController.nextMove = _moveFrames[i].vector;
-                }
-
                 for (int i = 0; i < _forceFrames.Length; i++)
                 {
                     if (_forceFrames[i].frame == currentFrame) _fighterController.nextForce = _forceFrames[i].vector;

@@ -11,6 +11,8 @@ namespace Assault
         public VerticalControl verticalControl;
         public ControlManeuver controlManeuver;
 
+        public HorizontalControlGeneral horizontalControlGeneral;
+
         public Button button;
         public ButtonManeuver buttonManeuver;
 
@@ -79,7 +81,7 @@ namespace Assault
                     direcManeu = "";
                     break;
                 case ControlManeuver.Snap:
-                    direcManeu = "Double Snap ";
+                    direcManeu = "Snap ";
                     break;
                 default:
                     direcManeu = controlManeuver.ToString() + " ";
@@ -169,6 +171,15 @@ namespace Assault
         public static bool operator !=(InputCombo combo, ControlManeuver directionManeuver)
         {
             return !(combo == directionManeuver);
+        }
+
+        public static bool operator ==(InputCombo combo, HorizontalControlGeneral direction)
+        {
+            return combo.horizontalControlGeneral == direction;
+        }
+        public static bool operator !=(InputCombo combo, HorizontalControlGeneral direction)
+        {
+            return combo.horizontalControlGeneral != direction;
         }
         
         public static bool operator ==(InputCombo combo, Button button)

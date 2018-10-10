@@ -211,12 +211,19 @@ AnimationClip:
     floatParameter: 0
     intParameter: 8
     messageOptions: 0
-  - time: 0.65
+  - time: 0
     functionName: SetState
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 256
+    messageOptions: 0
+  - time: 0.65
+    functionName: SetState
+    data: 
+    objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 512
     messageOptions: 0
   - time: 0.6666667
     functionName: CanFastFall

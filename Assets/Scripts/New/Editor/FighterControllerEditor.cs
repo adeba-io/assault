@@ -8,7 +8,7 @@ using Assault;
 using Assault.Maneuvers;
 
 namespace Assault.Editors
-{
+{/*
     [CanEditMultipleObjects]
     [CustomEditor(typeof(FighterController))]
     public class FighterControllerEditor : Editor
@@ -24,7 +24,7 @@ namespace Assault.Editors
         bool _isPrefab = false;
         bool _isNotInstance = false;
 
-        FighterController _targetController;
+        FighterControllerMK2 _targetController;
         SerializedProperty _currentManeuver;
         bool _expandManeuver;
 
@@ -355,7 +355,7 @@ namespace Assault.Editors
 
                 return;
             }
-            */
+            *
             serializedObject.Update();
 
             EditorGUILayout.PropertyField(_currentState, gui_currentState);
@@ -403,5 +403,5 @@ namespace Assault.Editors
         enum ReLists { Maneuvers, Techniques }
 
         struct AddData { public AddType type; public ReLists list; }
-    }
+    }*/
 }

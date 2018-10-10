@@ -309,34 +309,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\ControlStickBox.cs" />
+    <Compile Include="Assets\Scripts\Fighter\FighterController.cs" />
+    <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\SceneLinkedSMB.cs" />
+    <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\TechniqueSMB.cs" />
     <Compile Include="Assets\Scripts\HitboxPool.cs" />
+    <Compile Include="Assets\Scripts\Input\InputCombo.cs" />
     <Compile Include="Assets\Scripts\Input\InputComponent.cs" />
-    <Compile Include="Assets\Scripts\Input\PlayerInput.cs" />
     <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
     <Compile Include="Assets\Scripts\Managers\PhysicsManager.cs" />
     <Compile Include="Assets\Scripts\New\Boxes.cs" />
-    <Compile Include="Assets\Scripts\New\FighterController.cs" />
-    <Compile Include="Assets\Scripts\New\FighterControllerMK2.cs" />
     <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
     <Compile Include="Assets\Scripts\New\FighterInput.cs" />
-    <Compile Include="Assets\Scripts\New\InputCombo.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuver\Crouch.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuver\GroundDash.cs" />
     <Compile Include="Assets\Scripts\New\Maneuver\Maneuver.cs" />
     <Compile Include="Assets\Scripts\New\Maneuver\Technique.cs" />
-    <Compile Include="Assets\Scripts\New\Utility\AssaultAnimator.cs" />
     <Compile Include="Assets\Scripts\Physics\FighterPhysics.cs" />
     <Compile Include="Assets\Scripts\Physics\PhysicsObject.cs" />
     <Compile Include="Assets\Scripts\Playable\Boxes\HitBox.cs" />
-    <Compile Include="Assets\Scripts\Playable\Damageable.cs" />
-    <Compile Include="Assets\Scripts\Playable\PlayerController.cs" />
-    <Compile Include="Assets\Scripts\Playable\PlayerFighter.cs" />
-    <Compile Include="Assets\Scripts\Playable\Techniques\Technique.cs" />
     <Compile Include="Assets\Scripts\Terrain\Platform.cs" />
     <Compile Include="Assets\Scripts\Types.cs" />
     <Compile Include="Assets\Scripts\Utility\IntRange.cs" />
     <Compile Include="Assets\Scripts\Utility\ObjectPool.cs" />
-    <Compile Include="Assets\Scripts\Utility\SerialDictionary.cs" />
     <Compile Include="Assets\Test.cs" />
   </ItemGroup>
   <ItemGroup>

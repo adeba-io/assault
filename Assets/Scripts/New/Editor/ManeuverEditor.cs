@@ -6,7 +6,7 @@ using UnityEditorInternal;
 using Assault.Maneuvers;
 
 namespace Assault.Editors
-{
+{/*
     [CustomEditor(typeof(Maneuver))]
     public class ManeuverEditor : Editor
     {
@@ -102,7 +102,7 @@ namespace Assault.Editors
                                 _moveFrames.serializedProperty.GetArrayElementAtIndex(j + 1).FindPropertyRelative("frame").intValue = temp;
                             }
                         }
-                    }*/
+                    }*
                 }
             };
         }
@@ -243,7 +243,7 @@ namespace Assault.Editors
                         _name.stringValue = 
                 }
             }
-            */
+            *
             
             if (newName != _targetManeuver.name)
             {
@@ -273,5 +273,5 @@ namespace Assault.Editors
         public VectorFramesReorderableList(SerializedObject serializedObject, SerializedProperty property, bool draggable, bool displayHeader, bool displayAddButton, bool displayRemoveButton) :
             base(serializedObject, property, draggable, displayHeader, displayAddButton, displayRemoveButton)
         { maxFrame = 60; }
-    }
+    }*/
 }

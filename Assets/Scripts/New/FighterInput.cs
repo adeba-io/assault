@@ -9,7 +9,7 @@ namespace Assault
 {
     public class FighterInput : InputComponent
     {
-        public InputGrid Control = new InputGrid(KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.Q, ControllerGrid.LeftStick);
+        public InputGrid Control = new InputGrid(KeyCode.RightArrow, KeyCode.LeftArrow, KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.Z, ControllerGrid.LeftStick);
 
         public InputButton Jump = new InputButton(KeyCode.Space, ControllerButtons.FaceBottom);
         public InputButton AttackLight = new InputButton(KeyCode.F, ControllerButtons.FaceLeft);
@@ -20,7 +20,7 @@ namespace Assault
 
         protected bool _haveControl = true;
 
-        protected FighterControllerMK2 _fighterController;
+        protected FighterController _fighterController;
 
         protected InputFeed _inputFeed;
 
@@ -28,7 +28,7 @@ namespace Assault
 
         private void Start()
         {
-            _fighterController = GetComponent<FighterControllerMK2>();
+            _fighterController = GetComponent<FighterController>();
 
         }
 
@@ -91,45 +91,29 @@ namespace Assault
             
             HorizontalControl horiDirec = HorizontalControl.NEUTRAL;
             VerticalControl vertDirec = VerticalControl.NEUTRAL;
-            ControlManeuver newDirecManeu = ControlManeuver.ANY;
+            ControlManeuver direcManeu = ControlManeuver.ANY;
+            HorizontalControlGeneral horiGeneral = HorizontalControlGeneral.NEUTRAL;
 
-            if (Control.X.Value > 0) horiDirec = (_fighterController.facingRight ? HorizontalControl.Forward : HorizontalControl.Back);
-            else if (Control.X.Value < 0) horiDirec = (_fighterController.facingRight ? HorizontalControl.Back : HorizontalControl.Forward);
+            if (Control.X.Value > 0)
+            {
+                horiDirec = (_fighterController.facingRight ? HorizontalControl.Forward : HorizontalControl.Back);
+                horiGeneral = HorizontalControlGeneral.Right;
+            }
+            else if (Control.X.Value < 0)
+            {
+                horiDirec = (_fighterController.facingRight ? HorizontalControl.Back : HorizontalControl.Forward);
+                horiGeneral = HorizontalControlGeneral.Left;
+            }
 
             if (Control.Y.Value > 0) vertDirec = VerticalControl.Up;
             else if (Control.Y.Value < 0) vertDirec = VerticalControl.Down;
-            /*
-            if (Control.Y.Value > 0) newDirec = ControlDirection.Up;
-            else if (Control.Y.Value < 0) newDirec = ControlDirection.Down;
+            
 
-            if (Control.X.Value > 0) // The control stick is pointing right
-            {
-                if (newDirec == ControlDirection.Up)
-                    newDirec = (_fighterController.facingRight ? ControlDirection.ForwardUp : ControlDirection.BackUp);
+            if (Control.Snap) direcManeu = ControlManeuver.Snap;
+            else if (Control.Hard) direcManeu = ControlManeuver.Hard;
+            else if (Control.Soft) direcManeu = ControlManeuver.Soft;
 
-                else if (newDirec == ControlDirection.Down)
-                    newDirec = (_fighterController.facingRight ? ControlDirection.ForwardDown : ControlDirection.BackDown);
-
-                else
-                    newDirec = (_fighterController.facingRight ? ControlDirection.Forward : ControlDirection.Back);
-            }
-            else if (Control.X.Value < 0) // The control stick is pointing left
-            {
-                if (newDirec == ControlDirection.Up)
-                    newDirec = (!_fighterController.facingRight ? ControlDirection.ForwardUp : ControlDirection.BackUp);
-
-                else if (newDirec == ControlDirection.Down)
-                    newDirec = (!_fighterController.facingRight ? ControlDirection.ForwardDown : ControlDirection.BackDown);
-
-                else
-                    newDirec = (!_fighterController.facingRight ? ControlDirection.Forward : ControlDirection.Back);
-            }
-            */
-            if (Control.Snap) newDirecManeu = ControlManeuver.Snap;
-            else if (Control.Hard) newDirecManeu = ControlManeuver.Hard;
-            else if (Control.Soft) newDirecManeu = ControlManeuver.Soft;
-
-            _inputFeed.SetControl(horiDirec, vertDirec, newDirecManeu);
+            _inputFeed.SetControl(horiDirec, vertDirec, direcManeu, horiGeneral);
 
             InputButton[] buttons = { Special, AttackHeavy, AttackLight, Jump, Meter, Defend };
             Button newBtn = Button.NULL;
@@ -163,9 +147,6 @@ namespace Assault
             for (int i = 0; i < _inputFeed.Count; i++)
             {
                 InputCombo current = _inputFeed[i];
-
-                if (current == HorizontalControl.NEUTRAL && current == VerticalControl.NEUTRAL && current == Button.NULL)
-                    continue;
                 
                 if (_fighterController.ReceiveInput(current))
                     break;
@@ -180,6 +161,8 @@ namespace Assault
             HorizontalControl horizontalControl;
             ControlManeuver directionManeuver;
 
+            HorizontalControlGeneral horizontalControlGeneral;
+
             List<Button> buttons;
             List<ButtonManeuver> buttonManeuvers;
 
@@ -191,12 +174,14 @@ namespace Assault
                 get
                 {
                     if (index >= _count) return default(InputCombo);
-                    
+
                     return new InputCombo
                     {
                         verticalControl = verticalControl,
                         horizontalControl = horizontalControl,
                         controlManeuver = directionManeuver,
+
+                        horizontalControlGeneral = horizontalControlGeneral,
 
                         button = buttons[index],
                         buttonManeuver = buttonManeuvers[index]
@@ -209,17 +194,21 @@ namespace Assault
                 verticalControl = VerticalControl.NEUTRAL;
                 horizontalControl = HorizontalControl.NEUTRAL;
                 directionManeuver = ControlManeuver.ANY;
+
+                horizontalControlGeneral = HorizontalControlGeneral.NEUTRAL;
                 
                 buttons = new List<Button>();
                 buttonManeuvers = new List<ButtonManeuver>();
                 _count = 0;
             }
 
-            public void SetControl(HorizontalControl horiDirec, VerticalControl vertDirec, ControlManeuver direcManeu)
+            public void SetControl(HorizontalControl horiDirec, VerticalControl vertDirec, ControlManeuver direcManeu, HorizontalControlGeneral horiGeneral)
             {
                 verticalControl = vertDirec;
                 horizontalControl = horiDirec;
                 directionManeuver = direcManeu;
+
+                horizontalControlGeneral = horiGeneral;
             }
 
             public InputCombo GetControl()
@@ -229,6 +218,8 @@ namespace Assault
                     horizontalControl = horizontalControl,
                     verticalControl = verticalControl,
                     controlManeuver = directionManeuver,
+
+                    horizontalControlGeneral = horizontalControlGeneral,
 
                     button = Button.NULL,
                     buttonManeuver = ButtonManeuver.ANY

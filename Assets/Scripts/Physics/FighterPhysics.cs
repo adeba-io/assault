@@ -16,7 +16,7 @@ namespace Assault
         bool _fastFallPrevious = false;
         public bool fastFall { get; set; }
         public bool useTraction { get; set; }
-
+        
         public Vector2 internalVelocity { get { return _internalVelocity; } }
 
         private void Start()

@@ -6,12 +6,7 @@ namespace Assault
 {
     public class Test : MonoBehaviour
     {
-
-        public PlayerController toTest;
-
-        public Maneuvers.Maneuver manu;
-
-        [IntRange(10, 30)] public IntRange test;
+        public bool flip = false;
 
         // Use this for initialization
         void Start()
@@ -22,7 +17,13 @@ namespace Assault
         // Update is called once per frame
         void Update()
         {
-            toTest.ForceRigidbody(this, Vector2.zero);
+            transform.position = new Vector3(transform.position.x + Time.deltaTime, transform.position.y, transform.position.z);
+
+            if (flip)
+            {
+                transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+                flip = false;
+            }
         }
     }
 }
