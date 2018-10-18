@@ -26,14 +26,25 @@ namespace Assault
 
         public bool haveControl { get { return _haveControl; } }
 
+        [HideInInspector] public InputCombo toFeed;
+
         private void Start()
         {
             _fighterController = GetComponent<FighterController>();
 
+            Control.SetPlayerNumber(_playerNumber);
+            Jump.SetPlayerNumber(_playerNumber);
+            AttackLight.SetPlayerNumber(_playerNumber);
+            AttackHeavy.SetPlayerNumber(_playerNumber);
+            Special.SetPlayerNumber(_playerNumber);
+            Meter.SetPlayerNumber(_playerNumber);
+            Defend.SetPlayerNumber(_playerNumber);
         }
 
         protected override void FurtherUpdate()
         {
+            if (!_fighterController) return;
+
             _inputFeed.Initialize();
             UpdateInputFeed();
             Feed();
@@ -87,8 +98,6 @@ namespace Assault
 
         void UpdateInputFeed()
         {
-            if (!_fighterController) return;
-            
             HorizontalControl horiDirec = HorizontalControl.NEUTRAL;
             VerticalControl vertDirec = VerticalControl.NEUTRAL;
             ControlManeuver direcManeu = ControlManeuver.ANY;
@@ -144,6 +153,8 @@ namespace Assault
 
         void Feed()
         {
+            if (_inputFeed.Count < 1) _fighterController.ReceiveInput(_inputFeed.GetControl());
+
             for (int i = 0; i < _inputFeed.Count; i++)
             {
                 InputCombo current = _inputFeed[i];
@@ -151,8 +162,11 @@ namespace Assault
                 if (_fighterController.ReceiveInput(current))
                     break;
             }
+        }
 
-            _fighterController.ReceiveInput(_inputFeed.GetControl());
+        public void FeedDefined(InputCombo inputCombo)
+        {
+            _fighterController.ReceiveInput(inputCombo);
         }
 
         protected struct InputFeed

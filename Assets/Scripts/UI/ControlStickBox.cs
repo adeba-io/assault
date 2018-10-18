@@ -16,27 +16,19 @@ namespace Assault
         public Text _rawX, _rawY;
 
         public Image _snapX, _snapY;
+
         int _snapStartX, _snapStartY;
         int _snapInterval = 3;
 
         RectTransform _stickRectTransform;
-        RectTransform _hardRegionRectTransform;
 
         Vector2 _defaultPosition;
-
-        private void Awake()
-        {
-            Application.targetFrameRate = 60;
-        }
 
         private void Start()
         {
             _stickRectTransform = _stickPlacement.GetComponent<RectTransform>();
-            _hardRegionRectTransform = _hardRegion.GetComponent<RectTransform>();
 
             _defaultPosition = _stickRectTransform.anchoredPosition;
-
-
         }
 
         private void Update()

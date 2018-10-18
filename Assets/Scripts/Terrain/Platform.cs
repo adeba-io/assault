@@ -18,6 +18,13 @@ namespace Assault
 
             public bool inContact;
             public bool checkedThisFrame;
+
+            public void Move(Vector2 movement)
+            {
+                if (!inContact) return;
+
+
+            }
         }
 
         public enum PlatformType { Standard, OneWay }

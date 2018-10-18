@@ -21,6 +21,7 @@ namespace Assault
 
         #endregion
 
+        
         #region Events, Fields, and Properties
 
         public Action<Collider2D> OnTriggerEnterEvent;

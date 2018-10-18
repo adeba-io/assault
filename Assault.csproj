@@ -308,25 +308,32 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\ControlStickBox.cs" />
     <Compile Include="Assets\Scripts\Fighter\FighterController.cs" />
     <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\SceneLinkedSMB.cs" />
     <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\TechniqueSMB.cs" />
     <Compile Include="Assets\Scripts\HitboxPool.cs" />
+    <Compile Include="Assets\Scripts\Input\FighterInput.cs" />
     <Compile Include="Assets\Scripts\Input\InputCombo.cs" />
     <Compile Include="Assets\Scripts\Input\InputComponent.cs" />
     <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\InteractionManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\LevelManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\MusicManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\OptionsManager.cs" />
     <Compile Include="Assets\Scripts\Managers\PhysicsManager.cs" />
-    <Compile Include="Assets\Scripts\New\Boxes.cs" />
+    <Compile Include="Assets\Scripts\Managers\PlayerPrefsManager.cs" />
     <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
-    <Compile Include="Assets\Scripts\New\FighterInput.cs" />
+    <Compile Include="Assets\Scripts\New\InteractionBox.cs" />
     <Compile Include="Assets\Scripts\New\Maneuver\Maneuver.cs" />
+    <Compile Include="Assets\Scripts\New\Maneuver\Techniqu.cs" />
     <Compile Include="Assets\Scripts\New\Maneuver\Technique.cs" />
     <Compile Include="Assets\Scripts\Physics\FighterPhysics.cs" />
     <Compile Include="Assets\Scripts\Physics\PhysicsObject.cs" />
     <Compile Include="Assets\Scripts\Playable\Boxes\HitBox.cs" />
     <Compile Include="Assets\Scripts\Terrain\Platform.cs" />
     <Compile Include="Assets\Scripts\Types.cs" />
+    <Compile Include="Assets\Scripts\UI\ControlStickBox.cs" />
+    <Compile Include="Assets\Scripts\UI\FadeIn.cs" />
     <Compile Include="Assets\Scripts\Utility\IntRange.cs" />
     <Compile Include="Assets\Scripts\Utility\ObjectPool.cs" />
     <Compile Include="Assets\Test.cs" />

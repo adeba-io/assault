@@ -24,6 +24,17 @@ namespace Assault
             {
                 return !(node == i);
             }
+
+            public override bool Equals(object obj)
+            {
+                Node node = (Node)obj;
+                return this == node;
+            }
+
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
+            }
         }
 
         [Serializable]
@@ -36,7 +47,7 @@ namespace Assault
 
         [Serializable]
         public class TechniqueNode : Node
-        { public Technique technique; }
+        { public Techniqu technique; }
 
         [Serializable]
         public struct VectorFrame
@@ -147,6 +158,7 @@ namespace Assault
             public float launchSpeed;
 
             public HitstunType hitstunType;
+            Transform transform;
 
             public List<InteractionBox> hitboxes;
 
@@ -154,7 +166,7 @@ namespace Assault
             {
                 for (int i = 0; i < hitboxes.Count; i++)
                 {
-                    hitboxes[i].Enable();
+                    hitboxes[i].Enable(damager.gameObject, transform);
                 }
             }
 

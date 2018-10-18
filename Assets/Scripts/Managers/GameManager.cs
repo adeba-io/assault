@@ -6,7 +6,7 @@ namespace Assault
 {
     public class GameManager : MonoBehaviour
     {
-        public static GameManager _instance;
+        public static GameManager Game { get; protected set; }
 
         [SerializeField] float _FPSUpdateInterval = 0.5f;
 
@@ -16,10 +16,13 @@ namespace Assault
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-                Destroy(gameObject);
+            if (Game == null)
+            {
+                Game = this;
+                DontDestroyOnLoad(gameObject);
+            }
             else
-                _instance = this;
+                Destroy(gameObject);
 
             //Application.targetFrameRate = 60;
         }

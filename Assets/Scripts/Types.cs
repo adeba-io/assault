@@ -18,7 +18,7 @@ namespace Assault
             Running = 0x10,
 
             Skidding = 0x20,
-
+            
             JumpSquat = 0x40,
             AirJumpSquat = 0x80,
             Jumping = 0x100,
@@ -85,6 +85,8 @@ namespace Assault
 
         public enum HitstunType
         { STANDARD, Chain, Burst, NoDI }
-        
+
+        public enum BoxDrawType
+        { STATIC, Continuous }
     }
 }

@@ -19,6 +19,7 @@ namespace Assault
             float propWidth = position.width / 11f;
 
             position = new Rect(position.x, position.y, position.width, 10f);
+            
 
             EditorGUI.BeginProperty(position, label, property);
 
@@ -48,7 +49,7 @@ namespace Assault
 
             EditorGUI.PropertyField(horiRect, property.FindPropertyRelative("horizontalControl"), GUIContent.none);
             EditorGUI.PropertyField(vertRect, property.FindPropertyRelative("verticalControl"), GUIContent.none);
-            EditorGUI.PropertyField(directionManeuRect, property.FindPropertyRelative("directionManeuver"), GUIContent.none);
+            EditorGUI.PropertyField(directionManeuRect, property.FindPropertyRelative("controlManeuver"), GUIContent.none);
             EditorGUI.PropertyField(buttonRect, property.FindPropertyRelative("button"), GUIContent.none);
             EditorGUI.PropertyField(maneuverRect, property.FindPropertyRelative("buttonManeuver"), GUIContent.none);
 

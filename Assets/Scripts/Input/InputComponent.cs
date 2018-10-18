@@ -35,23 +35,25 @@ namespace Assault
 
 
             protected static readonly Dictionary<int, string> k_buttonsToName = new Dictionary<int, string>
-        {
-            { (int)ControllerButtons.FaceTop, "FaceTop" },
-            { (int)ControllerButtons.FaceBottom, "FaceBottom" },
-            { (int)ControllerButtons.FaceLeft, "FaceLeft" },
-            { (int)ControllerButtons.FaceRight, "FaceRight" },
-            { (int)ControllerButtons.Start, "Start" },
-            { (int)ControllerButtons.Select, "Select" },
-            { (int)ControllerButtons.LeftStick, "LeftStick" },
-            { (int)ControllerButtons.RightStick, "RightStick" },
-            { (int)ControllerButtons.LeftBumper, "LeftBumper" },
-            { (int)ControllerButtons.RightBumper, "RightBumper" },
-            { (int)ControllerButtons.LeftTrigger, "Left Trigger" },
-            { (int)ControllerButtons.RightTrigger, "Right Trigger" }
-        };
+            {
+                { (int)ControllerButtons.FaceTop, "FaceTop" },
+                { (int)ControllerButtons.FaceBottom, "FaceBottom" },
+                { (int)ControllerButtons.FaceLeft, "FaceLeft" },
+                { (int)ControllerButtons.FaceRight, "FaceRight" },
+                { (int)ControllerButtons.Start, "Start" },
+                { (int)ControllerButtons.Select, "Select" },
+                { (int)ControllerButtons.LeftStick, "LeftStick" },
+                { (int)ControllerButtons.RightStick, "RightStick" },
+                { (int)ControllerButtons.LeftBumper, "LeftBumper" },
+                { (int)ControllerButtons.RightBumper, "RightBumper" },
+                { (int)ControllerButtons.LeftTrigger, "Left Trigger" },
+                { (int)ControllerButtons.RightTrigger, "Right Trigger" }
+            };
 
             public InputButton(KeyCode key, ControllerButtons controlBtn)
             { this.key = key; controllerButton = controlBtn; }
+
+            public void SetPlayerNumber(int newNumber) { _playerNumber = newNumber; }
 
             public void StateUpdate(bool fixedUpdateHappened, InputType inputType)
             {
@@ -67,9 +69,9 @@ namespace Assault
 
                 if (inputType == InputType.Controller)
                 {
-                    Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton]);
-                    Held = Input.GetButton(k_buttonsToName[(int)controllerButton]);
-                    Up = Input.GetButtonUp(k_buttonsToName[(int)controllerButton]);
+                    Down = Input.GetButtonDown(k_buttonsToName[(int)controllerButton] + _playerNumber);
+                    Held = Input.GetButton(k_buttonsToName[(int)controllerButton] + _playerNumber);
+                    Up = Input.GetButtonUp(k_buttonsToName[(int)controllerButton] + _playerNumber);
                 }
                 else if (inputType == InputType.Keyboard)
                 {
@@ -125,12 +127,13 @@ namespace Assault
 
             public ControllerGrid controllerGrid;
 
+            int _playerNumber;
             ControllerAxes controllerAxisX, controllerAxisY;
 
             [SerializeField] protected bool _enabled = true;
             protected bool _gettingInput = true;
 
-            protected Vector2[] _previousValue = new Vector2[3];
+            protected Vector2[] _previousValues = new Vector2[4];
 
             public Vector2 Value { get; protected set; }
 
@@ -143,7 +146,9 @@ namespace Assault
             { get { return Value.x != 0 || Value.y != 0; } }
             public bool Hard
             { get { return Mathf.Abs(Value.x) == 1f || Mathf.Abs(Value.y) == 1f; } }
+
             public bool Snap { get; protected set; }
+            public bool ReverseSnap { get; protected set; }
 
             public bool Enabled { get { return _enabled; } }
             public bool ReceivingInput { get; protected set; }
@@ -213,6 +218,8 @@ namespace Assault
                 }
             }
 
+            public void SetPlayerNumber(int newNumber) { _playerNumber = newNumber; }
+
             public void StateUpdate(InputType inputType)
             {
                 Snap = false;
@@ -220,13 +227,12 @@ namespace Assault
                 if (!_enabled)
                 {
                     Value = Vector2.zero;
-                    _previousValue = new Vector2[3];
                     return;
                 }
 
-                _previousValue[0] = Value;
-                _previousValue[1] = _previousValue[0];
-                _previousValue[2] = _previousValue[1];
+                _previousValues[0] = Value;
+                _previousValues[1] = _previousValues[0];
+                _previousValues[2] = _previousValues[1];
 
                 if (!_gettingInput) return;
 
@@ -237,7 +243,11 @@ namespace Assault
                 Raw r = new Raw();
                 if (inputType == InputType.Controller)
                 {
-                    float[] values = { Input.GetAxis(k_axisToName[(int)controllerAxisX]), Input.GetAxis(k_axisToName[(int)controllerAxisY]) };
+                    float[] values = 
+                    {
+                        Input.GetAxis(k_axisToName[(int)controllerAxisX] + _playerNumber),
+                        Input.GetAxis(k_axisToName[(int)controllerAxisY] + _playerNumber)
+                    };
                     rawVal = new Vector2(values[0], values[1]);
 
                     for (int i = 0; i < values.Length; i++)
@@ -290,38 +300,30 @@ namespace Assault
                 y.Value = Value.y;
 
                 x.Snap = false; y.Snap = false;
+                x.ReverseSnap = false; y.ReverseSnap = false;
 
                 ReceivingInput = Value.x != 0 || Value.y != 0;
 
-                if (ReceivingInput && inputType == InputType.Controller)
+                if (ReceivingInput)
                 {
-                    if (_previousValue[2] == Vector2.zero)
+                    Vector2 previous = _previousValues[2];
+
+                    if (Mathf.Abs(Value.x) >= 1f)
                     {
-                        if (Mathf.Abs(Value.x) >= 1f)
-                        {
-                            x.Snap = true;
-                        }
-                            
-                        if (Mathf.Abs(Value.y) >= 1f)
+                        bool goodConditions = previous.x == 0 || (Mathf.Sign(Value.x) != Mathf.Sign(previous.x));
+
+                        if (goodConditions)
                         {
                             Snap = true;
-                            y.Snap = true;
-
+                            x.Snap = true;
                         }
                     }
-                }
-                else if (ReceivingInput && inputType == InputType.Keyboard)
-                {
-                    if (_previousValue[2] == Vector2.zero)
+
+                    if (Mathf.Abs(Value.y) >= 1f)
                     {
+                        bool goodConditions = previous.y == 0 || (Mathf.Sign(Value.y) != Mathf.Sign(previous.y));
 
-                        if (Mathf.Abs(Value.x) >= 1f)
-                        {
-                            Snap = true;
-                            x.Snap = true;
-                        }
-
-                        if (Mathf.Abs(Value.y) >= 1f)
+                        if (goodConditions)
                         {
                             Snap = true;
                             y.Snap = true;
@@ -334,7 +336,11 @@ namespace Assault
                 Raws = r;
             }
 
-            public void Enable() { _enabled = true; }
+            public void Enable()
+            {
+                _enabled = true;
+                _previousValues = new Vector2[4];
+            }
             public void Disable() { _enabled = false; }
 
             public void GainControl() { _gettingInput = true; }
@@ -346,13 +352,14 @@ namespace Assault
                     Value = Vector2.zero;
                     ReceivingInput = false;
                 }
-                _previousValue = new Vector2[3];
+                _previousValues = new Vector2[4];
             }
 
             public struct Axis
             {
                 public float Value;
                 public bool Snap;
+                public bool ReverseSnap;
 
                 public bool Hard
                 { get { return Mathf.Abs(Value) == 1f || Mathf.Abs(Value) == 1f; } }
@@ -405,20 +412,22 @@ namespace Assault
             public bool ReceivingInput { get; protected set; }
 
             protected readonly static Dictionary<int, string> k_axisToName = new Dictionary<int, string>
-        {
-        { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
-        { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
-        { (int)ControllerAxes.RightStick_X, "RightStick X" },
-        { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
-        { (int)ControllerAxes.Dpad_X, "Dpad X" },
-        { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
-        };
+            {
+                { (int)ControllerAxes.LeftStick_X, "LeftStick X" },
+                { (int)ControllerAxes.LeftStick_Y, "LeftStick Y" },
+                { (int)ControllerAxes.RightStick_X, "RightStick X" },
+                { (int)ControllerAxes.RightStick_Y, "RightStick Y" },
+                { (int)ControllerAxes.Dpad_X, "Dpad X" },
+                { (int)ControllerAxes.Dpad_Y, "Dpad Y" }
+            };
 
             public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis)
             { positive = posi; negative = nega; contrAxis = controllerAxis; }
 
             public InputAxis(KeyCode posi, KeyCode nega, ControllerAxes contrAxis, float deadzone)
             { positive = posi; negative = nega; controllerAxis = contrAxis; deadzoneValue = deadzone; }
+
+            public void SetPlayerNumber(int newNumber) { _playerNumber = newNumber; }
 
             public void StateUpdate(InputType inputType)
             {
@@ -440,7 +449,7 @@ namespace Assault
                 float val = 0;
                 if (inputType == InputType.Controller)
                 {
-                    val = Input.GetAxis(k_axisToName[(int)controllerAxis]);
+                    val = Input.GetAxis(k_axisToName[(int)controllerAxis] + _playerNumber);
 
                     if (val > 0.9f || val < -0.9f)
                         val = Mathf.Sign(val) * 1f;
@@ -496,6 +505,7 @@ namespace Assault
 
         #endregion
 
+        public int _playerNumber = 1;
         public InputType _inputType = InputType.Keyboard;
 
         bool _fixedUpdateHappened;

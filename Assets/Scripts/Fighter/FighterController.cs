@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Assault.Types;
-using Assault.Maneuvers;
+using Assault.Techniques;
 
 namespace Assault
 {
@@ -33,7 +33,7 @@ namespace Assault
 
         #endregion
 
-        public Maneuver currentManeuver;
+        public Technique currentManeuver;
 
         public FighterState currentState;
         public bool facingRight { get; protected set; }
@@ -64,6 +64,7 @@ namespace Assault
 
         InputCombo _currentCombo;
 
+        public FighterDamager damager { get; protected set; }
         FighterPhysics _physics;
 
         Animator _animator;
@@ -128,14 +129,14 @@ namespace Assault
 
                     Stand();
 
-                    return false;
+                    break;
                 case FighterState.Crouching:
 
                     if (JumpSquat()) return true;
 
                     Stand();
 
-                    return false;
+                    break;
                 case FighterState.Walking:
                     
                     if (JumpSquat()) return true;
@@ -145,7 +146,7 @@ namespace Assault
 
                     Stand();
 
-                    return false;
+                    break;
                 case FighterState.Running:
                     
                     if (JumpSquat()) return true;
@@ -154,14 +155,14 @@ namespace Assault
 
                     Skid();
 
-                    return false;
+                    break;
                 case FighterState.Dashing:
 
                     if (JumpSquat()) return true;
                     if (Dash()) return true;
                     if (RunInit()) return true;
 
-                    return false;
+                    break;
                 case FighterState.Skidding:
 
                     if (JumpSquat()) return true;
@@ -169,10 +170,10 @@ namespace Assault
 
                     Turnaround();
 
-                    return false;
+                    break;
                 case FighterState.JumpSquat:
                     
-                    return false;
+                    break;
                 case FighterState.Jumping:
 
                     AirDrift();
@@ -180,7 +181,7 @@ namespace Assault
                     if (AirJumpSquat()) return true;
                     if (WallJumpSquat()) return true;
 
-                    return false;
+                    break;
                 case FighterState.Aerial:
 
                     AirDrift();
@@ -189,14 +190,14 @@ namespace Assault
                     if (AirJumpSquat()) return true;
                     if (WallJumpSquat()) return true;
 
-                    return false;
+                    break;
                 case FighterState.Tumble:
                     
                     AirDrift();
 
                     if (AirJumpSquat()) return true;
 
-                    return false;
+                    break;
             }
 
             return false;

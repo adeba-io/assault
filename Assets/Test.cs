@@ -8,22 +8,20 @@ namespace Assault
     {
         public bool flip = false;
 
+        Rigidbody2D rb;
+
         // Use this for initialization
         void Start()
         {
-
+            rb = GetComponent<Rigidbody2D>();
         }
 
         // Update is called once per frame
         void Update()
         {
-            transform.position = new Vector3(transform.position.x + Time.deltaTime, transform.position.y, transform.position.z);
+            float hori = Input.GetAxis("Horizontal"), vert = Input.GetAxis("Vertical");
 
-            if (flip)
-            {
-                transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
-                flip = false;
-            }
+            transform.Translate(new Vector3(Random.Range(0, 1), vert) * 3f * Time.deltaTime);
         }
     }
 }
