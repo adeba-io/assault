@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b6f71a7629f5f24cb9608870b72a56d, type: 3}
+  m_Name: New Technique 0
+  m_EditorClassIdentifier: 
+  animationClip: {fileID: 7400000, guid: 02bd5db9be3966543a5404d20ea7a5bb, type: 2}
+  animationTrigger: -1435536942
+  _totalFrameCount: 26
+  _forceFrames: []
+  _accelerateCurveX:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _accelerateCurveY:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _cancellable: 1
+  _cancelRegion:
+    rangeStart: 24
+    rangeEnd: 26
+  _joints:
+  - {fileID: 0}
+  _attacks:
+  - ID: 0
+    priority: 1
+    enableRegion:
+      rangeStart: 5
+      rangeEnd: 10
+    damage: 0
+    knockbackBase: 0
+    knockbackGrowth: 0
+    launchAngle: 0
+    jointID: -1106
+    hitstunType: 0
+    hitbox:
+      parent: {fileID: 0}
+      boxSizeX: 2
+      boxSizeY: 0
+      hitMask:
+        serializedVersion: 2
+        m_Bits: 0
+      drawType: 0
+  _links: []
+  fighterController: {fileID: 0}

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Assault.Types;
-using Assault.Maneuvers;
 
 namespace Assault
 {
@@ -26,7 +25,7 @@ namespace Assault
 
         public bool haveControl { get { return _haveControl; } }
 
-        [HideInInspector] public InputCombo toFeed;
+        [HideInInspector] [SerializeField] public InputCombo toFeed;
 
         private void Start()
         {
@@ -187,7 +186,7 @@ namespace Assault
             {
                 get
                 {
-                    if (index >= _count) return default(InputCombo);
+                    if (index >= _count) return InputCombo.none;
 
                     return new InputCombo
                     {

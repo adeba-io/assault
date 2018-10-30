@@ -16,6 +16,14 @@ namespace Assault
         public Button button;
         public ButtonManeuver buttonManeuver;
 
+        public static InputCombo none
+        {
+            get
+            {
+                return new InputCombo { horizontalControl = HorizontalControl.NEUTRAL, verticalControl = VerticalControl.NEUTRAL, horizontalControlGeneral = HorizontalControlGeneral.NEUTRAL, button = Button.NULL };
+            }
+        }
+
         /// <summary>
         /// Checks to see if the presented InputCombo matches this one
         /// </summary>

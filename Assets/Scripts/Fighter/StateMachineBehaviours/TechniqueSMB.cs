@@ -8,24 +8,23 @@ namespace Assault.StateMachines
     {
         public override void OnSLStatePostEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            _monoBehavior.currentManeuver.Initialize(_monoBehavior);
+            Debug.Log(_monoBehavior);
+            _monoBehavior.InitializeTechnique();
         }
 
         public override void OnSLStateNoTransitionUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            _monoBehavior.currentManeuver.Update();
+            _monoBehavior.UpdateTechnique();
         }
 
         public override void OnSLStatePreExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            _monoBehavior.currentManeuver.End();
-            _monoBehavior.currentManeuver = null;
+            _monoBehavior.EndTechnique();
         }
 
         public override void OnSLStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            _monoBehavior.currentManeuver.End();
-            _monoBehavior.currentManeuver = null;
+            _monoBehavior.EndTechnique();
         }
     }
 }

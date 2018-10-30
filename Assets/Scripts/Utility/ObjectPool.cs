@@ -7,22 +7,12 @@ namespace Assault
 {
     public class ObjectPool : MonoBehaviour
     {
-        public string _poolName = "--- Pooled Objects ---";
         public GameObject _pooledObject;
         [SerializeField] protected int _pooledAmount = 10;
         public bool _willGrow = true;
-
-        protected Transform _poolParent;
+        
         protected List<GameObject> _objects;
-
-        private void Reset()
-        {
-            _poolParent = transform.Find(_poolName);
-            GameObject pool = new GameObject(_poolName);
-            pool.transform.parent = transform;
-            _poolParent = pool.transform;
-        }
-
+        
         private void Start()
         {
             _objects = new List<GameObject>();

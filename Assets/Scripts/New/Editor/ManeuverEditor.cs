@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-using Assault.Maneuvers;
 
 namespace Assault.Editors
 {/*

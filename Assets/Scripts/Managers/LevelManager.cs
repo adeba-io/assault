@@ -23,6 +23,7 @@ namespace Assault.Managers
             Debug.Log("Loading Level: " + sceneName);
 
             SceneManager.LoadScene(sceneName);
+
         }
 
         public void QuitRequest()

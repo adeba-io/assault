@@ -20,12 +20,16 @@ namespace Assault.Editors
         {
             base.OnInspectorGUI();
 
+            serializedObject.Update();
+
             EditorGUILayout.PropertyField(serializedObject.FindProperty("toFeed"), GUIContent.none);
 
             if (GUILayout.Button("Feed Input"))
             {
                 fighterInput.FeedDefined(fighterInput.toFeed);
             }
+
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }

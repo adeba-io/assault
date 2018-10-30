@@ -309,9 +309,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Fighter\FighterController.cs" />
+    <Compile Include="Assets\Scripts\Fighter\HitboxPool.cs" />
     <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\SceneLinkedSMB.cs" />
     <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\TechniqueSMB.cs" />
-    <Compile Include="Assets\Scripts\HitboxPool.cs" />
     <Compile Include="Assets\Scripts\Input\FighterInput.cs" />
     <Compile Include="Assets\Scripts\Input\InputCombo.cs" />
     <Compile Include="Assets\Scripts\Input\InputComponent.cs" />
@@ -322,10 +322,10 @@
     <Compile Include="Assets\Scripts\Managers\OptionsManager.cs" />
     <Compile Include="Assets\Scripts\Managers\PhysicsManager.cs" />
     <Compile Include="Assets\Scripts\Managers\PlayerPrefsManager.cs" />
+    <Compile Include="Assets\Scripts\New\Boxes\Hitbox.cs" />
+    <Compile Include="Assets\Scripts\New\Boxes\InteractionBox.cs" />
     <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
-    <Compile Include="Assets\Scripts\New\InteractionBox.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuver\Maneuver.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuver\Techniqu.cs" />
+    <Compile Include="Assets\Scripts\New\Joint.cs" />
     <Compile Include="Assets\Scripts\New\Maneuver\Technique.cs" />
     <Compile Include="Assets\Scripts\Physics\FighterPhysics.cs" />
     <Compile Include="Assets\Scripts\Physics\PhysicsObject.cs" />
@@ -334,9 +334,9 @@
     <Compile Include="Assets\Scripts\Types.cs" />
     <Compile Include="Assets\Scripts\UI\ControlStickBox.cs" />
     <Compile Include="Assets\Scripts\UI\FadeIn.cs" />
+    <Compile Include="Assets\Scripts\Utility\FighterLibrary.cs" />
     <Compile Include="Assets\Scripts\Utility\IntRange.cs" />
     <Compile Include="Assets\Scripts\Utility\ObjectPool.cs" />
-    <Compile Include="Assets\Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="C:\Users\adeba_iy0jonw\AppData\Local\Unity\cache\packages\packages.unity.com\com.unity.package-manager-ui@1.9.10\Editor\Resources\Styles\Main_Dark.uss" />

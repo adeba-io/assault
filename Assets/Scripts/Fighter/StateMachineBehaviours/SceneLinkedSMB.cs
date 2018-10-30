@@ -26,7 +26,6 @@ namespace Assault.StateMachines
         protected void InternalInitialize(Animator animator, TMonoBehaviour monoBehaviour)
         {
             _monoBehavior = monoBehaviour;
-            
         }
 
         public sealed override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex, AnimatorControllerPlayable controller)

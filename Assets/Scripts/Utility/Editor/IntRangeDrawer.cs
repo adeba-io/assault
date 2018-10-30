@@ -36,7 +36,7 @@ public class IntRangeDrawer : PropertyDrawer
         else range = (IntRangeAttribute)attribute;
 
         position.height = EditorGUIUtility.singleLineHeight;
-        float buffer = position.width * 0.02f;
+        float posWidth = position.width;
 
         EditorGUI.BeginProperty(position, label, property);
 
@@ -48,81 +48,44 @@ public class IntRangeDrawer : PropertyDrawer
         position.y += EditorGUIUtility.singleLineHeight;
         position.width *= 0.98f;
 
-        Rect minLimitRect = new Rect(position.x + (position.width * 0.1f), position.y, (position.width * 0.1f) - buffer, position.height);
-        Rect minValueRect = new Rect(position.x + (position.width * 0.2f), position.y, (position.width * 0.1f) - buffer, position.height);
-        Rect sliderRect = new Rect(position.x + (position.width * 0.3f), position.y, (position.width * 0.5f) - buffer, position.height);
-        Rect maxValueRect = new Rect(position.x + (position.width * 0.8f), position.y, (position.width * 0.1f) - buffer, position.height);
-        Rect maxLimitRect = new Rect(position.x + (position.width * 0.9f), position.y, (position.width * 0.1f) - buffer, position.height);
+        Rect rect_minLimit = new Rect(position.x + (posWidth * 0.02f), position.y, posWidth * 0.08f, EditorGUIUtility.singleLineHeight);
+        Rect rect_minValue = new Rect(rect_minLimit.xMax, rect_minLimit.y, posWidth * 0.15f, rect_minLimit.height);
+        Rect rect_slider = new Rect(rect_minValue.xMax, rect_minValue.y, posWidth * 0.5f, rect_minLimit.height);
+        Rect rect_maxValue = new Rect(rect_slider.xMax, rect_slider.y, rect_minValue.width, rect_minLimit.height);
+        Rect rect_maxLimit = new Rect(rect_maxValue.xMax, rect_maxValue.y, rect_minLimit.width, rect_minLimit.height);
 
         float minVal = minValue.intValue;
         float maxVal = maxValue.intValue;
 
-        EditorGUI.MinMaxSlider(sliderRect, ref minVal, ref maxVal, range.minLimit, range.maxLimit);
+        EditorGUI.MinMaxSlider(rect_slider, ref minVal, ref maxVal, range.minLimit, range.maxLimit);
 
         // Deals with rounding on negative
         int newMinVal = (int)(minVal - range.minLimit) + range.minLimit;
         int newMaxVal = (int)(maxVal - range.minLimit) + range.minLimit;
 
-        EditorGUI.LabelField(minLimitRect, range.minLimit.ToString(), new GUIStyle { alignment = TextAnchor.MiddleCenter });
-        EditorGUI.LabelField(maxLimitRect, range.maxLimit.ToString(), new GUIStyle { alignment = TextAnchor.MiddleCenter });
+        EditorGUI.LabelField(rect_minLimit, range.minLimit.ToString(), new GUIStyle { alignment = TextAnchor.MiddleCenter });
+        EditorGUI.LabelField(rect_maxLimit, range.maxLimit.ToString(), new GUIStyle { alignment = TextAnchor.MiddleCenter });
 
-        newMinVal = EditorGUI.IntField(minValueRect, newMinVal);
-        newMaxVal = EditorGUI.IntField(maxValueRect, newMaxVal);
+        newMinVal = EditorGUI.IntField(rect_minValue, newMinVal);
+        newMaxVal = EditorGUI.IntField(rect_maxValue, newMaxVal);
 
         newMinVal = Mathf.Clamp(newMinVal, range.minLimit, newMaxVal - 1);
         newMaxVal = Mathf.Clamp(newMaxVal, newMinVal, range.maxLimit);
+
+        if (newMinVal == newMaxVal)
+        {
+            newMaxVal++;
+
+            if (newMaxVal > range.maxLimit)
+            {
+                newMaxVal = range.maxLimit;
+                newMinVal--;
+            }
+        }
 
         minValue.intValue = (int)newMinVal;
         maxValue.intValue = (int)newMaxVal;
 
         EditorGUI.EndProperty();
-        /*
-        float newMin = minValue.intValue;
-        float newMax = maxValue.intValue;
-
-        float xDivision = position.width * 0.5f;
-        float xLabelDiv = xDivision * 0.125f;
-
-        float yDivision = position.height * 0.5f;
-        EditorGUI.LabelField(new Rect(position.x, position.y, xDivision, yDivision), label);
-
-        Rect mmRect = new Rect(position.x + xDivision + xLabelDiv, position.y, position.width - (xDivision + (xLabelDiv * 2f)), yDivision);
-
-        EditorGUI.MinMaxSlider(mmRect, ref newMin, ref newMax, range.minLimit, range.maxLimit);
-
-        // Deals with rounding on negatives
-        int newMinI = (int)(newMin - (float)range.minLimit) + range.minLimit;
-        int newMaxI = (int)(newMax - (float)range.minLimit) + range.minLimit;
-
-        // Left Label
-        Rect minRangeRect = new Rect(position.x + xDivision, position.y, xLabelDiv, yDivision);
-        minRangeRect.x += xLabelDiv * 0.5f - 12f;
-        minRangeRect.width = 24f;
-        EditorGUI.LabelField(minRangeRect, range.minLimit.ToString());
-
-        // Right Label
-        Rect maxRangeRect = new Rect(minRangeRect);
-        maxRangeRect.x = mmRect.xMax + (xLabelDiv * 0.5f) - 12f;
-        maxRangeRect.width = 24f;
-        EditorGUI.LabelField(maxRangeRect, range.maxLimit.ToString());
-
-        int totalRange = Mathf.Max(range.maxLimit - range.minLimit, 1);
-        Rect minLabelRect = new Rect(mmRect);
-        minLabelRect.x = minLabelRect.x + minLabelRect.width * ((newMin - range.minLimit) / totalRange);
-        minLabelRect.x -= 12;
-        minLabelRect.y += yDivision;
-        minLabelRect.width = 24;
-        newMinI = Mathf.Clamp(EditorGUI.IntField(minLabelRect, newMinI), range.minLimit, newMaxI);
-
-        Rect maxLabelRect = new Rect(mmRect);
-        maxLabelRect.x = maxLabelRect.x + maxLabelRect.width * ((newMax - range.minLimit) / totalRange);
-        maxLabelRect.x -= 12;
-        maxLabelRect.x = Mathf.Max(maxLabelRect.x, minLabelRect.xMax);
-        maxLabelRect.y += yDivision;
-        maxLabelRect.width = 24;
-        newMaxI = Mathf.Clamp(EditorGUI.IntField(maxLabelRect, newMaxI), newMinI, range.maxLimit);
-
-        minValue.intValue = (int)newMinI;
-        maxValue.intValue = (int)newMaxI;*/
     }
 }

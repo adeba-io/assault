@@ -7,6 +7,8 @@ using Assault.Techniques;
 namespace Assault
 {
     [RequireComponent(typeof(FighterPhysics), typeof(FighterInput))]
+    [RequireComponent(typeof(FighterDamager))]
+    [RequireComponent(typeof(Animator))]
     public class FighterController : MonoBehaviour
     {
         const FighterState GROUNDED_IN_CONTROL = FighterState.Standing | FighterState.Crouching | FighterState.Running | FighterState.Dashing;
@@ -33,9 +35,9 @@ namespace Assault
 
         #endregion
 
-        public Technique currentManeuver;
+        public Technique currentTechnique { get; set; }
 
-        public FighterState currentState;
+        public FighterState currentState { get; protected set; }
         public bool facingRight { get; protected set; }
 
         public Vector2 nextForce;
@@ -44,21 +46,22 @@ namespace Assault
         [SerializeField] float _walkAcceleration = 4f, _maxWalkSpeed = 2f;
 
         [SerializeField] float _runAcceleration = 6f, _maxRunSpeed = 7f;
-        [SerializeField] float _maxSlowRunSpeed = 4f;
-
-        [SerializeField] float _airAcceleration = 6f, _maxAirSpeed = 4f;
-
-        [SerializeField] float _jumpForce = 8f;
-        [SerializeField] float _aerialJumpForce = 6f;
-        [SerializeField] int _maxAirJumps = 3;
-        int _airJumpsLeft;
 
         [SerializeField] float _dashForce = 5f;
 
+        [SerializeField] float _airAcceleration = 6f, _maxAirSpeed = 4f;
+        [SerializeField] float _airDashForce = 4f;
+
+        [SerializeField] float _jumpForce = 8f;
+        [SerializeField] float _airJumpForce = 6f;
+        [SerializeField] int _maxAirJumps = 3;
+        [SerializeField] int _airJumpsLeft;
+
         [SerializeField] Vector2 _wallJumpForce = new Vector2(3f, 2f);
 
+        [SerializeField] InputComboTechniquePair[] _standing;
+
         bool _cancelToDash = true;
-        bool canCancel = true;
         bool _canFastFall = false;
         bool _cancelToRun = false;
 
@@ -76,8 +79,11 @@ namespace Assault
 
             _physics = GetComponent<FighterPhysics>();
             _animator = GetComponent<Animator>();
+            damager = GetComponent<FighterDamager>();
 
             _animator.SetBool(anim_GROUNDED, true);
+
+            StateMachines.SceneLinkedSMB<FighterController>.Initialize(_animator, this);
 
             _airJumpsLeft = _maxAirJumps;
             _wallJumpForce = new Vector2(Mathf.Abs(_wallJumpForce.x), Mathf.Abs(_wallJumpForce.y));
@@ -86,11 +92,6 @@ namespace Assault
         private void Update()
         {
             UpdateState();
-        }
-
-        public void UpdateManeuver()
-        {
-
         }
 
         void UpdateState()
@@ -114,6 +115,20 @@ namespace Assault
             }
         }
 
+        public void FindNewState()
+        {
+            if (_physics.isGrounded)
+            {
+                SetState(FighterState.Standing);
+            }
+            else
+            {
+                SetState(FighterState.Aerial);
+            }
+        }
+
+
+
         public bool ReceiveInput(InputCombo inputCombo)
         {
             _currentCombo = inputCombo;
@@ -122,6 +137,8 @@ namespace Assault
             switch (currentState)
             {
                 case FighterState.Standing:
+
+                    if (CheckForInputCombo(_standing)) return true;
 
                     if (JumpSquat()) return true;
                     if (Dash()) return true;
@@ -198,6 +215,11 @@ namespace Assault
                     if (AirJumpSquat()) return true;
 
                     break;
+                case FighterState.MidTechnique:
+
+
+
+                    break;
             }
 
             return false;
@@ -219,6 +241,67 @@ namespace Assault
             }
         }
 
+        #region Technique Methods
+
+        bool CheckForInputCombo(InputComboTechniquePair[] iCTPairs)
+        {
+            for (int i = 0; i < iCTPairs.Length; i++)
+            {
+                if (iCTPairs[i].inputCombo == InputCombo.none)
+                    continue;
+
+                if (_currentCombo == iCTPairs[i].inputCombo)
+                {
+                    currentTechnique = iCTPairs[i].technique;
+                    _animator.SetTrigger(currentTechnique.animationTrigger);
+                    SetState(FighterState.MidTechnique);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void InitializeTechnique()
+        {
+            if (!currentTechnique)
+            {
+                Debug.LogWarning("Attempted to Initialize non existent technique");
+                return;
+            }
+
+            currentTechnique.Initialize(this);
+        }
+
+        public void UpdateTechnique()
+        {
+            if (!currentTechnique)
+            {
+                Debug.LogWarning("Attempted to Update non existent technique");
+                return;
+            }
+
+            currentTechnique.Update();
+        }
+
+        public void EndTechnique()
+        {
+            if (!currentTechnique)
+            {
+                Debug.LogWarning("Attempted to End non existent technique");
+                return;
+            }
+
+            currentTechnique.End();
+            currentTechnique = null;
+
+            FindNewState();
+        }
+
+
+        #endregion
+
         public void CanFastFall() { _canFastFall = true; }
 
         #region Jump
@@ -227,7 +310,7 @@ namespace Assault
         {
             currentState = FighterState.Jumping;
 
-            float jump = _physics.isGrounded ? _jumpForce : _aerialJumpForce;
+            float jump = _physics.isGrounded ? _jumpForce : _airJumpForce;
 
             if (_physics.internalVelocity.x > 0 && _currentCombo == HorizontalControlGeneral.Left)
                 _physics.ResetRigidbody(this, resetY: false);
@@ -332,7 +415,6 @@ namespace Assault
             if (_currentCombo == HorizontalControl.NEUTRAL) return false;
             if (_currentCombo == ControlManeuver.Snap) return false;
             if (_currentCombo == ControlManeuver.Soft) return false;
-           // if (!_cancelToRun) return false;
             
             Vector2 run = Vector2.zero;
 

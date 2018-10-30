@@ -37,6 +37,14 @@ namespace Assault.Techniques
     { public InputCombo inputCombo; }
 
     [System.Serializable]
+    public class TechniqueNode : Node
+    { public Technique technique; } 
+    
+    [System.Serializable]
+    public class InputComboTechniquePair
+    { public InputCombo inputCombo; public Technique technique; }
+
+    [System.Serializable]
     public struct VectorFrame
     { public Vector2 vector; public int frame; }
 
@@ -57,8 +65,10 @@ namespace Assault.Techniques
         [IntRange(0, 60)] [SerializeField]
         IntRange _cancelRegion;
 
+        [SerializeField] Joint[] _joints;
         [SerializeField] Attack[] _attacks;
-        [SerializeField] InputComboNode[] _links;
+
+        [SerializeField] InputComboTechniquePair[] _links;
 
         public int currentFrame { get; protected set; }
         public int totalFrameCount { get { return _totalFrameCount; } }
@@ -66,7 +76,7 @@ namespace Assault.Techniques
         public bool canCancel { get; protected set; }
         public bool cancellable { get { return _cancellable; } }
 
-        public FighterController fighterController { get; protected set; }
+        public FighterController fighterController;
         public FighterDamager fighterDamager { get; protected set; }
 
         public Technique() { }
@@ -75,6 +85,9 @@ namespace Assault.Techniques
         {
             fighterController = controller;
             fighterDamager = controller.damager;
+
+            fighterController.SetState(FighterState.MidTechnique);
+
             currentFrame = 0;
             canCancel = false;
         }
@@ -82,6 +95,7 @@ namespace Assault.Techniques
         public void Update()
         {
             currentFrame++;
+            Debug.Log(name + ": " + currentFrame);
 
             for (int i = 0; i < _forceFrames.Length; i++)
             {
@@ -92,8 +106,8 @@ namespace Assault.Techniques
 
             for (int i = 0; i < _attacks.Length; i++)
             {
-                if (_attacks[i].enableRegion.WithinRange(currentFrame)) _attacks[i].Enable(fighterDamager);
-                else if (_attacks[i].enabled && !_attacks[i].enableRegion.WithinRange(currentFrame)) _attacks[i].Disable();
+                if (_attacks[i].enableRegion.rangeStart == currentFrame) _attacks[i].Enable(fighterDamager);
+                else if (_attacks[i].enabled && !_attacks[i].enableRegion.WithinRange(currentFrame)) _attacks[i].Disable(fighterDamager);
             }
 
             if (cancellable)
@@ -102,45 +116,43 @@ namespace Assault.Techniques
 
         public void End()
         {
-            fighterController.currentManeuver = null;
+            
         }
     }
 
     [System.Serializable]
-    struct Attack
+    public struct Attack
     {
+        public int ID;
+
+        public int priority;
+
         [IntRange(0, 60)] public IntRange enableRegion;
 
         public float damage;
 
-        public float baseKnockback;
+        public float knockbackBase;
         public float knockbackGrowth;
-        public float launchAngle;
-        public float launchSpeed;
+        public int launchAngle;
 
+        public int jointID;
         public HitstunType hitstunType;
-        public Transform joint;
 
-        public List<InteractionBox> hitboxes;
+        public InteractionBoxData hitbox;
 
         public bool enabled { get; private set; }
 
         public void Enable(FighterDamager damager)
         {
-            for (int i = 0; i < hitboxes.Count; i++)
-            {
-                hitboxes[i].Enable(damager.gameObject, joint);
-            }
+            hitbox.ID = ID;
+            damager.ActivateHitbox(hitbox, jointID);
 
             enabled = true;
         }
 
-        public void Disable()
+        public void Disable(FighterDamager damager)
         {
-            for (int i = 0; i < hitboxes.Count; i++)
-            {
-                hitboxes[i].Disable();
-            }
+            damager.DeactivateHitbox(ID);
 
             enabled = false;
         }

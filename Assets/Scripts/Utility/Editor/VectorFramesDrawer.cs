@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-[CustomPropertyDrawer(typeof(Assault.Maneuvers.VectorFrame))]
+[CustomPropertyDrawer(typeof(Assault.Techniques.VectorFrame))]
 public class VectorFramesDrawer : PropertyDrawer
 {
     float _buffer = 5f;
@@ -17,6 +17,9 @@ public class VectorFramesDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        if (property.FindPropertyRelative("frame").intValue == 0)
+            property.FindPropertyRelative("frame").intValue = 1;
+
         Rect vectorLabel = new Rect(position.x, position.y, position.width / 8f, position.height);
         Rect vectorRect = new Rect(vectorLabel.x + vectorLabel.width, position.y, (position.width * (3f / 8f)) - _buffer, position.height);
         Rect frameLabel = new Rect(vectorRect.x + vectorRect.width + _buffer, position.y, position.width / 8f, position.height);
