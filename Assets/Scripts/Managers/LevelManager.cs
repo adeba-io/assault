@@ -1,12 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Linq;
 
 namespace Assault.Managers
 {
     public class LevelManager : MonoBehaviour
     {
-        public float _loadOffSplashScreenTime = 5f;
+        [SerializeField] float _loadOffSplashScreenTime = 5f;
 
         private void Start()
         {
@@ -23,7 +24,6 @@ namespace Assault.Managers
             Debug.Log("Loading Level: " + sceneName);
 
             SceneManager.LoadScene(sceneName);
-
         }
 
         public void QuitRequest()

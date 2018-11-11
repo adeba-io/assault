@@ -50,6 +50,13 @@ namespace Assault.Utility
                 return "Assets/Entities/Fighters/" + name + "/Techniques/Grounded";
             return "";
         }
+
+        public static string GetMyAerialTechniqueDirectory(string name)
+        {
+            if (Directory.Exists(GetMyFighterDirectory(name) + "\\Techniques\\Aerial\\"))
+                return "Assets/Entities/Fighters/" + name + "/Techniques/Aerial";
+            return "";
+        }
     }
 
     [Serializable]

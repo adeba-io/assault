@@ -441,22 +441,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5342d764331fdef4e905a8caa1f0fed4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentManeuver: {fileID: 0}
-  currentState: 0
   nextForce: {x: 0, y: 0}
   currentAccelerate: {x: 0, y: 0}
   _walkAcceleration: 10
   _maxWalkSpeed: 2
   _runAcceleration: 6
   _maxRunSpeed: 10
-  _maxSlowRunSpeed: 4
+  _dashForce: 10
   _airAcceleration: 23
   _maxAirSpeed: 6
+  _airDashForce: 4
   _jumpForce: 20
-  _aerialJumpForce: 19
+  _airJumpForce: 6
   _maxAirJumps: 3
-  _dashForce: 10
-  _wallJumpForce: {x: 9, y: 16}
+  _airJumpsLeft: 0
+  _wallJumpForce: {x: 9, y: 10}
+  _standingTechniques: []
+  _runningTechniques: []
+  _jumpingTechniques: []
+  _aerialTechniques: []
 --- !u!114 &6116782232650991815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -469,6 +472,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2a9ce853b88382468fa31af6973b4e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _playerNumber: 1
   _inputType: 1
   Control:
     positiveX: 275
@@ -508,6 +512,13 @@ MonoBehaviour:
     controllerButton: 9
     _playerNumber: 0
     _enabled: 1
+  toFeed:
+    horizontalControl: 0
+    verticalControl: 0
+    controlManeuver: 0
+    horizontalControlGeneral: 0
+    button: 0
+    buttonManeuver: 0
 --- !u!114 &6116782232650991809
 MonoBehaviour:
   m_ObjectHideFlags: 0

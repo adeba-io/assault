@@ -88,8 +88,8 @@ namespace Assault
                 case ControlManeuver.ANY:
                     direcManeu = "";
                     break;
-                case ControlManeuver.Snap:
-                    direcManeu = "Snap ";
+                case ControlManeuver.DoubleSnap:
+                    direcManeu = "Double Snap ";
                     break;
                 default:
                     direcManeu = controlManeuver.ToString() + " ";

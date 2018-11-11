@@ -308,35 +308,44 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Fighter\FighterController.cs" />
-    <Compile Include="Assets\Scripts\Fighter\HitboxPool.cs" />
-    <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\SceneLinkedSMB.cs" />
-    <Compile Include="Assets\Scripts\Fighter\StateMachineBehaviours\TechniqueSMB.cs" />
-    <Compile Include="Assets\Scripts\Input\FighterInput.cs" />
+    <Compile Include="Assets\Scripts\Character\MonoBehaviours\AssaultEntity.cs" />
+    <Compile Include="Assets\Scripts\Character\MonoBehaviours\FighterController.cs" />
+    <Compile Include="Assets\Scripts\Character\MonoBehaviours\FighterDamageable.cs" />
+    <Compile Include="Assets\Scripts\Character\MonoBehaviours\FighterDamager.cs" />
+    <Compile Include="Assets\Scripts\Character\MonoBehaviours\HitboxPool.cs" />
+    <Compile Include="Assets\Scripts\Character\MonoBehaviours\Joint.cs" />
+    <Compile Include="Assets\Scripts\Character\ScriptableObjects\Technique.cs" />
+    <Compile Include="Assets\Scripts\Character\StateMachineBehaviours\SceneLinkedSMB.cs" />
+    <Compile Include="Assets\Scripts\Character\StateMachineBehaviours\TechniqueSMB.cs" />
+    <Compile Include="Assets\Scripts\Hitbox\MonoBehaviour\BlastBox.cs" />
+    <Compile Include="Assets\Scripts\Hitbox\MonoBehaviour\BlastZone.cs" />
+    <Compile Include="Assets\Scripts\Hitbox\MonoBehaviour\Hitbox.cs" />
+    <Compile Include="Assets\Scripts\Hitbox\MonoBehaviour\Hurtbox.cs" />
+    <Compile Include="Assets\Scripts\Hitbox\MonoBehaviour\InteractionBox.cs" />
     <Compile Include="Assets\Scripts\Input\InputCombo.cs" />
-    <Compile Include="Assets\Scripts\Input\InputComponent.cs" />
+    <Compile Include="Assets\Scripts\Input\MonoBehaviours\FighterInput.cs" />
+    <Compile Include="Assets\Scripts\Input\MonoBehaviours\InputComponent.cs" />
+    <Compile Include="Assets\Scripts\Input\MonoBehaviours\SelectionInput.cs" />
+    <Compile Include="Assets\Scripts\Managers\FighterManager.cs" />
     <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
-    <Compile Include="Assets\Scripts\Managers\InteractionManager.cs" />
     <Compile Include="Assets\Scripts\Managers\LevelManager.cs" />
     <Compile Include="Assets\Scripts\Managers\MusicManager.cs" />
     <Compile Include="Assets\Scripts\Managers\OptionsManager.cs" />
     <Compile Include="Assets\Scripts\Managers\PhysicsManager.cs" />
     <Compile Include="Assets\Scripts\Managers\PlayerPrefsManager.cs" />
-    <Compile Include="Assets\Scripts\New\Boxes\Hitbox.cs" />
-    <Compile Include="Assets\Scripts\New\Boxes\InteractionBox.cs" />
-    <Compile Include="Assets\Scripts\New\FighterDamager.cs" />
-    <Compile Include="Assets\Scripts\New\Joint.cs" />
-    <Compile Include="Assets\Scripts\New\Maneuver\Technique.cs" />
-    <Compile Include="Assets\Scripts\Physics\FighterPhysics.cs" />
-    <Compile Include="Assets\Scripts\Physics\PhysicsObject.cs" />
-    <Compile Include="Assets\Scripts\Playable\Boxes\HitBox.cs" />
-    <Compile Include="Assets\Scripts\Terrain\Platform.cs" />
-    <Compile Include="Assets\Scripts\Types.cs" />
+    <Compile Include="Assets\Scripts\Physics\MonoBehaviour\FighterPhysics.cs" />
+    <Compile Include="Assets\Scripts\Physics\MonoBehaviour\PhysicsObject.cs" />
+    <Compile Include="Assets\Scripts\Terrain\MonoBehaviours\Platform.cs" />
+    <Compile Include="Assets\Scripts\Terrain\MonoBehaviours\Stage.cs" />
     <Compile Include="Assets\Scripts\UI\ControlStickBox.cs" />
     <Compile Include="Assets\Scripts\UI\FadeIn.cs" />
+    <Compile Include="Assets\Scripts\UI\Selection Screens\SelectionPointer.cs" />
+    <Compile Include="Assets\Scripts\UI\Selection Screens\SelectionScreen.cs" />
+    <Compile Include="Assets\Scripts\UI\Selection Screens\SelectorPanel.cs" />
     <Compile Include="Assets\Scripts\Utility\FighterLibrary.cs" />
     <Compile Include="Assets\Scripts\Utility\IntRange.cs" />
     <Compile Include="Assets\Scripts\Utility\ObjectPool.cs" />
+    <Compile Include="Assets\Scripts\Utility\Types.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="C:\Users\adeba_iy0jonw\AppData\Local\Unity\cache\packages\packages.unity.com\com.unity.package-manager-ui@1.9.10\Editor\Resources\Styles\Main_Dark.uss" />

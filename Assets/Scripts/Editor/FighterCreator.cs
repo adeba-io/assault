@@ -60,7 +60,7 @@ namespace Assault.Editors
 
             string prefabPath = "Assets/Entities/Fighters/" + _newCharacterName + "/" + _newCharacterName + ".prefab";
 
-            GameObject fighter = new GameObject(_newCharacterName, typeof(FighterController));
+            GameObject fighter = new GameObject(_newCharacterName, typeof(FighterController), typeof(FighterDamager), typeof(FighterDamageable));
             GameObject renderer = new GameObject("Renderer", typeof(SpriteRenderer));
             renderer.transform.SetParent(fighter.transform);
 

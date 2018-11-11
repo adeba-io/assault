@@ -43,4 +43,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c389d630c0bb0eb4b94c2342bd2cda39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _stageNames:
+  - 03 Stage 1
   _FPSUpdateInterval: 0.5

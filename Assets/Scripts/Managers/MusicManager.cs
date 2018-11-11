@@ -35,14 +35,14 @@ namespace Assault.Managers
         {
             Debug.Log("Loaded Level: " + scene.name + "; Build Index: " + scene.buildIndex + "; Load Mode: " + mode.ToString());
 
-            AudioClip currLevelMusic = SearchSceneMusicArray(scene.buildIndex).GetRandomAudioClip();
+            SceneAudioPair currSceneAudioPair = SearchSceneMusicArray(scene.buildIndex);
 
-            if (currLevelMusic)
+            if (currSceneAudioPair)
             {
-                Debug.Log("Playing clip: " + currLevelMusic.name);
-                _audioSource.clip = currLevelMusic;
+                _audioSource.clip = currSceneAudioPair.GetRandomAudioClip();
                 _audioSource.loop = true;
                 _audioSource.Play();
+                Debug.Log("Playing clip: " + _audioSource.clip.name);
             }
         }
 
@@ -82,6 +82,11 @@ namespace Assault.Managers
             {
                 return null;
             }
+        }
+
+        public static implicit operator bool(SceneAudioPair audioPair)
+        {
+            return audioPair != null;
         }
     }
 }

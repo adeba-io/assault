@@ -16,8 +16,10 @@ namespace Assault
         public Text _rawX, _rawY;
 
         public Image _snapX, _snapY;
+        public Image _doubleSnapX, _doubleSnapY;
 
         int _snapStartX, _snapStartY;
+        int _dSnapStartX, _dSnapStartY;
         int _snapInterval = 3;
 
         RectTransform _stickRectTransform;
@@ -55,8 +57,18 @@ namespace Assault
                 _snapX.color = Color.green;
             }
 
+            if (Input.Control.X.DoubleSnap)
+            {
+                print(Time.frameCount);
+                _dSnapStartX = Time.frameCount;
+                _doubleSnapX.color = Color.green;
+            }
+
             if (Time.frameCount - _snapStartX == _snapInterval)
             { _snapX.color = Color.red; }
+
+            if (Time.frameCount - _dSnapStartX == _snapInterval)
+            { _doubleSnapX.color = Color.red; }
         }
 
         void SnapY()
@@ -67,8 +79,18 @@ namespace Assault
                 _snapY.color = Color.green;
             }
 
+            if (Input.Control.Y.DoubleSnap)
+            {
+                print(Time.frameCount);
+                _dSnapStartY = Time.frameCount;
+                _doubleSnapY.color = Color.green;
+            }
+
             if (Time.frameCount - _snapStartY == _snapInterval)
             { _snapY.color = Color.red; }
+
+            if (Time.frameCount - _dSnapStartY == _snapInterval)
+            { _doubleSnapY.color = Color.red; }
         }
     }
 }

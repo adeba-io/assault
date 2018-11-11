@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b6f71a7629f5f24cb9608870b72a56d, type: 3}
+  m_Name: Let it Rip
+  m_EditorClassIdentifier: 
+  animationClip: {fileID: 7400000, guid: 5b7abb53e102731418819b551c586fbd, type: 2}
+  animationTrigger: 1675303972
+  _totalFrameCount: 48
+  _forceFrames: []
+  _accelerateCurveX:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _accelerateCurveY:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _cancellable: 0
+  _cancelFrame: 0
+  _attacks:
+  - ID: 0
+    priority: 0
+    enableRegion:
+      rangeStart: 3
+      rangeEnd: 40
+    damage: 20
+    knockbackType: 0
+    knockbackBase: 40
+    knockbackGrowth: 9
+    launchAngle: 89
+    jointID: 4
+    joint: {fileID: 0}
+    hitstunType: 0
+    hitbox:
+      ID: 0
+      parent: {fileID: 0}
+      boxSize: {x: 1, y: 1}
+      offset: {x: 0, y: 0}
+      boxSizeX: 2.3
+      boxSizeY: 0
+      offsetX: 0
+      offsetY: 0
+      rotation: 0
+      hitMask:
+        serializedVersion: 2
+        m_Bits: 0
+      drawType: 0
+  _links: []
+  fighterController: {fileID: 0}

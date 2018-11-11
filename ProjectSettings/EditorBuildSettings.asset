@@ -15,7 +15,13 @@ EditorBuildSettings:
     path: Assets/_Scenes/01b Options.unity
     guid: 6787d002ff0c9d6459bcb39e4822e928
   - enabled: 1
-    path: Assets/_Scenes/03 Stage 1.unity
+    path: Assets/_Scenes/02a Stage Select.unity
+    guid: ca09765a01500db46889e3a699376f5e
+  - enabled: 1
+    path: Assets/_Scenes/02b Character Select.unity
+    guid: 14f41f25c8ebd584dbd00194ea90d21e
+  - enabled: 1
+    path: Assets/_Scenes/Stages/03 Stage 1.unity
     guid: 38896fd2755fcff458acd4aa0230c192
   - enabled: 1
     path: Assets/_Scenes/Testing Zone.unity
