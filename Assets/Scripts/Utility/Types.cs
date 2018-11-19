@@ -31,7 +31,8 @@ namespace Assault
 
             MidTech = 0x2000,
             MidTechnique = 0x4000,
-            Hitstun = 0x8000
+            Hitstun = 0x8000,
+            Landing = 0x10000
         }
 
         #region Input Enums

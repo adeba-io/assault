@@ -7,7 +7,28 @@ namespace Assault.Managers
 {
     public class LevelManager : MonoBehaviour
     {
+        public static LevelManager LM { get; protected set; }
+
         [SerializeField] float _loadOffSplashScreenTime = 5f;
+
+        [SerializeField] string _stageSelectScreen = "02a Stage Select";
+        [SerializeField] string _characterSelectScreen = "02b Character Select";
+        [SerializeField] string _mainMenu = "01a Main Menu";
+
+        public string stageSelectScreen { get { return _stageSelectScreen; } }
+        public string characterSelectScreen { get { return _characterSelectScreen; } }
+        public string mainMenu { get { return _mainMenu; } }
+
+        private void Awake()
+        {
+            if (LM == null)
+            {
+                LM = this;
+                DontDestroyOnLoad(this);
+            }
+            else
+                Destroy(gameObject);
+        }
 
         private void Start()
         {
@@ -38,6 +59,21 @@ namespace Assault.Managers
         public void LoadNextLevel()
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        }
+
+        public void LoadStageSelectScreen()
+        {
+            SceneManager.LoadScene(_stageSelectScreen);
+        }
+
+        public void LoadCharacterSelectScreen()
+        {
+            SceneManager.LoadScene(_characterSelectScreen);
+        }
+
+        public void LoadMainMenu()
+        {
+            SceneManager.LoadScene(_mainMenu);
         }
     }
 }

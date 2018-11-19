@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animationClip: {fileID: 7400000, guid: 02bd5db9be3966543a5404d20ea7a5bb, type: 2}
   animationTrigger: -825488659
+  _type: 0
   _totalFrameCount: 26
   _forceFrames: []
   _accelerateCurveX:
@@ -94,5 +95,17 @@ MonoBehaviour:
         serializedVersion: 2
         m_Bits: 0
       drawType: 1
-  _links: []
+  _links:
+  - inputCombo:
+      horizontalControl: 0
+      verticalControl: 0
+      controlManeuver: 0
+      horizontalControlGeneral: 0
+      button: 0
+      buttonManeuver: 0
+    technique: {fileID: 11400000, guid: 2cccab8316b8dac419d6c027c959e64e, type: 2}
+    linkCondition: 0
+    conditionRegion:
+      rangeStart: 37
+      rangeEnd: 60
   fighterController: {fileID: 0}

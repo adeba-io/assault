@@ -17,7 +17,10 @@ public class IntRangeDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        return EditorGUIUtility.singleLineHeight + 16f;
+        float height = EditorGUIUtility.singleLineHeight;
+        if (label != GUIContent.none) height += EditorGUIUtility.singleLineHeight;
+
+        return height;
     }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -40,12 +43,14 @@ public class IntRangeDrawer : PropertyDrawer
 
         EditorGUI.BeginProperty(position, label, property);
 
-        EditorGUI.LabelField(position, label);
+        if (label != GUIContent.none)
+            EditorGUI.LabelField(position, label);
 
         SerializedProperty minValue = property.FindPropertyRelative("rangeStart");
         SerializedProperty maxValue = property.FindPropertyRelative("rangeEnd");
 
-        position.y += EditorGUIUtility.singleLineHeight;
+        if (label != GUIContent.none)
+            position.y += EditorGUIUtility.singleLineHeight;
         position.width *= 0.98f;
 
         Rect rect_minLimit = new Rect(position.x + (posWidth * 0.02f), position.y, posWidth * 0.08f, EditorGUIUtility.singleLineHeight);

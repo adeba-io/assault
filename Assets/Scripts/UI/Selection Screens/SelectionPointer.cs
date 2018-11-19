@@ -8,46 +8,88 @@ namespace Assault.UI
     [RequireComponent(typeof(SelectionInput))]
     public class SelectionPointer : MonoBehaviour
     {
-        public float _movementSpeed = 50f;
-        public RectTransform selectPanel;
+        [SerializeField] float _movementSpeed = 300f;
+        [SerializeField] int _playerNumber;
+        
+        public SelectorPanel _currPanel;
 
+        public int playerNumber { get { return _playerNumber; } }
+        public SelectionScreen selectionScreen { get; set; }
         public SelectorPanel[] selectorPanels { get; set; }
+        public PreviewImage previewSpace;
 
         SelectionInput Input;
         RectTransform _rectTransform;
 
-        private void Start()
+        private void Awake()
         {
             Input = GetComponent<SelectionInput>();
             _rectTransform = GetComponent<RectTransform>();
-            Debug.Log(selectPanel.rect);
+            
+            SetPlayerNumber(_playerNumber);
         }
 
         private void Update()
         {
-            Vector2 moveVector = Input.Control.Value;
-
-            moveVector *= _movementSpeed * Time.deltaTime;
-            transform.Translate(moveVector);
+            if (Move())
+                HoverOver();
 
             MakeSelection();
+            Deconfirm();
+        }
+
+        bool Move()
+        {
+            Vector2 moveVector = Input.Control.Value;
+
+            if (moveVector != Vector2.zero)
+            {
+                moveVector *= _movementSpeed * Time.deltaTime;
+                transform.Translate(moveVector);
+                return true;
+            }
+            
+            return false;
+        }
+
+        void HoverOver()
+        {
+            Debug.Log(selectorPanels[0].selectable);
+            for (int i = 0; i < selectorPanels.Length; i++)
+            {
+                if (selectorPanels[i].Contains(_rectTransform.anchoredPosition))
+                {
+                    print("Ya");
+                    _currPanel = selectorPanels[i];
+                    if (previewSpace)
+                        previewSpace.SetImage(_currPanel.previewImage);
+                    return;
+                }
+            }
+
+            _currPanel = null;
+            if (previewSpace) previewSpace.ResetImage();
         }
 
         void MakeSelection()
         {
-            if (Input.Confirm.Down)
+            if (Input.Confirm.Down && _currPanel)
             {
-                Debug.Log("Trying");
-
-                for (int i = 0; i < selectorPanels.Length; i++)
-                {
-                    if (selectorPanels[i].Contains(_rectTransform.anchoredPosition))
-                    {
-
-                        break;
-                    }
-                }
+                selectionScreen.MakeSelection(this, _currPanel);
             }
+        }
+        
+        void Deconfirm()
+        {
+            if (!Input.Back.Down) return;
+
+            selectionScreen.Back(this);
+        }
+
+        public void SetPlayerNumber(int playerNumber)
+        {
+            _playerNumber = playerNumber;
+            Input.SetPlayerNumber(playerNumber);
         }
     }
 }

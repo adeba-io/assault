@@ -4,6 +4,15 @@ using UnityEngine;
 using Assault.Types;
 using Assault.Boxes;
 
+namespace Assault.Types
+{
+    public enum LinkCondition
+    { InputCombo, OnHit, WhenHit, OnLand }
+    
+    public enum TechniqueType
+    { Grounded, Aerial, Special }
+}
+
 namespace Assault.Techniques
 {
     [System.Serializable]
@@ -13,10 +22,8 @@ namespace Assault.Techniques
     [System.Serializable]
     public class LinkConditionTechniquePair : InputComboTechniquePair
     {
-        public enum LinkCondition
-        { InputCombo, OnHit, WhenHit }
-
         public LinkCondition linkCondition;
+        public IntRange conditionRegion;
     }
 
     [System.Serializable]
@@ -29,6 +36,7 @@ namespace Assault.Techniques
         public AnimationClip animationClip;
         public int animationTrigger;
 
+        [SerializeField] TechniqueType _type;
         [SerializeField] int _totalFrameCount;
 
         [SerializeField] VectorFrame[] _forceFrames;
@@ -43,18 +51,22 @@ namespace Assault.Techniques
 
         [SerializeField] LinkConditionTechniquePair[] _links;
 
+        public TechniqueType type { get { return _type; } set { _type = value; } }
+
         public int currentFrame { get; protected set; }
         public int totalFrameCount { get { return _totalFrameCount; } }
 
         public bool canCancel { get; protected set; }
         public bool cancellable { get { return _cancellable; } }
 
+        public LinkConditionTechniquePair[] links { get { return _links; } }
+
         public FighterController fighterController;
         public FighterDamager fighterDamager { get; protected set; }
 
         public Technique() { }
 
-        public void Initialize(FighterController controller)
+        public virtual void Initialize(FighterController controller)
         {
             fighterController = controller;
             fighterDamager = controller.damager;
@@ -65,7 +77,7 @@ namespace Assault.Techniques
             Update();
         }
 
-        public void Update()
+        public virtual void Update()
         {
             currentFrame++;
 
@@ -86,13 +98,44 @@ namespace Assault.Techniques
                 canCancel = currentFrame >= _cancelFrame;
         }
 
-        public void End()
+        public virtual void End()
         {
             for (int i = 0; i < _attacks.Length; i++)
             {
                 if (_attacks[i].enabled)
                     _attacks[i].Disable(fighterDamager);
             }
+        }
+
+        public virtual Technique Land()
+        {
+            if (_type == TechniqueType.Grounded) return null;
+
+            for (int i = 0; i < _links.Length; i++)
+            {
+                if (_links[i].linkCondition != LinkCondition.OnLand) continue;
+
+                if (_links[i].conditionRegion.WithinRange(currentFrame))
+                    return _links[i].technique;
+            }
+
+            return null;
+        }
+
+        public virtual Technique Link(InputCombo inputCombo)
+        {
+            if (inputCombo == InputCombo.none) return null;
+
+            for (int i = 0; i < _links.Length; i++)
+            {
+                if (_links[i].linkCondition != LinkCondition.InputCombo) continue;
+                if (_links[i].inputCombo == InputCombo.none) continue;
+
+                if (inputCombo == _links[i].inputCombo)
+                    return _links[i].technique;
+            }
+
+            return null;
         }
     }
 

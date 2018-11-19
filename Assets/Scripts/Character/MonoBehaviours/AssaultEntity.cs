@@ -8,6 +8,5 @@ namespace Assault
     {
 
         public abstract void Spawn(Transform spawnPoint);
-        public abstract void HitBlastZone();
     }
 }

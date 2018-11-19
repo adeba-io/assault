@@ -79,26 +79,27 @@ namespace Assault
 
         public override void SetPlayerNumber(int playerNumber)
         {
+            _playerNumber = playerNumber;
 
-            Control.SetPlayerNumber(playerNumber);
-            Jump.SetPlayerNumber(playerNumber);
+            Control.    SetPlayerNumber(playerNumber);
+            Jump.       SetPlayerNumber(playerNumber);
             AttackLight.SetPlayerNumber(playerNumber);
             AttackHeavy.SetPlayerNumber(playerNumber);
-            Special.SetPlayerNumber(playerNumber);
-            Meter.SetPlayerNumber(playerNumber);
-            Defend.SetPlayerNumber(playerNumber);
+            Special.    SetPlayerNumber(playerNumber);
+            Meter.      SetPlayerNumber(playerNumber);
+            Defend.     SetPlayerNumber(playerNumber);
         }
 
         protected override void GetInputs(bool fixedUpdateHappened)
         {
             Control.StateUpdate(_inputType);
 
-            Jump.StateUpdate(fixedUpdateHappened, _inputType);
+            Jump.       StateUpdate(fixedUpdateHappened, _inputType);
             AttackLight.StateUpdate(fixedUpdateHappened, _inputType);
             AttackHeavy.StateUpdate(fixedUpdateHappened, _inputType);
-            Special.StateUpdate(fixedUpdateHappened, _inputType);
-            Meter.StateUpdate(fixedUpdateHappened, _inputType);
-            Defend.StateUpdate(fixedUpdateHappened, _inputType);
+            Special.    StateUpdate(fixedUpdateHappened, _inputType);
+            Meter.      StateUpdate(fixedUpdateHappened, _inputType);
+            Defend.     StateUpdate(fixedUpdateHappened, _inputType);
         }
 
         #endregion

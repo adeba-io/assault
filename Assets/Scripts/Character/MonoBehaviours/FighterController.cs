@@ -18,6 +18,9 @@ namespace Assault
         #region Animation Variables
 
         // Triggers
+        readonly int anim_SPAWN = Animator.StringToHash("Spawn");
+        readonly int anim_CANCEL = Animator.StringToHash("Cancel");
+
         readonly int anim_JUMP = Animator.StringToHash("Jump");
         readonly int anim_AIRJUMP = Animator.StringToHash("AirJump");
         readonly int anim_DASH = Animator.StringToHash("Dash");
@@ -72,29 +75,48 @@ namespace Assault
         public FighterDamager damager { get; protected set; } 
         public FighterDamageable damageable { get; protected set; }
 
+        public Transform spawnPoint;
+        public int playerNumber;
+
+        FighterInput Input;
         FighterPhysics _physics;
-        Animator _animator;
+        Animator m_animator;
         SpriteRenderer _majorRenderer;
 
         private void Start()
         {
             currentState = FighterState.Standing;
 
+            Input = GetComponent<FighterInput>();
             _physics = GetComponent<FighterPhysics>();
-            _animator = GetComponent<Animator>();
+            m_animator = GetComponent<Animator>();
             damager = GetComponent<FighterDamager>();
 
-            _animator.SetBool(anim_GROUNDED, true);
+            _physics.OnGroundedEvent = OnLand;
+            _physics.OnAerialEvent = OnAerial;
+            _physics.OnHitCeilingEvent = OnHitCeiling;
+            _physics.OnHitLeftWallEvent = OnHitLeftWall;
+            _physics.OnHitRightWallEvent = OnHitRightWall;
 
-            StateMachines.SceneLinkedSMB<FighterController>.Initialize(_animator, this);
+            m_animator.SetBool(anim_GROUNDED, true);
+            StateMachines.SceneLinkedSMB<FighterController>.Initialize(m_animator, this);
 
             _airJumpsLeft = _maxAirJumps;
             _wallJumpForce = new Vector2(Mathf.Abs(_wallJumpForce.x), Mathf.Abs(_wallJumpForce.y));
+
+            if (spawnPoint)
+            {
+                transform.position = spawnPoint.position;
+                m_animator.SetTrigger(anim_SPAWN);
+            }
+
+            if (playerNumber != 0)
+                SetPlayerNumber(playerNumber);
         }
 
         private void Update()
         {
-            UpdateState();
+           // UpdateState();
         }
 
         private void OnTriggerExit2D(Collider2D collision)
@@ -103,17 +125,54 @@ namespace Assault
                 Destroy(gameObject);
         }
 
+        void OnLand()
+        {
+            _canFastFall = false;
+            _airJumpsLeft = _maxAirJumps;
+            SetState(FighterState.Standing);
+
+            m_animator.SetBool(anim_GROUNDED, true);
+
+            if (currentTechnique)
+            {
+                InitializeTechnique(currentTechnique.Land(), true);
+            }
+        }
+
+        void OnAerial()
+        {
+            m_animator.SetBool(anim_GROUNDED, false);
+
+            if (currentState == GROUNDED_IN_CONTROL)
+                SetState(FighterState.Aerial);
+        }
+
+        void OnHitCeiling()
+        {
+
+        }
+
+        void OnHitLeftWall()
+        {
+
+        }
+
+        void OnHitRightWall()
+        {
+
+        }
+
         void UpdateState()
         {
             if (_physics.isGrounded)
             {
                 _canFastFall = false;
-                _animator.SetBool(anim_GROUNDED, true);
+                m_animator.SetBool(anim_GROUNDED, true);
 
-                if (_animator.GetBool(anim_SKIDDING) && Mathf.Abs(_physics.internalVelocity.x) < 1f)
+                if (m_animator.GetBool(anim_SKIDDING) && Mathf.Abs(_physics.internalVelocity.x) < 1f)
                 {
-                    _animator.SetBool(anim_SKIDDING, false);
-                    _animator.SetInteger(anim_GROUNDMOVEMENT, 0);
+                    m_animator.SetBool(anim_SKIDDING, false);
+                    m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
                 }
 
                 _airJumpsLeft = _maxAirJumps;
@@ -122,7 +181,7 @@ namespace Assault
             }
             else if (!_physics.isGrounded)
             {
-                _animator.SetBool(anim_GROUNDED, false);
+                m_animator.SetBool(anim_GROUNDED, false);
 
                 if (currentState == GROUNDED_IN_CONTROL)
                     SetState(FighterState.Aerial);
@@ -205,6 +264,7 @@ namespace Assault
                     if (JumpSquat()) return true;
                     //if (Dash()) return true;
 
+                    Stand();
                     Turnaround();
 
                     break;
@@ -259,6 +319,13 @@ namespace Assault
             return false;
         }
 
+        public void Spawn()
+        {
+
+        }
+
+        public void SetPlayerNumber(int playerNumber) { Input.SetPlayerNumber(playerNumber); }
+
         void UseGravity() { _physics.useGravity = true; }
         void NoGravity() { _physics.useGravity = false; }
         
@@ -287,10 +354,7 @@ namespace Assault
 
                 if (_currentCombo == iCTPairs[i].inputCombo)
                 {
-                    currentTechnique = iCTPairs[i].technique;
-                    _animator.SetTrigger(currentTechnique.animationTrigger);
-                    InitializeTechnique();
-                    SetState(FighterState.MidTechnique);
+                    InitializeTechnique(iCTPairs[i].technique);
 
                     return true;
                 }
@@ -299,15 +363,22 @@ namespace Assault
             return false;
         }
 
-        public void InitializeTechnique()
+        void InitializeTechnique(Technique technique, bool land = false)
         {
-            if (!currentTechnique)
+            if (!technique)
             {
                 Debug.LogWarning("Attempted to Initialize non existent technique");
                 return;
             }
 
+            currentTechnique = technique;
+
+            if (!land)
+                m_animator.SetTrigger(currentTechnique.animationTrigger); 
+
+
             currentTechnique.Initialize(this);
+            SetState(FighterState.MidTechnique);
         }
 
         public void UpdateTechnique()
@@ -358,7 +429,7 @@ namespace Assault
         {
             currentState = FighterState.Jumping;
 
-            _animator.ResetTrigger(anim_WALLJUMP);
+            m_animator.ResetTrigger(anim_WALLJUMP);
             Vector2 jump = facingRight ? _wallJumpForce : new Vector2(-_wallJumpForce.x, _wallJumpForce.y);
             _physics.ForceRigidbody(this, jump, resetX: true, resetY: true);
         }
@@ -369,7 +440,7 @@ namespace Assault
             if (_currentCombo != Button.Jump) return false;
             if (_currentCombo != ButtonManeuver.Down) return false;
             
-            _animator.SetTrigger(anim_JUMP);
+            m_animator.SetTrigger(anim_JUMP);
 
             return false;
         }
@@ -381,7 +452,7 @@ namespace Assault
             if (_currentCombo != ButtonManeuver.Down) return false;
 
             Debug.Log("Air Jump");
-            _animator.SetTrigger(anim_AIRJUMP);
+            m_animator.SetTrigger(anim_AIRJUMP);
             _airJumpsLeft--;
 
             return true;
@@ -399,14 +470,14 @@ namespace Assault
             {
                 SetFacingDirection(false); // Now facing left
 
-                _animator.SetTrigger(anim_WALLJUMP);
+                m_animator.SetTrigger(anim_WALLJUMP);
                 return true;
             }
             else if (_physics.collisionState.leftPlatform && _currentCombo == HorizontalControlGeneral.Right)
             {
                 SetFacingDirection(true); // Now facing left
 
-                _animator.SetTrigger(anim_WALLJUMP);
+                m_animator.SetTrigger(anim_WALLJUMP);
                 return true;
             }
 
@@ -439,8 +510,8 @@ namespace Assault
 
             _physics.ForceRigidbody(this, dash, true);
             
-            _animator.SetBool(anim_SKIDDING, false);
-            _animator.SetTrigger(anim_DASH);
+            m_animator.SetBool(anim_SKIDDING, false);
+            m_animator.SetTrigger(anim_DASH);
 
             return true;
         }
@@ -461,7 +532,7 @@ namespace Assault
             NoGravity();
             _physics.ForceRigidbody(this, dash, true, true);
 
-            _animator.SetTrigger(anim_DASH);
+            m_animator.SetTrigger(anim_DASH);
 
             return true;
         }
@@ -482,8 +553,8 @@ namespace Assault
             _physics.AccelerateRigidbody(this, run, maxVelocityX: _maxRunSpeed);
 
 
-            _animator.SetBool(anim_SKIDDING, false);
-            _animator.SetInteger(anim_GROUNDMOVEMENT, 2);
+            m_animator.SetBool(anim_SKIDDING, false);
+            m_animator.SetInteger(anim_GROUNDMOVEMENT, 2);
             _cancelToRun = false;
 
             return true;
@@ -525,7 +596,7 @@ namespace Assault
 
             _physics.AccelerateRigidbody(this, walk, maxVelocityX: _maxWalkSpeed);
 
-            _animator.SetInteger(anim_GROUNDMOVEMENT, 1);
+            m_animator.SetInteger(anim_GROUNDMOVEMENT, 1);
 
             return true;
         }
@@ -552,8 +623,8 @@ namespace Assault
         {
             if (_currentCombo != HorizontalControl.NEUTRAL) return;
             
-            _animator.SetInteger(anim_GROUNDMOVEMENT, 0);
-            _animator.SetBool(anim_SKIDDING, true);
+            m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
+            m_animator.SetBool(anim_SKIDDING, true);
 
             return;
         }
@@ -564,8 +635,8 @@ namespace Assault
 
             Flip();
 
-            _animator.SetBool(anim_SKIDDING, false);
-            _animator.SetTrigger(anim_TURNAROUND);
+            m_animator.SetBool(anim_SKIDDING, false);
+            m_animator.SetTrigger(anim_TURNAROUND);
 
             return true;
         }
@@ -576,13 +647,16 @@ namespace Assault
 
             if (_currentCombo == HorizontalControl.NEUTRAL && _currentCombo == VerticalControl.NEUTRAL)
             {
-                _animator.SetBool(anim_CROUCHING, false);
-                _animator.SetInteger(anim_GROUNDMOVEMENT, 0);
+                if (m_animator.GetBool(anim_SKIDDING) && Mathf.Abs(_physics.internalVelocity.x) < 1f)
+                    m_animator.SetBool(anim_SKIDDING, false);
+
+                m_animator.SetBool(anim_CROUCHING, false);
+                m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
             }
             else if (_currentCombo == VerticalControl.Down && _currentCombo == HorizontalControl.NEUTRAL)
             {
-                _animator.SetBool(anim_CROUCHING, true);
-                _animator.SetInteger(anim_GROUNDMOVEMENT, 0);
+                m_animator.SetBool(anim_CROUCHING, true);
+                m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
             }
         }
 

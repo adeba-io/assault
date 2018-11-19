@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,19 @@ namespace Assault
     // Awake, FixedUpdate, OnTriggerEnter2D, OnTriggerStay2D, OnTriggerExit2D
     public class FighterPhysics : PhysicsObject
     {
+        public Action OnGroundedEvent;
+        public Action OnAerialEvent;
+        public Action OnHitCeilingEvent;
+
+        public Action OnHitLeftWallEvent;
+        public Action OnHitRightWallEvent;
+
+        bool callOnGrounded = false;
+        bool callOnAerial = false;
+        bool callOnHitCeiling = false;
+        bool callOnHitLeftWall = false;
+        bool callOnHitRightWall = false;
+
         [SerializeField] float _traction = 2f;
 
         [SerializeField] float _fallSpeed = 5f;
@@ -25,11 +39,27 @@ namespace Assault
             useTraction = true;
         }
 
+        private void Update()
+        {
+            if (callOnGrounded && OnGroundedEvent != null) { OnGroundedEvent(); callOnGrounded = false; }
+            if (callOnAerial && OnAerialEvent != null) { OnAerialEvent(); callOnAerial = false; }
+            if (callOnHitCeiling && OnHitCeilingEvent != null) { OnHitCeilingEvent(); callOnHitCeiling = false; }
+            if (callOnHitLeftWall && OnHitLeftWallEvent != null) { OnHitLeftWallEvent(); callOnHitLeftWall = false; }
+            if (callOnHitRightWall && OnHitRightWallEvent != null) { OnHitRightWallEvent(); callOnHitRightWall = false; }
+        }
+
         protected override void FurtherFixedUpdate()
         {
             _fastFallPrevious = fastFall;
 
             Fall();
+
+            callOnGrounded      = !collisionState.groundedLastFrame && collisionState.groundedThisFrame;
+            callOnAerial        = collisionState.groundedLastFrame && !collisionState.groundedThisFrame;
+            callOnHitCeiling    = !collisionState.hitCeilingLastFrame && collisionState.hitCeilingThisFrame;
+            callOnHitLeftWall   = !collisionState.hitLeftWallLastFrame && collisionState.hitLeftWallThisFrame;
+            callOnHitRightWall  = !collisionState.hitRightWallLastFrame && collisionState.hitRightWallThisFrame;
+            
         }
 
         void Fall()

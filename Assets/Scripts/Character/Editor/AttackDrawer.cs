@@ -58,7 +58,7 @@ namespace Assault.Editors
         readonly GUIContent gui_hitbox = new GUIContent("Hit Box");
 
         public static float propertyHeight
-        { get { return new IntRangeDrawer().GetPropertyHeight(null, GUIContent.none) + (EditorGUIUtility.singleLineHeight * 8) + IBoxDataDrawer.propertyHeight; } }
+        { get { return new IntRangeDrawer().GetPropertyHeight(null, GUIContent.none) + (EditorGUIUtility.singleLineHeight * 9) + IBoxDataDrawer.propertyHeight; } }
 
         public AttackDrawer() { }
 
@@ -71,7 +71,7 @@ namespace Assault.Editors
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            float height = 0;
+            float height = EditorGUIUtility.singleLineHeight;
 
             if (label != GUIContent.none) height += EditorGUIUtility.singleLineHeight;
 
@@ -187,7 +187,7 @@ namespace Assault.Editors
 
             rect_id = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
             rect_priority = new Rect(position.x, rect_id.yMax + _buffer, position.width, EditorGUIUtility.singleLineHeight);
-            rect_enableRegion = new Rect(position.x, rect_priority.yMax + _buffer, position.width, new IntRangeDrawer().GetPropertyHeight(null, GUIContent.none));
+            rect_enableRegion = new Rect(position.x, rect_priority.yMax + _buffer, position.width, new IntRangeDrawer().GetPropertyHeight(null, gui_enableRegion));
             rect_damage = new Rect(position.x, rect_enableRegion.yMax + _buffer, position.width, EditorGUIUtility.singleLineHeight);
 
             rect_knockbackLabel = new Rect(position.x + (position.width * 0.05f), rect_damage.yMax + _buffer, position.width * 0.35f, EditorGUIUtility.singleLineHeight);

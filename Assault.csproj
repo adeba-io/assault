@@ -314,6 +314,7 @@
     <Compile Include="Assets\Scripts\Character\MonoBehaviours\FighterDamager.cs" />
     <Compile Include="Assets\Scripts\Character\MonoBehaviours\HitboxPool.cs" />
     <Compile Include="Assets\Scripts\Character\MonoBehaviours\Joint.cs" />
+    <Compile Include="Assets\Scripts\Character\ScriptableObjects\Aerial.cs" />
     <Compile Include="Assets\Scripts\Character\ScriptableObjects\Technique.cs" />
     <Compile Include="Assets\Scripts\Character\StateMachineBehaviours\SceneLinkedSMB.cs" />
     <Compile Include="Assets\Scripts\Character\StateMachineBehaviours\TechniqueSMB.cs" />
@@ -339,6 +340,7 @@
     <Compile Include="Assets\Scripts\Terrain\MonoBehaviours\Stage.cs" />
     <Compile Include="Assets\Scripts\UI\ControlStickBox.cs" />
     <Compile Include="Assets\Scripts\UI\FadeIn.cs" />
+    <Compile Include="Assets\Scripts\UI\Selection Screens\PreviewImage.cs" />
     <Compile Include="Assets\Scripts\UI\Selection Screens\SelectionPointer.cs" />
     <Compile Include="Assets\Scripts\UI\Selection Screens\SelectionScreen.cs" />
     <Compile Include="Assets\Scripts\UI\Selection Screens\SelectorPanel.cs" />

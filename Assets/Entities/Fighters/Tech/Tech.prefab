@@ -49,6 +49,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f5b49c2a0dee2c49abbad207907abc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ID: 0
 --- !u!1 &1865813983778693566
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,6 +171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f5b49c2a0dee2c49abbad207907abc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ID: 2
 --- !u!1 &2812783832359965377
 GameObject:
   m_ObjectHideFlags: 0
@@ -244,6 +246,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f5b49c2a0dee2c49abbad207907abc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ID: 1
 --- !u!1 &7389350420380769931
 GameObject:
   m_ObjectHideFlags: 0
@@ -287,6 +290,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f5b49c2a0dee2c49abbad207907abc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ID: 3
 --- !u!1 &7716251078602794927
 GameObject:
   m_ObjectHideFlags: 0
@@ -318,8 +322,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7716251078602794927}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0.0035306497, w: 0.9999938}
+  m_LocalPosition: {x: -0.4330372, y: 0.31561363, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 7687901846276572155}
@@ -416,10 +420,10 @@ MonoBehaviour:
     belowPlatform: {fileID: 0}
     leftPlatform: {fileID: 0}
     rightPlatform: {fileID: 0}
-    hitCeilingLastFrame: 0
-    hitCeilingThisFrame: 0
     groundedLastFrame: 0
     groundedThisFrame: 0
+    hitCeilingLastFrame: 0
+    hitCeilingThisFrame: 0
     hitLeftWallLastFrame: 0
     hitLeftWallThisFrame: 0
     hitRightWallLastFrame: 0
@@ -488,6 +492,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _playerNumber: 1
   _inputType: 1
+  _feedInputs: 1
   Control:
     positiveX: 275
     negativeX: 276
@@ -588,6 +593,8 @@ MonoBehaviour:
       button: 4
       buttonManeuver: 0
     technique: {fileID: 11400000, guid: 1d031974f706b1a4083dfa47942f9818, type: 2}
+  spawnPoint: {fileID: 0}
+  playerNumber: 0
 --- !u!114 &2436421910443155763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -705,6 +712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f5b49c2a0dee2c49abbad207907abc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ID: 4
 --- !u!1 &9180733059091691156
 GameObject:
   m_ObjectHideFlags: 0

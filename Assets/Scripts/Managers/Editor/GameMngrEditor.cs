@@ -15,14 +15,29 @@ namespace Assault.Editors
         AnimBool _showDebugValues;
         
         SerializedProperty _FPSUpdateInterval;
+        
+        SerializedProperty _nextStageSelectController;
+        
+        SerializedProperty _numberOfPlayers;
+
+        SerializedProperty _1PCSS, _2PCSS, _4PCSS;
 
         ReorderableList _stageNames;
-        string[] _stages;
-
-        readonly GUIContent gui_stageNames = new GUIContent("Fighter Stages");
+        SerializedProperty _nextStage;
 
         readonly GUIContent gui_debugValues = new GUIContent("Debug");
         readonly GUIContent gui_FPSUpdateInterval = new GUIContent("FPS Update");
+        
+        readonly GUIContent gui_nextStageSelectController = new GUIContent("Next Stage Select Controller");
+
+        readonly GUIContent gui_numberOfPlayers = new GUIContent("No. of Players");
+
+        readonly GUIContent gui_1PCSS = new GUIContent("1P Character Select Screen"), 
+                            gui_2PCSS = new GUIContent("2P Character Select Screen"),
+                            gui_4PCSS = new GUIContent("4P Character Select Screen");
+
+        readonly GUIContent gui_stageNames = new GUIContent("Fighter Stages");
+        readonly GUIContent gui_nextStage = new GUIContent("Next Stage");
 
         private void OnEnable()
         {
@@ -31,6 +46,14 @@ namespace Assault.Editors
             
             _FPSUpdateInterval = serializedObject.FindProperty("_FPSUpdateInterval");
 
+            _nextStageSelectController = serializedObject.FindProperty("_nextStageSelectController");
+            _numberOfPlayers = serializedObject.FindProperty("_numberOfPlayers");
+
+            _1PCSS = serializedObject.FindProperty("_1PCSS");
+            _2PCSS = serializedObject.FindProperty("_2PCSS");
+            _4PCSS = serializedObject.FindProperty("_4PCSS");
+
+            _nextStage = serializedObject.FindProperty("_nextStage");
             StageNames();
         }
 
@@ -71,7 +94,7 @@ namespace Assault.Editors
                     if (menu.GetItemCount() < 1)
                     {
                         menu.AddDisabledItem(new GUIContent("No Stages Found in"));
-                        menu.AddDisabledItem(new GUIContent("'_Scenes/Stages'"));
+                        menu.AddDisabledItem(new GUIContent("'_Scenes\\Stages'"));
                     }
 
                     menu.ShowAsContext();
@@ -116,9 +139,36 @@ namespace Assault.Editors
 
             EditorGUILayout.Space();
 
+            EditorGUILayout.BeginVertical(GUI.skin.box);
+            EditorGUILayout.PropertyField(_1PCSS, gui_1PCSS);
+            EditorGUILayout.PropertyField(_2PCSS, gui_2PCSS);
+            EditorGUILayout.PropertyField(_4PCSS, gui_4PCSS);
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.Space();
+
             _stageNames.DoLayoutList();
 
+            EditorGUILayout.Space();
+
+            EditorGUILayout.BeginVertical(GUI.skin.box);
+
+            string value = _nextStage.stringValue == "" ? "Next Stage not set" : _nextStage.stringValue;
+            EditorGUILayout.LabelField(gui_nextStage.text, value);
+
+            EditorGUILayout.LabelField(gui_nextStageSelectController.text, _nextStageSelectController.intValue.ToString());
+            EditorGUILayout.LabelField(gui_numberOfPlayers.text, _numberOfPlayers.intValue.ToString());
+
+            EditorGUILayout.EndVertical();
+
             serializedObject.ApplyModifiedProperties();
+        }
+
+        void SelectStageField()
+        {
+            Rect rect_field = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            Rect rect_next = new Rect(rect_field.x, rect_field.y, rect_field.width * 0.69f, rect_field.height);
+
         }
     }
 }

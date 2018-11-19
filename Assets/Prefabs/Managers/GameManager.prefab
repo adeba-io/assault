@@ -43,6 +43,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c389d630c0bb0eb4b94c2342bd2cda39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _nextStageSelectController: 1
+  _numberOfPlayers: 2
   _stageNames:
   - 03 Stage 1
+  _nextStage: 
+  _1PCSS: {fileID: 3533390439594628572, guid: d460d53cf887b3649901fe6f1d522c69, type: 3}
+  _2PCSS: {fileID: 1355890686700198979, guid: b961b33e6abc0414489f83571e3c2a90, type: 3}
+  _4PCSS: {fileID: 9020894732256684163, guid: d289ee2477ba3444d8cff565f39e56e6, type: 3}
   _FPSUpdateInterval: 0.5

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Assault.Managers;
 
 namespace Assault
 {
@@ -105,6 +106,8 @@ namespace Assault
             _currPosition = _rigidbody.position;
         }
 
+        bool belowPrev;
+
         private void FixedUpdate()
         {
             // Take external forces into account
@@ -115,6 +118,7 @@ namespace Assault
             FurtherFixedUpdate();
 
             // Setup for new FixedUpdate
+            belowPrev = _collisionState.below;
             _collisionState.Reset();
             _onSlope = false;
             ResetRaycastPoints();
@@ -142,8 +146,11 @@ namespace Assault
             // If we're grounded we have no important Y velocity
             if (_collisionState.belowPlatform) _currentVelocity.y = 0;
 
-            if (!_collisionState.groundedLastFrame && _collisionState.below)
+            if (_collisionState.below)
                 _collisionState.groundedThisFrame = true;
+
+           // if (!belowPrev && _collisionState.below)
+             //   _collisionState.groundedThisFrame = true;
 
             if (!_collisionState.hitCeilingLastFrame && _collisionState.above)
                 _collisionState.hitCeilingThisFrame = true;
@@ -373,7 +380,7 @@ namespace Assault
             }
 
 
-            // Above CHeck
+            // Above Check
             distanceToHit = 0;
             hitNormal = Vector2.zero;
 
@@ -405,7 +412,7 @@ namespace Assault
 
         void AdjustHorizontal()
         {
-            // Setuo required varaibles
+            // Setup required varaibles
             Vector2 hitNormal = Vector2.zero;
             float distanceToHit = 0;
 
@@ -606,9 +613,9 @@ namespace Assault
                     AdjustForVerticalSlope(above, raycastHit);
                     return;
                 }
-
-                Platform potentialPlatform = raycastHit.collider.gameObject.GetComponent<Platform>();
-                if (potentialPlatform)
+                
+                Platform potentialPlatform;
+                if (PhysicsManager.TryGetPlatform(raycastHit.collider, out potentialPlatform))
                 {
                     if (above)
                     {
@@ -667,8 +674,8 @@ namespace Assault
                 // bail it's not a wall
                 if (currAngle <= _groundSlopeLimit || currAngle >= 180f - _ceilingSlopeLimit) return;
 
-                Platform potentialWall = raycastHit.collider.gameObject.GetComponent<Platform>();
-                if (potentialWall)
+                Platform potentialWall;
+                if (PhysicsManager.TryGetPlatform(raycastHit.collider, out potentialWall))
                 {
                     if (right)
                     {
@@ -708,7 +715,7 @@ namespace Assault
         void Gravity()
         {
             if (!_useGravity) return;
-            if (_collisionState.groundedLastFrame) return;
+            if (_collisionState.groundedThisFrame) return;
 
             Vector2 toMove = PhysicsManager.gravity * _gravityMultiplier * Time.deltaTime;
 
@@ -780,9 +787,10 @@ namespace Assault
         public Platform belowPlatform;
         public Platform leftPlatform;
         public Platform rightPlatform;
-
-        public bool hitCeilingLastFrame, hitCeilingThisFrame;
+        
         public bool groundedLastFrame, groundedThisFrame;
+        
+        public bool hitCeilingLastFrame, hitCeilingThisFrame;
         public bool hitLeftWallLastFrame, hitLeftWallThisFrame;
         public bool hitRightWallLastFrame, hitRightWallThisFrame;
 
@@ -792,8 +800,8 @@ namespace Assault
 
         public void Reset()
         {
+            groundedLastFrame = groundedThisFrame;
             hitCeilingLastFrame = hitCeilingThisFrame;
-            groundedLastFrame = below;
             hitLeftWallLastFrame = hitLeftWallThisFrame;
             hitRightWallLastFrame = hitRightWallThisFrame;
 

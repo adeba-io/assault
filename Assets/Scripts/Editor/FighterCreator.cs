@@ -63,9 +63,7 @@ namespace Assault.Editors
             GameObject fighter = new GameObject(_newCharacterName, typeof(FighterController), typeof(FighterDamager), typeof(FighterDamageable));
             GameObject renderer = new GameObject("Renderer", typeof(SpriteRenderer));
             renderer.transform.SetParent(fighter.transform);
-
-           // Object @object = PrefabUtility.CreateEmptyPrefab(prefabPath);
-           // PrefabUtility.ReplacePrefab(fighter, @object, ReplacePrefabOptions.ConnectToPrefab);
+            
             PrefabUtility.SaveAsPrefabAsset(fighter, prefabPath);
             
             Utility.FighterLibrary.SaveFighterData(new Utility.FighterData(_newCharacterName, 0));

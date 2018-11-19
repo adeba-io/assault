@@ -8,15 +8,11 @@ namespace Assault
     {
         public Platform[] _platforms;
 
-        public Transform[] spawnPoints { get; protected set; }
+        public Transform[] spawnPoints;
 
         private void Reset()
         {
             _platforms = GetComponentsInChildren<Platform>();
-        }
-
-        private void Awake()
-        {
             FindSpawnPoints();
         }
         
