@@ -55,25 +55,27 @@ namespace Assault
 
                 _colliderType = _collider.GetType();
 
-                if (_renderHitbox)
+                List<Transform> rS = GetComponentsInChildren<Transform>().ToList();
+
+                if (rS.Count < 1)
                 {
-                    List<Transform> rS = GetComponentsInChildren<Transform>().ToList();
+                    Debug.LogWarning("No render objects in children on " + name + ": " + GetInstanceID());
+                    _renderHitbox = false;
+                    return;
+                }
 
-                    if (rS.Count < 1)
-                    {
-                        Debug.LogWarning("No render objects in children on " + name + ": " + GetInstanceID());
-                        _renderHitbox = false;
-                        return;
-                    }
+                for (int i = 0; i < rS.Count; i++)
+                {
+                    if (rS[i] == transform) rS.RemoveAt(i);
+                }
 
-                    for (int i = 0; i < rS.Count; i++)
-                    {
-                        if (rS[i] == transform) rS.RemoveAt(i);
-                    }
+                _renderShapes = rS.ToArray();
 
-                    _renderShapes = rS.ToArray();
-
+                if (FighterManager.FM.renderHitboxes)
                     AssignBoxColor();
+                else
+                {
+                    for (int i = 0; i < _renderShapes.Length; i++) _renderShapes[i].GetComponent<SpriteRenderer>().color = Color.clear;
                 }
             }
 
@@ -88,7 +90,7 @@ namespace Assault
                     col.size = _boxData.boxSize;
                     _collider = col;
 
-                    if (_renderHitbox)
+                    if (FighterManager.FM.renderHitboxes)
                     {
                         _renderShapes[0].localScale = _boxData.boxSize;
                         _renderShapes[1].localScale = new Vector3(_boxData.boxSize.x, 0);
@@ -105,7 +107,7 @@ namespace Assault
                     col.size = _boxData.boxSize;
                     _collider = col;
 
-                    if (_renderHitbox)
+                    if (FighterManager.FM.renderHitboxes)
                     {
                         _renderShapes[0].localScale = _boxData.boxSize;
                         _renderShapes[0].localPosition = Vector2.zero;
@@ -160,6 +162,8 @@ namespace Assault
 
             public void DrawBox()
             {
+                if (!FighterManager.FM.renderHitboxes) return;
+
                 if (_colliderType == typeof(BoxCollider2D))
                 {
                     BoxCollider2D col = (BoxCollider2D)_collider;

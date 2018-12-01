@@ -6,6 +6,11 @@ namespace Assault.Managers
 {
     public class FighterManager : MonoBehaviour
     {
+        [SerializeField] [Range(0.5f, 1f)] float _backDashSpeedMultiplier = 0.7f;
+        [SerializeField] [Range(0.4f, 0.9f)] float _softAirSpeedMultiplier = 0.7f;
+        [SerializeField] [Range(0.4f, 0.9f)] float _softWalkSpeedMultiplier = 0.7f;
+        [SerializeField] [Range(0.4f, 0.9f)] float _softRunSpeedMultiplier = 0.7f;
+        
         [SerializeField] bool _renderHitboxes;
 
         [SerializeField] Color _interactionBox;
@@ -15,10 +20,21 @@ namespace Assault.Managers
 
         public static FighterManager FM { get; protected set; }
 
+        public float backDashSpeedMultiplier { get { return _backDashSpeedMultiplier; } }
+        public float softAirSpeedMultiplier { get { return _softAirSpeedMultiplier; } }
+        public float softWalkSpeedMultplier { get { return _softWalkSpeedMultiplier; } }
+        public float softRunSpeedMultplier { get { return _softRunSpeedMultiplier; } }
+
+        public bool renderHitboxes  { get { return _renderHitboxes; } }
         public Color interactionBox { get { return _interactionBox; } }
         public Color hitboxColor    { get { return _hitboxColor; } }
         public Color hurtboxColor   { get { return _hurtboxColor; } }
         public Color grabboxColor   { get { return _grabboxColor; } }
+
+        private void Reset()
+        {
+            transform.position = Vector3.zero;
+        }
 
         public void Awake()
         {

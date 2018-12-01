@@ -49,7 +49,16 @@ namespace Assault.Editors
 
             rect_next.x += rect_next.width + nextBuffer;
             rect_next.width = rect_control.width * 0.19f;
+
+            EditorGUI.BeginChangeCheck();
             EditorGUI.PropertyField(rect_next, _renderHitbox, GUIContent.none);
+            if (EditorGUI.EndChangeCheck())
+            {
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    _renderers[i].color = _boxColor.colorValue;
+                }
+            }
 
             if (_renderHitbox.boolValue)
             {
@@ -113,6 +122,53 @@ namespace Assault.Editors
             }
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        Vector2 _prevBoxSize;
+        Vector2 _prevOffset;
+        float _prevRotation;
+
+        private void OnSceneGUI()
+        {
+            Vector2 boxSize = _boxData.FindPropertyRelative("boxSize").vector2Value;
+            Vector2 offset = _boxData.FindPropertyRelative("offset").vector2Value;
+            float rotation = _boxData.FindPropertyRelative("rotation").floatValue;
+
+            if (boxSize == _prevBoxSize && offset == _prevOffset) return;
+
+            if (_collider.GetType() == typeof(BoxCollider2D))
+            {
+                BoxCollider2D col = (BoxCollider2D)_collider;
+                col.size = boxSize;
+                col.offset = offset;
+                _collider = col;
+
+                _renderers[0].transform.localScale = boxSize;
+                _renderers[0].transform.localPosition = offset;
+            }
+            else if (_collider.GetType() == typeof(CapsuleCollider2D))
+            {
+                _rigidbody.rotation = rotation;
+
+                float parallelHeight = boxSize.y - boxSize.x;
+                if (parallelHeight < 0) parallelHeight = 0;
+
+                CapsuleCollider2D col = (CapsuleCollider2D)_collider;
+                col.size = boxSize;
+                col.offset = offset - new Vector2(0, parallelHeight / 2f);
+                _collider = col;
+
+                _renderers[0].transform.localScale = new Vector3(boxSize.x, boxSize.x);
+                _renderers[1].transform.localScale = new Vector3(boxSize.x, (boxSize.y - 2f) < 0 ? 0 : boxSize.y - 2f);
+                _renderers[2].transform.localScale = new Vector3(boxSize.x, boxSize.x);
+
+                _renderers[1].transform.localPosition = new Vector3(0, -parallelHeight / 2f) + (Vector3)offset;
+                _renderers[2].transform.localPosition = new Vector3(0, -parallelHeight) + (Vector3)offset;
+            }
+
+            _prevBoxSize = boxSize;
+            _prevOffset = offset;
+            _prevRotation = rotation;
         }
     }
 }

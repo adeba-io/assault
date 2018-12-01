@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animationClip: {fileID: 7400000, guid: 5b7abb53e102731418819b551c586fbd, type: 2}
   animationTrigger: 1675303972
+  _type: 1
   _totalFrameCount: 48
   _forceFrames: []
   _accelerateCurveX:
@@ -64,8 +65,13 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _cancellable: 0
+  _cancellable: 1
+  _landCancellable: 0
   _cancelFrame: 0
+  _landingLag: 0
+  _hardLandingRegion:
+    rangeStart: 1
+    rangeEnd: 2
   _attacks:
   - ID: 0
     priority: 0

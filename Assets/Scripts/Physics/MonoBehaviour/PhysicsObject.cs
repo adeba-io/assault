@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Assault.Managers;
+using Assault.Types;
 
 namespace Assault
 {
@@ -106,7 +107,10 @@ namespace Assault
             _currPosition = _rigidbody.position;
         }
 
-        bool belowPrev;
+        private void Reset()
+        {
+            _collisionMask = LayerMask.NameToLayer("Ground");
+        }
 
         private void FixedUpdate()
         {
@@ -118,7 +122,6 @@ namespace Assault
             FurtherFixedUpdate();
 
             // Setup for new FixedUpdate
-            belowPrev = _collisionState.below;
             _collisionState.Reset();
             _onSlope = false;
             ResetRaycastPoints();
@@ -148,9 +151,6 @@ namespace Assault
 
             if (_collisionState.below)
                 _collisionState.groundedThisFrame = true;
-
-           // if (!belowPrev && _collisionState.below)
-             //   _collisionState.groundedThisFrame = true;
 
             if (!_collisionState.hitCeilingLastFrame && _collisionState.above)
                 _collisionState.hitCeilingThisFrame = true;
@@ -216,10 +216,7 @@ namespace Assault
         {
             if (CheckIfConnected(affector))
             {
-                if (resetX) _internalVelocity.x = 0;
-                if (resetY) _internalVelocity.y = 0;
-
-                _internalVelocity += force;
+                ForceRigidbodyInternal(force, resetX, resetY);
             }
             else
             {
@@ -239,22 +236,7 @@ namespace Assault
         /// <param name="resetX">Should we reset the X velocity first?</param>
         /// <param name="resetY">Should we reset the Y velocity first?</param>
         public void ForceRigidbody(Component affector, float forceX, float forceY, bool resetX = false, bool resetY = false)
-        {
-            if (CheckIfConnected(affector))
-            {
-                if (resetX) _internalVelocity.x = 0;
-                if (resetY) _internalVelocity.y = 0;
-
-                _internalVelocity += new Vector2(forceX, forceY);
-            }
-            else
-            {
-                if (resetX) _externalVelocity.x = 0;
-                if (resetY) _externalVelocity.y = 0;
-
-                _externalVelocity += new Vector2(forceX, forceY);
-            }
-        }
+        { ForceRigidbody(affector, new Vector2(forceX, forceY), resetX, resetY); }
 
         /// <summary>
         /// Accelerates the GameObject. Automatically multiplies the acceleration by Time.deltaTime. Returns the GameObject's new velocity
@@ -262,32 +244,12 @@ namespace Assault
         /// <param name="accelerate">The Vector2 to accelerate by</param>
         public void AccelerateRigidbody(Component affector, Vector2 accelerate, float maxVelocityX = Mathf.Infinity, float maxVelocityY = Mathf.Infinity)
         {
-            Vector2 toAdd = accelerate * Time.deltaTime;
-
             if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
             {
-                if (toAdd.x > 0)
-                {
-                    if (_internalVelocity.x > Mathf.Abs(maxVelocityX)) return;
-                }
-                else if (toAdd.x < 0)
-                {
-                    if (_internalVelocity.x < -Mathf.Abs(maxVelocityX)) return;
-                }
-
-                if (toAdd.y > 0)
-                {
-                    if (_internalVelocity.y > Mathf.Abs(maxVelocityY)) return;
-                }
-                else if (toAdd.y < 0)
-                {
-                    if (_internalVelocity.y < -Mathf.Abs(maxVelocityY)) return;
-                }
-                
-                _internalVelocity += toAdd;
+                AccelerateRigidbodyInternal(accelerate, maxVelocityX, maxVelocityY);
             }
             else
-                _externalVelocity += toAdd;
+                _externalVelocity += accelerate * Time.deltaTime;
         }
 
         /// <summary>
@@ -296,43 +258,19 @@ namespace Assault
         /// <param name="accelerateX">The X component to accelerate by</param>
         /// <param name="accelerateY">The Y component to accelerate by</param>
         public void AccelerateRigidbody(Component affector, float accelerateX, float accelerateY, float maxVelocityX = Mathf.Infinity, float maxVelocityY = Mathf.Infinity)
-        {
-            Vector2 toAdd = new Vector2(accelerateX, accelerateY) * Time.deltaTime;
-            
-            if (CheckIfConnected(affector)) // We want to alter the _internalVelocity
-            {
-                if (Mathf.Abs(_internalVelocity.x) > Mathf.Abs(maxVelocityX)) return;
-                if (Mathf.Abs(_internalVelocity.y) > Mathf.Abs(maxVelocityY)) return;
-
-                _internalVelocity += toAdd;
-            }
-            else
-                _externalVelocity += toAdd;
-        }
+        { AccelerateRigidbody(affector, new Vector2(accelerateX, accelerateY), maxVelocityX, maxVelocityX); }
 
         public void ResetRigidbody(Component affector, bool resetX = true, bool resetY = true, bool externalAlso = false)
         {
             if (CheckIfConnected(affector))
             {
-                if (resetX) _internalVelocity.x = 0;
-                if (resetY) _internalVelocity.y = 0;
-
-                if (externalAlso)
-                {
-                    if (resetX) _externalVelocity.x = 0;
-                    if (resetY) _externalVelocity.y = 0;
-                }
+                ResetRigidbodyInternal(resetX, resetY, externalAlso);
             }
-            else
-            {
-                if (resetX) _externalVelocity.x = 0;
-                if (resetY) _externalVelocity.y = 0;
-            }
-        }
 
-        bool CheckIfConnected(Component toCheck)
-        {
-            return toCheck.gameObject.GetInstanceID() == gameObject.GetInstanceID();
+            if (!externalAlso) return;
+
+            if (resetX) _externalVelocity.x = 0;
+            if (resetY) _externalVelocity.y = 0;
         }
 
         /// <summary>
@@ -345,6 +283,60 @@ namespace Assault
             _prevPosition += deltaPosition;
             _currPosition = newPosition;
             _rigidbody.MovePosition(newPosition);
+        }
+
+        #endregion
+
+        #region Protected
+        
+        protected void ForceRigidbodyInternal(Vector2 force, bool resetX = false, bool resetY = false)
+        {
+            if (resetX) _internalVelocity.x = 0;
+            if (resetY) _internalVelocity.y = 0;
+
+            _internalVelocity += force;
+        }
+
+        protected void AccelerateRigidbodyInternal(Vector2 accelerate, float maxVelocityX = Mathf.Infinity, float maxVelocityY = Mathf.Infinity)
+        {
+            Vector2 toAdd = accelerate * Time.deltaTime;
+
+            if (toAdd.x > 0)
+            {
+                if (_internalVelocity.x > Mathf.Abs(maxVelocityX)) toAdd.x = 0;
+            }
+            else if (toAdd.x < 0)
+            {
+                if (_internalVelocity.x < -Mathf.Abs(maxVelocityX)) toAdd.x = 0;
+            }
+
+            if (toAdd.y > 0)
+            {
+                if (_internalVelocity.y > Mathf.Abs(maxVelocityY)) toAdd.y = 0;
+            }
+            else if (toAdd.y < 0)
+            {
+                if (_internalVelocity.y < -Mathf.Abs(maxVelocityY)) toAdd.y = 0;
+            }
+
+            _internalVelocity += toAdd;
+        }
+
+        protected void ResetRigidbodyInternal(bool resetX = true, bool resetY = true, bool externalAlso = false)
+        {
+            if (resetX) _internalVelocity.x = 0;
+            if (resetY) _internalVelocity.y = 0;
+
+            if (externalAlso)
+            {
+                if (resetX) _externalVelocity.x = 0;
+                if (resetY) _externalVelocity.y = 0;
+            }
+        }
+
+        protected bool CheckIfConnected(Component toCheck)
+        {
+            return toCheck.gameObject.GetInstanceID() == gameObject.GetInstanceID();
         }
 
         #endregion
@@ -615,10 +607,12 @@ namespace Assault
                 }
                 
                 Platform potentialPlatform;
-                if (PhysicsManager.TryGetPlatform(raycastHit.collider, out potentialPlatform))
+                if (PhysicsManager.TryGetColliderPlatform(raycastHit .collider, out potentialPlatform))
                 {
                     if (above)
                     {
+                        if (potentialPlatform.platformType == PlatformType.OneWay) return;
+
                         _collisionState.above = true;
                         _collisionState.abovePlatform = potentialPlatform;
                     }
@@ -665,7 +659,7 @@ namespace Assault
             if (raycastHit)
             {
                 // Don't register collisions if we're moving away from the collider
-                // A temporary failsafe to allow us to accelerate away from touching colliders
+                // A failsafe to allow us to accelerate away from touching colliders
                 if (_deltaMovement.x != 0)
                     if ((right && !goingRight) || (!right && goingRight)) return;
                 // We calc against the reverse of raycastDirection
@@ -675,8 +669,10 @@ namespace Assault
                 if (currAngle <= _groundSlopeLimit || currAngle >= 180f - _ceilingSlopeLimit) return;
 
                 Platform potentialWall;
-                if (PhysicsManager.TryGetPlatform(raycastHit.collider, out potentialWall))
+                if (PhysicsManager.TryGetColliderPlatform(raycastHit.collider, out potentialWall))
                 {
+                    if (potentialWall.platformType == PlatformType.OneWay) return;
+
                     if (right)
                     {
                         _collisionState.right = true;

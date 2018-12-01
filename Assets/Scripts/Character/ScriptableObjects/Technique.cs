@@ -43,10 +43,14 @@ namespace Assault.Techniques
 
         [SerializeField] AnimationCurve _accelerateCurveX = new AnimationCurve(new Keyframe(0, 0), new Keyframe(100f, 0));
         [SerializeField] AnimationCurve _accelerateCurveY = new AnimationCurve(new Keyframe(0, 0), new Keyframe(100f, 0));
-
-        [SerializeField] bool _cancellable = false;
-        [SerializeField] int _cancelFrame;
         
+        [SerializeField] bool _cancellable = false;
+        [SerializeField] bool _landCancellable = false; // For Special moves
+
+        [SerializeField] int _cancelFrame;
+        [SerializeField] int _landingLag;
+        [SerializeField] IntRange _hardLandingRegion;
+
         [SerializeField] Attack[] _attacks;
 
         [SerializeField] LinkConditionTechniquePair[] _links;
@@ -54,12 +58,15 @@ namespace Assault.Techniques
         public TechniqueType type { get { return _type; } set { _type = value; } }
 
         public int currentFrame { get; protected set; }
+
         public int totalFrameCount { get { return _totalFrameCount; } }
+        public int landingLag { get { return _landingLag; } }
 
         public bool canCancel { get; protected set; }
         public bool cancellable { get { return _cancellable; } }
 
         public LinkConditionTechniquePair[] links { get { return _links; } }
+        public InputComboTechniquePair[] inputComboLinks { get; protected set; }
 
         public FighterController fighterController;
         public FighterDamager fighterDamager { get; protected set; }
@@ -94,7 +101,7 @@ namespace Assault.Techniques
                 else if (_attacks[i].enabled && !_attacks[i].enableRegion.WithinRange(currentFrame)) _attacks[i].Disable(fighterDamager);
             }
 
-            if (cancellable && !canCancel)
+            if (cancellable)
                 canCancel = currentFrame >= _cancelFrame;
         }
 
@@ -120,6 +127,13 @@ namespace Assault.Techniques
             }
 
             return null;
+        }
+
+        public virtual bool HardLand()
+        {
+            if (_type == TechniqueType.Grounded) return false;
+
+            return _hardLandingRegion.WithinRange(currentFrame);
         }
 
         public virtual Technique Link(InputCombo inputCombo)

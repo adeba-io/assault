@@ -311,7 +311,7 @@ namespace Assault
 
                 if (ReceivingInput)
                 {
-                    Vector2 previous = _previousValues[2];
+                    Vector2 previous = inputType == InputType.Controller ? _previousValues[2] : _previousValues[0];
 
                     if (Mathf.Abs(Value.x) >= 1f)
                     {

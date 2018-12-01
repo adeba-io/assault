@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: New Technique 6
   m_EditorClassIdentifier: 
   animationClip: {fileID: 0}
-  animationTrigger: 0
-  _type: 0
-  _totalFrameCount: 0
+  animationTrigger: -996086590
+  _type: 2
+  _totalFrameCount: 14
   _forceFrames: []
   _accelerateCurveX:
     serializedVersion: 2
@@ -65,9 +65,40 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _cancellable: 0
+  _cancellable: 1
+  _landCancellable: 1
   _cancelFrame: 0
-  _attacks: []
+  _landingLag: 0
+  _hardLandingRegion:
+    rangeStart: 1
+    rangeEnd: 2
+  _attacks:
+  - ID: 0
+    priority: 0
+    enableRegion:
+      rangeStart: 7
+      rangeEnd: 8
+    damage: 3.5
+    knockbackType: 0
+    knockbackBase: 40
+    knockbackGrowth: 120
+    launchAngle: 37
+    jointID: 2
+    joint: {fileID: 0}
+    hitstunType: 0
+    hitbox:
+      ID: 0
+      parent: {fileID: 0}
+      boxSize: {x: 0.2, y: 0.2}
+      offset: {x: 0, y: 0}
+      boxSizeX: 0
+      boxSizeY: 0
+      offsetX: 0
+      offsetY: 0
+      rotation: 0
+      hitMask:
+        serializedVersion: 2
+        m_Bits: 0
+      drawType: 0
   _links: []
-  _comboLinks: []
   fighterController: {fileID: 0}

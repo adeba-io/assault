@@ -6,7 +6,11 @@ namespace Assault.StateMachines
 {
     public class TechniqueSMB : SceneLinkedSMB<FighterController>
     {
-        
+        public override void OnSLStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+        {
+            _monoBehavior.InitializeNextTechnique();
+        }
+
         public override void OnSLStatePostEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             _monoBehavior.UpdateTechnique();

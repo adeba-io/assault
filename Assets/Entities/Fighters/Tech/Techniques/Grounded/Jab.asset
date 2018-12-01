@@ -65,19 +65,24 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _cancellable: 1
+  _cancellable: 0
+  _landCancellable: 0
   _cancelFrame: 20
+  _landingLag: 0
+  _hardLandingRegion:
+    rangeStart: 0
+    rangeEnd: 1
   _attacks:
   - ID: 0
     priority: 1
     enableRegion:
       rangeStart: 4
       rangeEnd: 11
-    damage: 9
+    damage: 2
     knockbackType: 1
-    knockbackBase: 15
+    knockbackBase: 35
     knockbackGrowth: 2
-    launchAngle: 45
+    launchAngle: 84
     jointID: 3
     joint: {fileID: 0}
     hitstunType: 0
@@ -101,11 +106,11 @@ MonoBehaviour:
       verticalControl: 0
       controlManeuver: 0
       horizontalControlGeneral: 0
-      button: 0
-      buttonManeuver: 0
+      button: 3
+      buttonManeuver: 1
     technique: {fileID: 11400000, guid: 2cccab8316b8dac419d6c027c959e64e, type: 2}
     linkCondition: 0
     conditionRegion:
-      rangeStart: 37
-      rangeEnd: 60
+      rangeStart: 19
+      rangeEnd: 26
   fighterController: {fileID: 0}

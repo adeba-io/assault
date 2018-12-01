@@ -96,5 +96,12 @@ namespace Assault
 
         public enum ArmourType
         { NONE, Super, Heavy }
+
+        public enum PlatformType
+        { Standard, OneWay }
+
+        public enum MovingPlatformType
+        { ONCE, Loop, Back_Forth }
+
     }
 }

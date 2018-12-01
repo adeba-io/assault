@@ -336,6 +336,7 @@
     <Compile Include="Assets\Scripts\Managers\PlayerPrefsManager.cs" />
     <Compile Include="Assets\Scripts\Physics\MonoBehaviour\FighterPhysics.cs" />
     <Compile Include="Assets\Scripts\Physics\MonoBehaviour\PhysicsObject.cs" />
+    <Compile Include="Assets\Scripts\Terrain\MonoBehaviours\MovingPlatform.cs" />
     <Compile Include="Assets\Scripts\Terrain\MonoBehaviours\Platform.cs" />
     <Compile Include="Assets\Scripts\Terrain\MonoBehaviours\Stage.cs" />
     <Compile Include="Assets\Scripts\UI\ControlStickBox.cs" />

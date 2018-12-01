@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace Assault
 {
-    [CustomEditor(typeof(Platform))]
+    [CustomEditor(typeof(Platform), true)]
     public class PlatformEditor : Editor
     {
         Platform platform;

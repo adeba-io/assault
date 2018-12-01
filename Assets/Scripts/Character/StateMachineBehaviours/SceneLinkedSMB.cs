@@ -26,12 +26,15 @@ namespace Assault.StateMachines
         protected void InternalInitialize(Animator animator, TMonoBehaviour monoBehaviour)
         {
             _monoBehavior = monoBehaviour;
+            OnStart(animator);
         }
 
         public sealed override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex, AnimatorControllerPlayable controller)
         {
             _firstFrameHappened = false;
-            OnStart(animator);
+
+            OnSLStateEnter(animator, stateInfo, layerIndex);
+            OnSLStateEnter(animator, stateInfo, layerIndex, controller);
         }
 
         public sealed override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex, AnimatorControllerPlayable controller)

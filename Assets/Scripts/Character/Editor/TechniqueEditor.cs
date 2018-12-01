@@ -11,6 +11,8 @@ namespace Assault.Editors
     [CustomEditor(typeof(Technique))]
     public class TechniqueEditor : Editor
     {
+        const int MAXLANDINGLAG = 30;
+
         FighterController _owner;
         AnimatorOverrideController _ownerAnimator;
         Technique _target;
@@ -33,8 +35,12 @@ namespace Assault.Editors
         SerializedProperty _accelerateCurveY;
 
         SerializedProperty _cancellable;
+        SerializedProperty _landCancellable;
+
         SerializedProperty _cancelFrame;
-        
+        SerializedProperty _landingLag;
+        SerializedProperty _hardLandingRegion;
+
         MaxFrameReorderableList _forceFrames;
         
         Joint[] _jointObjs;
@@ -51,13 +57,18 @@ namespace Assault.Editors
         readonly GUIContent gui_selectAnimation = new GUIContent("Select Animation");
         readonly GUIContent gui_animationTrigger = new GUIContent("Animation Trigger");
         readonly GUIContent gui_totalFrameCount = new GUIContent("Total Frame Count");
+        readonly GUIContent gui_animationLabel = new GUIContent("Be sure to create the animation state with triggers");
 
         readonly GUIContent gui_accelerateCurveX = new GUIContent("Accelerate X", "All values are multiplied by 1000");
         readonly GUIContent gui_accelerateCurveY = new GUIContent("Accelerate Y", "All values are multiplied by 1000");
+        
+        readonly GUIContent gui_cancellable = new GUIContent("General Cancellable?");
+        readonly GUIContent gui_landCancellable = new GUIContent("Land Cancellable?");
 
-        readonly GUIContent gui_cancellable = new GUIContent("Cancellable?");
         readonly GUIContent gui_cancelFrame = new GUIContent("Cancel Frame");
-        readonly GUIContent gui_cancelRegion = new GUIContent("Cancel Region");
+        readonly GUIContent gui_landingLag = new GUIContent("Landing Lag");
+        readonly GUIContent gui_hardLandingRegion = new GUIContent("Hard Land Region");
+        readonly GUIContent gui_landingRegion = new GUIContent("Landing Region");
 
         readonly GUIContent gui_forceFrames = new GUIContent("Force Frames");
         readonly GUIContent gui_attacks = new GUIContent("Hit Boxes");
@@ -74,6 +85,7 @@ namespace Assault.Editors
         readonly GUIContent gui_jointSelect = new GUIContent("Select Joint");
 
         GUIStyle guis_label;
+        GUIStyle guis_subtitle;
         GUIStyle guis_rlHeader;
         GUIStyle guis_techHeader;
         GUIStyle guis_techHeaderIC;
@@ -108,9 +120,13 @@ namespace Assault.Editors
 
             _accelerateCurveX = serializedObject.FindProperty("_accelerateCurveX");
             _accelerateCurveY = serializedObject.FindProperty("_accelerateCurveY");
-
+            
             _cancellable = serializedObject.FindProperty("_cancellable");
+            _landCancellable = serializedObject.FindProperty("_landCancellable");
+
             _cancelFrame = serializedObject.FindProperty("_cancelFrame");
+            _landingLag = serializedObject.FindProperty("_landingLag");
+            _hardLandingRegion = serializedObject.FindProperty("_hardLandingRegion");
 
             ForceFrames();
             
@@ -121,6 +137,7 @@ namespace Assault.Editors
             _forceFrames.maxFrame = _totalFrameCount.intValue;
 
             guis_label = new GUIStyle { fontStyle = FontStyle.Bold };
+            guis_subtitle = new GUIStyle { fontStyle = FontStyle.Italic, fontSize = 10 };
             guis_rlHeader = new GUIStyle { fontStyle = FontStyle.Bold };
             guis_techHeader = new GUIStyle { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 14 };
             guis_techHeaderIC = new GUIStyle { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold, fontSize = 14 };
@@ -250,6 +267,7 @@ namespace Assault.Editors
                             rect_next.x += rect.width * 0.51f;
                             if (GUI.Button(rect_next, "Select Technique?"))
                             {
+                                tech.fighterController = _owner;
                                 Selection.activeObject = tech;
                             }
                         }
@@ -262,6 +280,7 @@ namespace Assault.Editors
                             rect_next.height = EditorGUIUtility.singleLineHeight + 2f;
                             if (GUI.Button(rect_next, "Select Technique?"))
                             {
+                                tech.fighterController = _owner;
                                 Selection.activeObject = tech;
                             }
                         }
@@ -486,7 +505,7 @@ namespace Assault.Editors
                 serializedObject.ApplyModifiedProperties();
                 return;
             }
-            
+
             // Animation Clip selection
             EditorGUILayout.LabelField(gui_animationClip, guis_label);
 
@@ -520,16 +539,22 @@ namespace Assault.Editors
                 menu.ShowAsContext();
             }
 
+            EditorGUILayout.LabelField(gui_animationLabel, guis_subtitle);
+
             Rect rect_field = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
             Rect rect_next = new Rect(rect_field.x, rect_field.y, rect_field.width * 0.5f, rect_field.height);
             EditorGUI.LabelField(rect_next, gui_totalFrameCount);
             rect_next.x += rect_next.width;
             EditorGUI.LabelField(rect_next, _target.totalFrameCount.ToString(), new GUIStyle { alignment = TextAnchor.MiddleCenter });
+            
+            EditorGUILayout.Space();
 
             _forceFrames.DoLayoutList();
 
             AccelerateCurveField(gui_accelerateCurveX, ref _accelerateCurveX, Color.blue);
             AccelerateCurveField(gui_accelerateCurveY, ref _accelerateCurveY, Color.red);
+
+            EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(_cancellable, gui_cancellable);
 
@@ -542,12 +567,39 @@ namespace Assault.Editors
                 EditorGUI.IntSlider(rect_field, _cancelFrame, 1, _forceFrames.maxFrame, gui_cancelFrame);
             }
 
-            _attacks.DoLayoutList();
+            if ((Types.TechniqueType)_type.enumValueIndex == Types.TechniqueType.Aerial)
+            {
+                IntRangeAttribute rangeAttribute = new IntRangeAttribute(1, _totalFrameCount.intValue);
+                IntRangeDrawer rangeDrawer = new IntRangeDrawer(rangeAttribute);
+                rect_next = EditorGUILayout.GetControlRect(false, rangeDrawer.GetPropertyHeight(_hardLandingRegion, gui_hardLandingRegion));
+                rangeDrawer.OnGUI(rect_next, _hardLandingRegion, gui_hardLandingRegion);
+                
+                EditorGUILayout.IntSlider(_landingLag, 0, MAXLANDINGLAG, gui_landingLag);
+            }
+            else if ((Types.TechniqueType)_type.enumValueIndex == Types.TechniqueType.Special)
+            {
+                EditorGUILayout.PropertyField(_landCancellable, gui_landCancellable);
 
-            _attacks.elementHeight = _attacks.serializedProperty.arraySize == 0 ? 15f : _hitboxElementHeight;
+                if (_landCancellable.boolValue)
+                {
+                    IntRangeAttribute rangeAttribute = new IntRangeAttribute(1, _totalFrameCount.intValue);
+                    IntRangeDrawer rangeDrawer = new IntRangeDrawer(rangeAttribute);
+                    rect_next = EditorGUILayout.GetControlRect(false, rangeDrawer.GetPropertyHeight(_hardLandingRegion, gui_hardLandingRegion));
+                    rect_next.x += rect_next.width * 0.05f;
+                    rect_next.width *= 0.95f;
+
+                    rangeDrawer.OnGUI(rect_next, _hardLandingRegion, gui_landingRegion);
+                }
+            }
 
             EditorGUILayout.Space();
 
+            _attacks.elementHeight = _attacks.serializedProperty.arraySize == 0 ? 15f : _hitboxElementHeight;
+            _attacks.DoLayoutList();
+
+            EditorGUILayout.Space();
+
+            _links.elementHeight = _links.serializedProperty.arraySize == 0 ? 20f : 100f;
             _links.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
@@ -581,6 +633,7 @@ namespace Assault.Editors
 
             _forceFrames.maxFrame = _totalFrameCount.intValue;
             _attacks.maxFrame = _totalFrameCount.intValue;
+            _links.maxFrame = _totalFrameCount.intValue;
 
             _animationTrigger.intValue = Animator.StringToHash(clip.name);
 

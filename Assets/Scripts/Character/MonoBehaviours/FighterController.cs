@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Assault.Types;
 using Assault.Techniques;
+using Assault.Managers;
 
 namespace Assault
 {
@@ -10,33 +11,41 @@ namespace Assault
     [RequireComponent(typeof(Animator))]
     public class FighterController : MonoBehaviour
     {
-        const FighterState GROUNDED_IN_CONTROL = FighterState.Standing | FighterState.Crouching | FighterState.Running | FighterState.Dashing;
-        const FighterState GROUNDED_HITTABLE = GROUNDED_IN_CONTROL | FighterState.Fallen | FighterState.JumpSquat;
+        #region State Groups
+        const FighterState GROUNDED_IN_CONTROL = FighterState.Standing | FighterState.Crouching | FighterState.Running | FighterState.Dashing | FighterState.Walking | FighterState.Skidding;
+        const FighterState GROUNDED_HITTABLE = GROUNDED_IN_CONTROL | FighterState.Fallen | FighterState.JumpSquat | FighterState.Landing;
 
         const FighterState AERIAL = FighterState.Aerial | FighterState.Tumble | FighterState.Jumping | FighterState.AirJumpSquat;
-
-        #region Animation Variables
-
-        // Triggers
-        readonly int anim_SPAWN = Animator.StringToHash("Spawn");
-        readonly int anim_CANCEL = Animator.StringToHash("Cancel");
-
-        readonly int anim_JUMP = Animator.StringToHash("Jump");
-        readonly int anim_AIRJUMP = Animator.StringToHash("AirJump");
-        readonly int anim_DASH = Animator.StringToHash("Dash");
-        readonly int anim_TURNAROUND = Animator.StringToHash("Turnaround");
-        readonly int anim_WALLJUMP = Animator.StringToHash("WallJump");
-
-        // Booleans
-        readonly int anim_GROUNDED = Animator.StringToHash("isGrounded");
-        readonly int anim_CROUCHING = Animator.StringToHash("Crouching");
-        readonly int anim_SKIDDING = Animator.StringToHash("Skidding");
-
-        // Integers
-        readonly int anim_GROUNDMOVEMENT = Animator.StringToHash("GroundMove"); // 0 = Standing, 1 = Walking, 2 = Running
-
         #endregion
 
+        #region Animation Variables
+        // Triggers
+        protected readonly int anim_SPAWN = Animator.StringToHash("Spawn");
+        protected readonly int anim_CANCEL = Animator.StringToHash("Cancel");
+
+        protected readonly int anim_JUMPSQUAT = Animator.StringToHash("JumpSquat");
+        protected readonly int anim_JUMP = Animator.StringToHash("Jump");
+        protected readonly int anim_DASH = Animator.StringToHash("Dash");
+        protected readonly int anim_BACKDASH = Animator.StringToHash("BackDash");
+        protected readonly int anim_TURNAROUND = Animator.StringToHash("Turnaround");
+        protected readonly int anim_WALLJUMP = Animator.StringToHash("WallJump");
+
+        protected readonly int anim_HARDLAND = Animator.StringToHash("HardLand");
+        protected readonly int anim_NOLANDANIM = Animator.StringToHash("NoLandAnim");
+
+        // Booleans
+        protected readonly int anim_GROUNDED = Animator.StringToHash("isGrounded");
+        protected readonly int anim_CROUCHING = Animator.StringToHash("Crouching");
+        protected readonly int anim_SKIDDING = Animator.StringToHash("Skidding");
+
+        // Integers
+        protected readonly int anim_GROUNDMOVEMENT = Animator.StringToHash("GroundMove"); // 0 = Standing, 1 = Walking, 2 = Running
+
+        // Float
+        protected readonly int anim_HARDLANDINGMODIFIER = Animator.StringToHash("HardLandModifier");
+        #endregion
+
+        public Technique nextTechnique { get; set; }
         public Technique currentTechnique { get; set; }
 
         public FighterState currentState { get; protected set; }
@@ -45,6 +54,7 @@ namespace Assault
         public Vector2 nextForce;
         public Vector2 currentAccelerate;
 
+        #region Movement Parameters
         [SerializeField] float _walkAcceleration = 4f, _maxWalkSpeed = 2f;
 
         [SerializeField] float _runAcceleration = 6f, _maxRunSpeed = 7f;
@@ -55,25 +65,34 @@ namespace Assault
         [SerializeField] float _airDashForce = 4f;
 
         [SerializeField] float _jumpForce = 8f;
-        [SerializeField] float _airJumpForce = 6f;
+        [SerializeField] float _airJumpForceMultiplier = 0.75f;
         [SerializeField] int _maxAirJumps = 3;
         [SerializeField] int _airJumpsLeft;
 
         [SerializeField] Vector2 _wallJumpForce = new Vector2(3f, 2f);
 
+        float m_walkAcceleration, m_maxWalkSpeed;
+        float m_runAcceleration, m_maxRunSpeed;
+        float m_dashForce, m_backDashForce;
+        float m_airAcceleration, m_maxAirSpeed;
+        float m_airDashForce, m_airBackDashForce;
+        float m_jumpForce, m_airJumpForce;
+        Vector2 m_wallJumpForce;
+        #endregion
+
+        #region Moveset
         [SerializeField] InputComboTechniquePair[] _standingTechniques;
         [SerializeField] InputComboTechniquePair[] _runningTechniques;
         [SerializeField] InputComboTechniquePair[] _jumpingTechniques;
         [SerializeField] InputComboTechniquePair[] _aerialTechniques;
+        #endregion
 
+        bool _backDashing = false;
         bool _cancelToDash = true;
         bool _canFastFall = false;
         bool _cancelToRun = false;
 
         InputCombo _currentCombo;
-
-        public FighterDamager damager { get; protected set; } 
-        public FighterDamageable damageable { get; protected set; }
 
         public Transform spawnPoint;
         public int playerNumber;
@@ -83,64 +102,49 @@ namespace Assault
         Animator m_animator;
         SpriteRenderer _majorRenderer;
 
-        private void Start()
-        {
-            currentState = FighterState.Standing;
+        public FighterDamager damager { get; protected set; }
+        public FighterDamageable damageable { get; protected set; }
 
-            Input = GetComponent<FighterInput>();
-            _physics = GetComponent<FighterPhysics>();
-            m_animator = GetComponent<Animator>();
-            damager = GetComponent<FighterDamager>();
-
-            _physics.OnGroundedEvent = OnLand;
-            _physics.OnAerialEvent = OnAerial;
-            _physics.OnHitCeilingEvent = OnHitCeiling;
-            _physics.OnHitLeftWallEvent = OnHitLeftWall;
-            _physics.OnHitRightWallEvent = OnHitRightWall;
-
-            m_animator.SetBool(anim_GROUNDED, true);
-            StateMachines.SceneLinkedSMB<FighterController>.Initialize(m_animator, this);
-
-            _airJumpsLeft = _maxAirJumps;
-            _wallJumpForce = new Vector2(Mathf.Abs(_wallJumpForce.x), Mathf.Abs(_wallJumpForce.y));
-
-            if (spawnPoint)
-            {
-                transform.position = spawnPoint.position;
-                m_animator.SetTrigger(anim_SPAWN);
-            }
-
-            if (playerNumber != 0)
-                SetPlayerNumber(playerNumber);
-        }
-
-        private void Update()
-        {
-           // UpdateState();
-        }
-
-        private void OnTriggerExit2D(Collider2D collision)
-        {
-            if (collision.GetComponent<Boxes.BlastZone>())
-                Destroy(gameObject);
-        }
-
+        #region FighterPhysics Events
         void OnLand()
         {
+            if (currentState == GROUNDED_HITTABLE) return;
+            if (currentState == FighterState.Standing || currentState == FighterState.Crouching ||
+                currentState == FighterState.Dashing || currentState == FighterState.Walking ||
+                currentState == FighterState.Running || currentState == FighterState.Skidding ||
+                currentState == FighterState.JumpSquat) return;
+
+            print("Landing");
             _canFastFall = false;
             _airJumpsLeft = _maxAirJumps;
             SetState(FighterState.Standing);
 
-            m_animator.SetBool(anim_GROUNDED, true);
-
             if (currentTechnique)
             {
-                InitializeTechnique(currentTechnique.Land(), true);
+                if (currentTechnique.type != TechniqueType.Grounded)
+                {
+                    Technique next = currentTechnique.Land();
+                    if (!next)
+                    {
+                        if (currentTechnique.HardLand())
+                        {
+                            m_animator.SetTrigger(anim_HARDLAND);
+
+                            float landModifier = currentTechnique.landingLag / 8f;
+                            m_animator.SetFloat(anim_HARDLANDINGMODIFIER, landModifier);
+                        }
+                    }
+                }
+                else SetNextTechnique(currentTechnique.Land(), true);
             }
+
+            m_animator.SetBool(anim_GROUNDED, true);
         }
 
         void OnAerial()
         {
+            if (currentState == AERIAL) return;
+            print("Aerial");
             m_animator.SetBool(anim_GROUNDED, false);
 
             if (currentState == GROUNDED_IN_CONTROL)
@@ -161,33 +165,79 @@ namespace Assault
         {
 
         }
+        #endregion
 
-        void UpdateState()
+        #region Init
+        private void Start()
         {
-            if (_physics.isGrounded)
+            currentState = FighterState.Standing;
+            facingRight = true;
+            
+            Input = GetComponent<FighterInput>();
+            _physics = GetComponent<FighterPhysics>();
+            m_animator = GetComponent<Animator>();
+            damager = GetComponent<FighterDamager>();
+            damageable = GetComponent<FighterDamageable>();
+
+            _physics.OnGroundedEvent = OnLand;
+            _physics.OnAerialEvent = OnAerial;
+            _physics.OnHitCeilingEvent = OnHitCeiling;
+            _physics.OnHitLeftWallEvent = OnHitLeftWall;
+            _physics.OnHitRightWallEvent = OnHitRightWall;
+            
+            m_animator.SetBool(anim_GROUNDED, _physics.isGrounded);
+            StateMachines.SceneLinkedSMB<FighterController>.Initialize(m_animator, this);
+
+            _airJumpsLeft = _maxAirJumps;
+            _wallJumpForce = new Vector2(Mathf.Abs(_wallJumpForce.x), Mathf.Abs(_wallJumpForce.y));
+
+            if (spawnPoint)
             {
-                _canFastFall = false;
-                m_animator.SetBool(anim_GROUNDED, true);
-
-                if (m_animator.GetBool(anim_SKIDDING) && Mathf.Abs(_physics.internalVelocity.x) < 1f)
-                {
-                    m_animator.SetBool(anim_SKIDDING, false);
-                    m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
-                }
-
-                _airJumpsLeft = _maxAirJumps;
-                if (currentState == FighterState.Aerial)
-                    SetState(FighterState.Standing);
+                transform.position = spawnPoint.position;
+                m_animator.SetTrigger(anim_SPAWN);
             }
-            else if (!_physics.isGrounded)
-            {
-                m_animator.SetBool(anim_GROUNDED, false);
 
-                if (currentState == GROUNDED_IN_CONTROL)
-                    SetState(FighterState.Aerial);
-            }
+            if (playerNumber != 0)
+                SetPlayerNumber(playerNumber);
+
+            CalculateMovementParameters();
         }
 
+        public void Spawn()
+        {
+
+        }
+
+        public void SetPlayerNumber(int playerNumber) { Input.SetPlayerNumber(playerNumber); }
+
+        public void CalculateMovementParameters()
+        {
+            m_walkAcceleration = _walkAcceleration * 10f;
+            m_maxWalkSpeed = _maxWalkSpeed * 2f;
+            m_runAcceleration = _runAcceleration * 12f;
+            m_maxRunSpeed = _maxRunSpeed * 2f;
+
+            m_dashForce = _dashForce * 5f;
+            m_backDashForce = m_dashForce * FighterManager.FM.backDashSpeedMultiplier;
+
+            m_airAcceleration = _airAcceleration;
+            m_maxAirSpeed = _maxAirSpeed;
+
+            m_airDashForce = _airDashForce * 5f;
+            m_airBackDashForce = m_airDashForce * FighterManager.FM.backDashSpeedMultiplier;
+
+            m_jumpForce = _jumpForce * 5f;
+            m_airJumpForce = m_jumpForce * _airJumpForceMultiplier;
+        }
+        #endregion
+
+        private void OnTriggerExit2D(Collider2D collision)
+        {
+            if (collision.GetComponent<Boxes.BlastZone>())
+                Destroy(gameObject);
+        }
+
+        #region State Manipulation
         public void FindNewState()
         {
             if (_physics.isGrounded)
@@ -199,11 +249,145 @@ namespace Assault
                 SetState(FighterState.Aerial);
             }
         }
-        
+
+        public void SetState(FighterState newState)
+        {
+            if (newState == FighterState.Jumping) print("Should Jump");
+
+            if (currentState == FighterState.Dashing && newState != FighterState.Dashing)
+            {
+                _backDashing = false;
+            }
+
+            if (newState == FighterState.Standing || newState == FighterState.Crouching)
+            {
+                _physics.ResetRigidbody(this);
+            }
+
+            if (newState == FighterState.Standing || newState == FighterState.Aerial) ResetParameters();
+
+            currentState = newState;
+        }
+        #endregion
+
+        #region Animation Methods
+        void UseGravity() { _physics.useGravity = true; }
+        void NoGravity() { _physics.useGravity = false; }
+
+        void ResetParameters()
+        {
+            m_animator.ResetTrigger(anim_CANCEL);
+            m_animator.ResetTrigger(anim_JUMP);
+            m_animator.ResetTrigger(anim_HARDLAND);
+            m_animator.ResetTrigger(anim_NOLANDANIM);
+            m_animator.SetBool(anim_CROUCHING, false);
+            m_animator.SetFloat(anim_HARDLANDINGMODIFIER, 1.0f);
+        }
+
+        void AnimFlip() { Flip(true, false, true); }
+
+        void EndGroundDash()
+        {
+            _physics.DecelerateToMax(this, Vector2.zero, Vector2.zero);
+        }
+
+        void EndAirDash()
+        {
+            _physics.DecelerateToMax(this, maxVelocityX: m_maxAirSpeed, decelerationX: 5f);
+        }
+
+        public void SetCanDash(bool canDash) { _cancelToDash = canDash; }
+        void CancelToRun() { _cancelToRun = true; }
+
+        public void CanFastFall() { _canFastFall = true; }
+        #endregion
+
+        #region Technique Methods
+
+        bool CheckForInputCombo(InputComboTechniquePair[] iCTPairs)
+        {
+            for (int i = 0; i < iCTPairs.Length; i++)
+            {
+                if (iCTPairs[i].inputCombo == InputCombo.none)
+                    continue;
+
+                if (_currentCombo == iCTPairs[i].inputCombo)
+                {
+                    SetNextTechnique(iCTPairs[i].technique);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        void SetNextTechnique(Technique technique, bool land = false)
+        {
+            if (!technique)
+            {
+                Debug.LogWarning("Tried to set non existant Technique");
+                return;
+            }
+
+            nextTechnique = technique;
+
+            if (!land) m_animator.SetTrigger(nextTechnique.animationTrigger);
+            
+        }
+
+        public void InitializeNextTechnique()
+        {
+            Debug.Log("Initializing");
+            if (!nextTechnique)
+            {
+                Debug.LogWarning("Attempted to Initialize non existent technique");
+                return;
+            }
+
+            if (currentTechnique)
+                currentTechnique.End();
+
+            currentTechnique = nextTechnique;
+            
+            currentTechnique.Initialize(this);
+            SetState(FighterState.MidTechnique);
+        }
+
+        public void UpdateTechnique()
+        {
+            Debug.Log("Updating");
+            if (!currentTechnique)
+            {
+                Debug.LogWarning("Attempted to Update non existent technique");
+                return;
+            }
+
+            currentTechnique.Update();
+        }
+
+        public void EndTechnique()
+        {
+            FindNewState();
+
+            if (!currentTechnique)
+            {
+                Debug.LogWarning("Attempted to End non existent technique");
+                return;
+            }
+
+            currentTechnique.End();
+            currentTechnique = null;
+        }
+
+
+        #endregion
+
+        #region Input Receiving
+
         public bool ReceiveInput(InputCombo inputCombo)
         {
             _currentCombo = inputCombo;
-           // print(inputCombo);
 
             switch (currentState)
             {
@@ -212,7 +396,7 @@ namespace Assault
                     if (CheckForInputCombo(_standingTechniques)) return true;
 
                     if (JumpSquat()) return true;
-                    if (Dash()) return true;
+                    if (DashLaunch()) return true;
                     if (WalkInit()) return true;
 
                     Stand();
@@ -232,7 +416,7 @@ namespace Assault
                     if (CheckForInputCombo(_standingTechniques)) return true;
 
                     if (JumpSquat()) return true;
-                    if (Dash()) return true;
+                    if (DashLaunch()) return true;
                     if (Walk()) return true;
                     if (Turnaround()) return true;
 
@@ -242,34 +426,37 @@ namespace Assault
                 case FighterState.Running:
 
                     if (CheckForInputCombo(_runningTechniques)) return true;
-                    
+
                     if (JumpSquat()) return true;
                     if (Run()) return true;
-                    if (Turnaround()) return true;
+                  //  if (Turnaround()) return true;
 
                     Skid();
 
                     break;
                 case FighterState.Dashing:
 
+                    RunReset();
+
                     if (CheckForInputCombo(_runningTechniques)) return true;
 
                     if (JumpSquat()) return true;
-                    if (Dash()) return true;
+                    if (DashLaunch()) return true;
                     if (RunInit()) return true;
 
                     break;
                 case FighterState.Skidding:
 
                     if (JumpSquat()) return true;
-                    //if (Dash()) return true;
+                    if (DashLaunch()) return true;
 
                     Stand();
-                    Turnaround();
 
                     break;
                 case FighterState.JumpSquat:
-                    
+
+                    if (CheckForInputCombo(_jumpingTechniques)) return true;
+
                     break;
                 case FighterState.Jumping:
 
@@ -280,7 +467,7 @@ namespace Assault
 
                     if (AirJumpSquat()) return true;
                     if (WallJumpSquat()) return true;
-                    if (AirDash()) return true;
+                    if (AirDashLaunch()) return true;
 
                     break;
                 case FighterState.Aerial:
@@ -292,23 +479,30 @@ namespace Assault
 
                     if (AirJumpSquat()) return true;
                     if (WallJumpSquat()) return true;
-                    if (AirDash()) return true;
+                    if (AirDashLaunch()) return true;
 
                     break;
                 case FighterState.Tumble:
-                    
+
                     AirDrift();
 
                     if (CheckForInputCombo(_aerialTechniques)) return true;
 
                     if (AirJumpSquat()) return true;
                     if (WallJumpSquat()) return true;
-                    if (AirDash()) return true;
+                    if (AirDashLaunch()) return true;
 
                     break;
                 case FighterState.MidTechnique:
-
                     if (!currentTechnique) FindNewState();
+
+                    Technique next = currentTechnique.Link(_currentCombo);
+                    if (next)
+                    {
+                        Debug.Log(next.name);
+                        SetNextTechnique(next);
+                        return true;
+                    }
 
                     if (currentTechnique.canCancel)
                         FindNewState();
@@ -319,328 +513,7 @@ namespace Assault
             return false;
         }
 
-        public void Spawn()
-        {
-
-        }
-
-        public void SetPlayerNumber(int playerNumber) { Input.SetPlayerNumber(playerNumber); }
-
-        void UseGravity() { _physics.useGravity = true; }
-        void NoGravity() { _physics.useGravity = false; }
-        
-        public void SetCanDash(bool canDash) { _cancelToDash = canDash; }
-        void CancelToRun() { _cancelToRun = true; }
-        
-        public void SetState(FighterState newState)
-        {
-            //print(newState);
-            currentState = newState;
-
-            if (newState == FighterState.Standing || newState == FighterState.Crouching)
-            {
-                _physics.ResetRigidbody(this);
-            }
-        }
-
-        #region Technique Methods
-
-        bool CheckForInputCombo(InputComboTechniquePair[] iCTPairs)
-        {
-            for (int i = 0; i < iCTPairs.Length; i++)
-            {
-                if (iCTPairs[i].inputCombo == InputCombo.none)
-                    continue;
-
-                if (_currentCombo == iCTPairs[i].inputCombo)
-                {
-                    InitializeTechnique(iCTPairs[i].technique);
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        void InitializeTechnique(Technique technique, bool land = false)
-        {
-            if (!technique)
-            {
-                Debug.LogWarning("Attempted to Initialize non existent technique");
-                return;
-            }
-
-            currentTechnique = technique;
-
-            if (!land)
-                m_animator.SetTrigger(currentTechnique.animationTrigger); 
-
-
-            currentTechnique.Initialize(this);
-            SetState(FighterState.MidTechnique);
-        }
-
-        public void UpdateTechnique()
-        {
-            if (!currentTechnique)
-            {
-                Debug.LogWarning("Attempted to Update non existent technique");
-                return;
-            }
-
-            currentTechnique.Update();
-        }
-
-        public void EndTechnique()
-        {
-            if (!currentTechnique)
-            {
-                Debug.LogWarning("Attempted to End non existent technique");
-                return;
-            }
-
-            currentTechnique.End();
-            currentTechnique = null;
-
-            FindNewState();
-        }
-
-
-        #endregion
-
-        public void CanFastFall() { _canFastFall = true; }
-
-        #region Jump
-
-        void Jump()
-        {
-            currentState = FighterState.Jumping;
-
-            float jump = (_physics.isGrounded ? _jumpForce : _airJumpForce) * 1.5f;
-
-            if (_physics.internalVelocity.x > 0 && _currentCombo == HorizontalControlGeneral.Left)
-                _physics.ResetRigidbody(this, resetY: false);
-
-            _physics.ForceRigidbody(this, new Vector2(0, jump), resetY: true);
-        }
-
-        void WallJump()
-        {
-            currentState = FighterState.Jumping;
-
-            m_animator.ResetTrigger(anim_WALLJUMP);
-            Vector2 jump = facingRight ? _wallJumpForce : new Vector2(-_wallJumpForce.x, _wallJumpForce.y);
-            _physics.ForceRigidbody(this, jump, resetX: true, resetY: true);
-        }
-
-
-        bool JumpSquat()
-        {
-            if (_currentCombo != Button.Jump) return false;
-            if (_currentCombo != ButtonManeuver.Down) return false;
-            
-            m_animator.SetTrigger(anim_JUMP);
-
-            return false;
-        }
-
-        bool AirJumpSquat()
-        {
-            if (_airJumpsLeft <= 0) return false;
-            if (_currentCombo != Button.Jump) return false;
-            if (_currentCombo != ButtonManeuver.Down) return false;
-
-            Debug.Log("Air Jump");
-            m_animator.SetTrigger(anim_AIRJUMP);
-            _airJumpsLeft--;
-
-            return true;
-        }
-
-        bool WallJumpSquat()
-        {
-            if (!_physics.collisionState.touchingWall) return false;
-            if (_physics.collisionState.leftPlatform && _physics.collisionState.rightPlatform) return false;
-            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            print("Wall JS " + Time.timeSinceLevelLoad);
-            _physics.ResetRigidbody(this);
-
-            if (_physics.collisionState.rightPlatform && _currentCombo == HorizontalControlGeneral.Left)
-            {
-                SetFacingDirection(false); // Now facing left
-
-                m_animator.SetTrigger(anim_WALLJUMP);
-                return true;
-            }
-            else if (_physics.collisionState.leftPlatform && _currentCombo == HorizontalControlGeneral.Right)
-            {
-                SetFacingDirection(true); // Now facing left
-
-                m_animator.SetTrigger(anim_WALLJUMP);
-                return true;
-            }
-
-            return false;
-        }
-
-        #endregion
-
-        void FastFall()
-        {
-            if (!_canFastFall) return;
-            if (_currentCombo != VerticalControl.Down) return;
-
-            _physics.fastFall = true;
-        }
-
-        bool Dash()
-        {
-            if (!_cancelToDash) return false;
-            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            if (_currentCombo != ControlManeuver.Snap && _currentCombo != ControlManeuver.DoubleSnap) return false;
-
-            Vector2 dash = Vector2.zero;
-
-            if (_currentCombo == HorizontalControl.Back)
-                Flip();
-
-            dash.x = facingRight ? 1 : -1;
-            dash.x *= _dashForce;
-
-            _physics.ForceRigidbody(this, dash, true);
-            
-            m_animator.SetBool(anim_SKIDDING, false);
-            m_animator.SetTrigger(anim_DASH);
-
-            return true;
-        }
-
-        bool AirDash()
-        {
-            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            if (_currentCombo != ControlManeuver.DoubleSnap) return false;
-
-            Vector2 dash = Vector2.zero;
-
-            if (_currentCombo == HorizontalControl.Back)
-                Flip();
-
-            dash.x = facingRight ? 1 : -1;
-            dash.x *= _airDashForce;
-
-            NoGravity();
-            _physics.ForceRigidbody(this, dash, true, true);
-
-            m_animator.SetTrigger(anim_DASH);
-
-            return true;
-        }
-
-        #region Run
-
-        bool RunInit()
-        {
-            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            if (_currentCombo == ControlManeuver.Snap) return false;
-            if (_currentCombo == ControlManeuver.Soft) return false;
-            
-            Vector2 run = Vector2.zero;
-
-            run.x = facingRight ? 1 : -1;
-            run.x *= _runAcceleration;
-
-            _physics.AccelerateRigidbody(this, run, maxVelocityX: _maxRunSpeed);
-
-
-            m_animator.SetBool(anim_SKIDDING, false);
-            m_animator.SetInteger(anim_GROUNDMOVEMENT, 2);
-            _cancelToRun = false;
-
-            return true;
-        }
-
-        bool Run()
-        {
-            if (_currentCombo != HorizontalControl.Forward) return false;
-            if (_currentCombo == ControlManeuver.Snap) return false;
-
-            Vector2 run = Vector2.zero;
-
-            run.x = facingRight ? 1 : -1;
-            run.x *= _runAcceleration;
-
-            if (_currentCombo == ControlManeuver.Soft) run.x *= 0.5f;
-
-            _physics.AccelerateRigidbody(this, run, maxVelocityX: _maxRunSpeed);
-
-            return true;
-        }
-
-        #endregion
-
-        #region Walk
-
-        bool WalkInit()
-        {
-            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            if (_currentCombo != ControlManeuver.Soft) return false;
-            
-            Vector2 walk = Vector2.zero;
-
-            if (_currentCombo == HorizontalControl.Back)
-                Flip();
-
-            walk.x = facingRight ? 1 : -1;
-            walk.x *= _walkAcceleration * 2f;
-
-            _physics.AccelerateRigidbody(this, walk, maxVelocityX: _maxWalkSpeed);
-
-            m_animator.SetInteger(anim_GROUNDMOVEMENT, 1);
-
-            return true;
-        }
-
-        bool Walk()
-        {
-            if (_currentCombo != HorizontalControl.Forward) return false;
-            
-            Vector2 walk = Vector2.zero;
-
-            walk.x = facingRight ? 1 : -1;
-            walk.x *= _walkAcceleration * 2f;
-
-            if (_currentCombo == ControlManeuver.Hard) walk.x *= 1.3f;
-
-            _physics.AccelerateRigidbody(this, walk, maxVelocityX: _maxWalkSpeed);
-
-            return true;
-        }
-
-        #endregion
-
-        void Skid()
-        {
-            if (_currentCombo != HorizontalControl.NEUTRAL) return;
-            
-            m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
-            m_animator.SetBool(anim_SKIDDING, true);
-
-            return;
-        }
-
-        bool Turnaround()
-        {
-            if (_currentCombo != HorizontalControl.Back) return false;
-
-            Flip();
-
-            m_animator.SetBool(anim_SKIDDING, false);
-            m_animator.SetTrigger(anim_TURNAROUND);
-
-            return true;
-        }
-
+        #region Movement
         void Stand()
         {
             if (!_physics.isGrounded) return;
@@ -670,24 +543,303 @@ namespace Assault
                 drift = facingRight ? Vector2.right : Vector2.left;
             else if (_currentCombo == HorizontalControl.Back)
             {
-                drift = (facingRight ? Vector2.left : Vector2.right) * 5f; 
+                drift = (facingRight ? Vector2.left : Vector2.right) * 5f;
             }
 
-            drift.x *= _airAcceleration;
+            drift.x *= m_airAcceleration;
 
-            if (_currentCombo == ControlManeuver.Soft) drift.x *= 0.7f;
+            float maxAirSpeed = m_maxAirSpeed;
+            if (_currentCombo == ControlManeuver.Soft) maxAirSpeed *= FighterManager.FM.softAirSpeedMultiplier;
 
-            _physics.AccelerateRigidbody(this, drift, maxVelocityX: _maxAirSpeed);
+            _physics.AccelerateRigidbody(this, drift, maxVelocityX: maxAirSpeed);
         }
 
-        public void Flip(bool flipX = true, bool flipY = false)
+        void FastFall()
         {
-            _physics.Flip(flipX, flipY);
+            if (!_canFastFall) return;
+            if (_currentCombo != VerticalControl.Down) return;
+
+            _physics.fastFall = true;
+        }
+
+        bool Turnaround()
+        {
+            if (_currentCombo != HorizontalControl.Back) return false;
+
+            Flip();
+
+            m_animator.SetBool(anim_SKIDDING, false);
+            m_animator.SetTrigger(anim_TURNAROUND);
+
+            return true;
+        }
+
+        void Skid()
+        {
+            if (_currentCombo != HorizontalControl.NEUTRAL) return;
+
+            m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
+            m_animator.SetBool(anim_SKIDDING, true);
+
+            return;
+        }
+        #endregion
+
+        #region Dash
+        bool DashLaunch()
+        {
+            if (!_cancelToDash) return false;
+            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
+            if (_currentCombo != ControlManeuver.Snap && _currentCombo != ControlManeuver.DoubleSnap) return false;
             
+            if (_currentCombo == HorizontalControl.Forward)
+            {
+                Dash();
+            }
+            else
+            {
+                if (_backDashing)
+                {
+                    Flip();
+                    Dash();
+                }
+                else
+                    Invoke("BackDash", 2f / 30f);
+            }
+            ResetParameters();
+            return true;
+        }
+
+        bool AirDashLaunch()
+        {
+            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
+            if (_currentCombo != ControlManeuver.Snap) return false;
+
+            NoGravity();
+            _physics.ResetRigidbody(this);
+            if (_currentCombo == HorizontalControl.Forward)
+            {
+                Dash();
+            }
+            else
+            {
+                BackDash();
+            }
+
+            return true;
+        }
+
+        void BackDash()
+        {
+            _backDashing = true;
+            Dash(true);
+        }
+
+        void Dash(bool backDash = false)
+        {
+            Vector2 dash = Vector2.zero;
+
+            dash.x = facingRight ? 1 : -1;
+
+            if (currentState == GROUNDED_HITTABLE)
+            {
+                dash.x *= !backDash ? m_dashForce : -m_backDashForce;
+            }
+            else
+            {
+                dash.x *= !backDash ? m_airDashForce : -m_backDashForce;
+            }
+
+            _physics.ForceRigidbody(this, dash, true);
+
+            if (backDash)
+                m_animator.SetTrigger(anim_BACKDASH);
+            else
+                m_animator.SetTrigger(anim_DASH);
+
+            if (currentState == GROUNDED_HITTABLE) m_animator.SetBool(anim_SKIDDING, false);
+        }
+
+        void BackDashTurnaround()
+        {
+            Flip();
+
+            m_animator.SetTrigger(anim_TURNAROUND);
+        }
+
+        void RunReset()
+        {
+            if (_currentCombo == HorizontalControl.NEUTRAL)
+                m_animator.SetInteger(anim_GROUNDMOVEMENT, 0);
+        }
+        #endregion
+
+        #region Jump
+        bool JumpSquat()
+        {
+            if (_currentCombo != Button.Jump) return false;
+            if (_currentCombo != ButtonManeuver.Down) return false;
+            
+            m_animator.SetTrigger(anim_JUMPSQUAT);
+            m_animator.SetTrigger(anim_JUMP);
+
+            return false;
+        }
+
+        bool AirJumpSquat()
+        {
+            if (_airJumpsLeft <= 0) return false;
+            if (_currentCombo != Button.Jump) return false;
+            if (_currentCombo != ButtonManeuver.Down) return false;
+
+            m_animator.SetTrigger(anim_JUMPSQUAT);
+            m_animator.SetTrigger(anim_JUMP);
+            _airJumpsLeft--;
+
+            return true;
+        }
+
+        bool WallJumpSquat()
+        {
+            if (!_physics.collisionState.touchingWall) return false;
+            if (_physics.collisionState.leftPlatform && _physics.collisionState.rightPlatform) return false;
+            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
+            //print("Wall JS " + Time.timeSinceLevelLoad);
+            _physics.ResetRigidbody(this);
+
+            if (_physics.collisionState.rightPlatform && _currentCombo == HorizontalControlGeneral.Left)
+            {
+                SetFacingDirection(false); // Now facing left
+
+                m_animator.SetTrigger(anim_WALLJUMP);
+                return true;
+            }
+            else if (_physics.collisionState.leftPlatform && _currentCombo == HorizontalControlGeneral.Right)
+            {
+                SetFacingDirection(true); // Now facing left
+
+                m_animator.SetTrigger(anim_WALLJUMP);
+                return true;
+            }
+
+            return false;
+        }
+
+
+        void Jump()
+        {
+            m_animator.SetTrigger("Jump");
+            float jump = (currentState == GROUNDED_HITTABLE ? m_jumpForce : m_airJumpForce);
+
+            if (_physics.internalVelocity.x > 0 && _currentCombo == HorizontalControlGeneral.Left)
+                _physics.ResetRigidbody(this, resetY: false);
+
+            _physics.ForceRigidbody(this, new Vector2(0, jump), resetY: true);
+        }
+
+        void WallJump()
+        {
+            m_animator.ResetTrigger(anim_WALLJUMP);
+            Vector2 jump = facingRight ? _wallJumpForce : new Vector2(-_wallJumpForce.x, _wallJumpForce.y);
+            _physics.ForceRigidbody(this, jump, resetX: true, resetY: true);
+        }
+        #endregion
+
+        #region Walk
+        bool WalkInit()
+        {
+            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
+            if (_currentCombo != ControlManeuver.Soft) return false;
+            /*
+            Vector2 walk = Vector2.zero;
+
+            if (_currentCombo == HorizontalControl.Back)
+                Flip();
+
+            walk.x = facingRight ? 1 : -1;
+            walk.x *= m_walkAcceleration;
+            
+            _physics.AccelerateRigidbody(this, walk, maxVelocityX: _maxWalkSpeed);
+            */
+            m_animator.SetInteger(anim_GROUNDMOVEMENT, 1);
+
+            return true;
+        }
+
+        bool Walk()
+        {
+            if (_currentCombo != HorizontalControl.Forward) return false;
+            //print("Walking");
+            Vector2 walk = Vector2.zero;
+
+            walk.x = facingRight ? 1 : -1;
+            walk.x *= m_walkAcceleration;
+
+            float maxWalkSpeed = m_maxWalkSpeed;
+            if (_currentCombo == ControlManeuver.Soft) maxWalkSpeed *= FighterManager.FM.softWalkSpeedMultplier;
+
+            _physics.AccelerateRigidbody(this, walk, maxVelocityX: maxWalkSpeed);
+
+            return true;
+        }
+        #endregion
+        
+        #region Run
+        bool RunInit()
+        {
+            if (_currentCombo == HorizontalControl.NEUTRAL) return false;
+            if (_currentCombo == ControlManeuver.Snap) return false;
+            if (_currentCombo == ControlManeuver.Soft) return false;
+            /*
+            Vector2 run = Vector2.zero;
+
+            run.x = facingRight ? 1 : -1;
+            run.x *= _runAcceleration * 10f;
+
+            _physics.AccelerateRigidbody(this, run, maxVelocityX: _maxRunSpeed);
+            */
+
+            m_animator.SetBool(anim_SKIDDING, false);
+            m_animator.SetInteger(anim_GROUNDMOVEMENT, 2);
+            _cancelToRun = false;
+
+            return true;
+        }
+
+        bool Run()
+        {
+            if (_currentCombo != HorizontalControl.Forward) return false;
+            if (_currentCombo == ControlManeuver.Snap) return false;
+            
+            Vector2 run = Vector2.zero;
+
+            run.x = facingRight ? 1 : -1;
+            run.x *= m_runAcceleration;
+
+            float maxRunSpeed = m_maxRunSpeed;
+            if (_currentCombo == ControlManeuver.Soft) maxRunSpeed *= FighterManager.FM.softRunSpeedMultplier;
+
+            _physics.AccelerateRigidbody(this, run, maxVelocityX: maxRunSpeed);
+
+            return true;
+        }
+        #endregion
+
+        #endregion
+
+        #region Flip
+        public void Flip(bool flipX = true, bool flipY = false, bool preserveX = false, bool preserveY = false)
+        {
             if (flipX)
             {
+                _physics.Flip(!preserveX, false);
+
                 facingRight = !facingRight;
                 transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y);
+            }
+            if (flipY)
+            {
+                _physics.Flip(false, !preserveY);
             }
         }
 
@@ -698,5 +850,6 @@ namespace Assault
                 Flip();
             }
         }
+        #endregion
     }
 }

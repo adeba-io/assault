@@ -28,7 +28,7 @@ namespace Assault.Editors
         SerializedProperty _airAcceleration, _maxAirSpeed;
         SerializedProperty _airDashForce;
 
-        SerializedProperty _jumpForce, _airJumpForce;
+        SerializedProperty _jumpForce, _airJumpForceMultiplier;
         SerializedProperty _maxAirJumps, _airJumpsLeft;
         SerializedProperty _wallJumpForce;
         
@@ -55,8 +55,10 @@ namespace Assault.Editors
         readonly GUIContent gui_airDash = new GUIContent("AIR DASH");
 
         readonly GUIContent gui_jumps = new GUIContent("JUMPS", "Data on the Grounded, Aerial and Wall Jump forces");
+        readonly GUIContent gui_maxAirJumps = new GUIContent("Max Air Jumps");
+        readonly GUIContent gui_airJumpsLeft = new GUIContent("Air Jumps Left");
         readonly GUIContent gui_jumpForce = new GUIContent("Grounded");
-        readonly GUIContent gui_airJumpForce = new GUIContent("Aerial");
+        readonly GUIContent gui_airJumpForceMultiplier = new GUIContent("Aerial Mult");
         readonly GUIContent gui_wallJumpForce = new GUIContent("Wall Jump");
         
         readonly GUIContent gui_standingTechniques = new GUIContent("Standing Techniques");
@@ -97,7 +99,7 @@ namespace Assault.Editors
             _airDashForce = serializedObject.FindProperty("_airDashForce");
 
             _jumpForce = serializedObject.FindProperty("_jumpForce");
-            _airJumpForce = serializedObject.FindProperty("_airJumpForce");
+            _airJumpForceMultiplier = serializedObject.FindProperty("_airJumpForceMultiplier");
             _maxAirJumps = serializedObject.FindProperty("_maxAirJumps");
             _airJumpsLeft = serializedObject.FindProperty("_airJumpsLeft");
             _wallJumpForce = serializedObject.FindProperty("_wallJumpForce");
@@ -174,16 +176,16 @@ namespace Assault.Editors
             //base.OnInspectorGUI();
             serializedObject.Update();
 
-            Rect nextRect = EditorGUILayout.GetControlRect();
-            Rect labelRect = new Rect(nextRect.x, nextRect.y, nextRect.width * 0.4f, nextRect.height);
-            Rect varRect = new Rect(labelRect.xMax + (nextRect.width * 0.05f), labelRect.y, nextRect.width * 0.55f, nextRect.height);
+            Rect rect_next = EditorGUILayout.GetControlRect();
+            Rect labelRect = new Rect(rect_next.x, rect_next.y, rect_next.width * 0.4f, rect_next.height);
+            Rect varRect = new Rect(labelRect.xMax + (rect_next.width * 0.05f), labelRect.y, rect_next.width * 0.55f, rect_next.height);
             EditorGUI.LabelField(labelRect, gui_currentState, new GUIStyle { fontStyle = FontStyle.Bold });
             if (_target.currentState != Types.FighterState.NULL)
                 EditorGUI.LabelField(varRect, _target.currentState.ToString());
 
-            nextRect = EditorGUILayout.GetControlRect();
-            labelRect.y = nextRect.y;
-            varRect.y = nextRect.y;
+            rect_next = EditorGUILayout.GetControlRect();
+            labelRect.y = rect_next.y;
+            varRect.y = rect_next.y;
             EditorGUI.LabelField(labelRect, gui_currentTechnique, new GUIStyle { fontStyle = FontStyle.Bold });
             if (_target.currentTechnique)
                 EditorGUI.LabelField(varRect, _target.currentTechnique.name);
@@ -192,10 +194,10 @@ namespace Assault.Editors
 
             EditorGUILayout.BeginVertical(GUI.skin.box);
 
-            nextRect = EditorGUILayout.GetControlRect(true, 14);
-            nextRect.x += nextRect.width * 0.05f;
-            nextRect.width *= 0.95f;
-            EditorGUI.LabelField(nextRect, gui_groundMovement, guis_secHeader);
+            rect_next = EditorGUILayout.GetControlRect(true, 14);
+            rect_next.x += rect_next.width * 0.05f;
+            rect_next.width *= 0.95f;
+            EditorGUI.LabelField(rect_next, gui_groundMovement, guis_secHeader);
 
             AccelMaxSpeedHeaders();
             AccelMaxSpeedField(gui_walking, ref _walkAcceleration, ref _maxWalkSpeed);
@@ -208,10 +210,10 @@ namespace Assault.Editors
 
             EditorGUILayout.BeginVertical(GUI.skin.box);
 
-            nextRect = EditorGUILayout.GetControlRect(true, 14);
-            nextRect.x += nextRect.width * 0.05f;
-            nextRect.width *= 0.95f;
-            EditorGUI.LabelField(nextRect, gui_airMovement, guis_secHeader);
+            rect_next = EditorGUILayout.GetControlRect(true, 14);
+            rect_next.x += rect_next.width * 0.05f;
+            rect_next.width *= 0.95f;
+            EditorGUI.LabelField(rect_next, gui_airMovement, guis_secHeader);
 
             AccelMaxSpeedHeaders();
             AccelMaxSpeedField(gui_airDrift, ref _airAcceleration, ref _maxAirSpeed);
@@ -223,15 +225,21 @@ namespace Assault.Editors
 
             EditorGUILayout.BeginVertical(GUI.skin.box);
 
-            nextRect = EditorGUILayout.GetControlRect(true, 14);
-            nextRect.x += nextRect.width * 0.05f;
-            nextRect.width *= 0.95f;
-            EditorGUI.LabelField(nextRect, gui_jumps, guis_secHeader);
+            rect_next = EditorGUILayout.GetControlRect(true, 14);
+            rect_next.x += rect_next.width * 0.05f;
+            rect_next.width *= 0.95f;
+            EditorGUI.LabelField(rect_next, gui_jumps, guis_secHeader);
+
+            //EditorGUILayout.BeginHorizontal();
+            
+            EditorGUILayout.PropertyField(_maxAirJumps, gui_maxAirJumps);
+            EditorGUILayout.PropertyField(_airJumpsLeft, gui_airJumpsLeft);
+
+           // EditorGUILayout.EndHorizontal();
 
             ForceHeader();
-            //DualForceField(gui_jumpForce, ref _jumpForce, gui_airJumpForce, ref _airJumpForce);
             ForceField(gui_jumpForce, ref _jumpForce);
-            ForceField(gui_airJumpForce, ref _airJumpForce);
+            ForceField(gui_airJumpForceMultiplier, ref _airJumpForceMultiplier, 0.4f, 1f);
             Vector2Field(gui_wallJumpForce, ref _wallJumpForce);
 
             EditorGUILayout.EndVertical();
@@ -251,10 +259,10 @@ namespace Assault.Editors
             }
             else
             {
-                nextRect = EditorGUILayout.GetControlRect();
-                nextRect.x += nextRect.width * 0.1f;
-                nextRect.width *= 0.9f;
-                EditorGUI.LabelField(nextRect, gui_noCurrTechnique, guis_selectionError);
+                rect_next = EditorGUILayout.GetControlRect();
+                rect_next.x += rect_next.width * 0.1f;
+                rect_next.width *= 0.9f;
+                EditorGUI.LabelField(rect_next, gui_noCurrTechnique, guis_selectionError);
             }
 
             EditorGUILayout.EndVertical();
@@ -308,14 +316,14 @@ namespace Assault.Editors
             EditorGUI.Slider(nextRect, maxSpeedProp, 1f, 10f, GUIContent.none);
         }
 
-        void ForceField(GUIContent label, ref SerializedProperty forceProp)
+        void ForceField(GUIContent label, ref SerializedProperty forceProp, float min = 1f, float max = 10f)
         {
             Rect fullRect = EditorGUILayout.GetControlRect();
             Rect nextRect = new Rect(fullRect.x, fullRect.y, fullRect.width * 0.24f, fullRect.height);
             EditorGUI.LabelField(nextRect, label, guis_label);
             nextRect.x += nextRect.width + (fullRect.width * 0.07f);
             nextRect.width = fullRect.width * 0.69f;
-            EditorGUI.Slider(nextRect, forceProp, 1f, 10f, GUIContent.none);
+            EditorGUI.Slider(nextRect, forceProp, min, max, GUIContent.none);
         }
 
         void Vector2Field(GUIContent label, ref SerializedProperty vector2Prop)
