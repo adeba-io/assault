@@ -6,8 +6,13 @@ public class Joint : MonoBehaviour
 {
     public int ID;
 
-	// Use this for initialization
-	void Start () {
+    private void Reset()
+    {
+        
+    }
+
+    // Use this for initialization
+    void Start () {
 		
 	}
 	

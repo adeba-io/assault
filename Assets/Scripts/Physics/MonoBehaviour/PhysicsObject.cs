@@ -15,7 +15,7 @@ namespace Assault
     {
         #region Internal Types
 
-        struct RaycastPoints
+        protected struct RaycastPoints
         {
             public Vector2 top, bottom;
             public Vector2 left, right;
@@ -51,7 +51,7 @@ namespace Assault
         protected LayerMask _collisionMask = 0;
 
         // Raycasts
-        RaycastPoints _raycastPoints;
+        protected RaycastPoints _raycastPoints;
 
         // Slopes
         [SerializeField]
@@ -62,7 +62,7 @@ namespace Assault
         protected AnimationCurve _slopeSpeedModifier =
             new AnimationCurve(new Keyframe(-90f, 1.5f), new Keyframe(0f, 1f), new Keyframe(90f, 0.5f));
 
-        bool _onSlope = false;
+        protected bool _onSlope = false;
 
         // Movement and Positioning Fields
         Rigidbody2D _rigidbody;
@@ -76,6 +76,8 @@ namespace Assault
         float _minMoveDistance = 0.01f;
 
         // Properties
+        protected Vector2 deltaMovement { get { return _deltaMovement; } }
+
         public bool useGravity { get { return _useGravity; } set { _useGravity = value; } }
         public float gravityMultiplier { get { return _gravityMultiplier; } set { _gravityMultiplier = value; } }
 
@@ -125,7 +127,6 @@ namespace Assault
             _collisionState.Reset();
             _onSlope = false;
             ResetRaycastPoints();
-
             // Calc _deltaMovement
             _prevPosition = _rigidbody.position;
             _currPosition = _prevPosition + ((_internalVelocity + _externalVelocity) * Time.deltaTime);
@@ -324,6 +325,7 @@ namespace Assault
 
         protected void ResetRigidbodyInternal(bool resetX = true, bool resetY = true, bool externalAlso = false)
         {
+            print("Reset");
             if (resetX) _internalVelocity.x = 0;
             if (resetY) _internalVelocity.y = 0;
 
@@ -552,7 +554,7 @@ namespace Assault
         /// <summary>
         /// There will be some instances where the above and below rays will hit a wall they cannot collide with. This makes appropriate adjustments
         /// </summary>
-        void AdjustForVerticalSlope(bool above, RaycastHit2D raycastHit)
+        protected void AdjustForVerticalSlope(bool above, RaycastHit2D raycastHit)
         {
             DrawRay(raycastHit.point, raycastHit.normal * 0.3f, slopeRayColor);
 
@@ -568,7 +570,7 @@ namespace Assault
 
         #region Collision
 
-        void CheckVerticalCollisions(bool above, ref float distanceToHit, ref Vector2 hitNormal)
+        protected virtual void CheckVerticalCollisions(bool above, ref float distanceToHit, ref Vector2 hitNormal)
         {
             // Declare required variables
             Vector2 raycastStart, raycastDirection;
@@ -611,7 +613,7 @@ namespace Assault
                 {
                     if (above)
                     {
-                        if (potentialPlatform.platformType == PlatformType.OneWay) return;
+                        if (potentialPlatform.platformType != PlatformType.Standard) return;
 
                         _collisionState.above = true;
                         _collisionState.abovePlatform = potentialPlatform;
@@ -671,7 +673,7 @@ namespace Assault
                 Platform potentialWall;
                 if (PhysicsManager.TryGetColliderPlatform(raycastHit.collider, out potentialWall))
                 {
-                    if (potentialWall.platformType == PlatformType.OneWay) return;
+                    if (potentialWall.platformType != PlatformType.Standard) return;
 
                     if (right)
                     {
@@ -759,9 +761,9 @@ namespace Assault
         #region DEBUG
 #if COLL_RAYS
 
-        Color vertRayColor = Color.red, horiRayColor = Color.blue, slopeRayColor = Color.yellow;
+        protected Color vertRayColor = Color.red, horiRayColor = Color.blue, slopeRayColor = Color.yellow;
 
-        void DrawRay(Vector2 start, Vector2 dir, Color color)
+        protected void DrawRay(Vector2 start, Vector2 dir, Color color)
         {
             Debug.DrawRay(start, dir, color);
         }

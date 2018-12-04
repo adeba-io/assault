@@ -98,7 +98,7 @@ namespace Assault
         { NONE, Super, Heavy }
 
         public enum PlatformType
-        { Standard, OneWay }
+        { Standard, OneWay, Phaseable }
 
         public enum MovingPlatformType
         { ONCE, Loop, Back_Forth }

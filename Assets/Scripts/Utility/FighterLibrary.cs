@@ -63,12 +63,12 @@ namespace Assault.Utility
     public class FighterData
     {
         public readonly string name;
-        public int nextNode;
+        public int nextID;
 
-        public FighterData(string name, int nextNode)
+        public FighterData(string name, int nextID)
         {
             this.name = name;
-            this.nextNode = nextNode;
+            this.nextID = nextID;
         }
     }
 }

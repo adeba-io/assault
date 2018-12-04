@@ -83,21 +83,22 @@ namespace Assault.Editors
         readonly string para_jumpsquat = "JumpSquat";
         readonly string para_jump = "Jump";
         readonly string para_dash = "Dash";
-        readonly string para_backDash = "Back Dash";
+        readonly string para_backDash = "BackDash";
         readonly string para_turnaround = "Turnaround";
         readonly string para_wallJump = "WallJump";
-        readonly string para_hardland = "HardLand";
-        readonly string para_noLandAnim = "NoLandAnim";
         readonly string para_spawn = "Spawn";
         readonly string para_cancel = "Cancel";
+        readonly string para_executeTechnique = "ExecuteTechnique";
 
         readonly string para_isGrounded = "isGrounded";
         readonly string para_crouching = "Crouching";
         readonly string para_skidding = "Skidding";
 
         readonly string para_groundMove = "GroundMove";
+        readonly string para_landType = "LandType";
+        readonly string para_techniqueID = "TechniqueID";
 
-        readonly string para_hardLandModifier = "HardLandModifier";
+        readonly string para_landModifier = "LandModifier";
 
         AnimatorController CreateController(string path)
         {
@@ -110,11 +111,11 @@ namespace Assault.Editors
             controller.AddParameter(para_backDash, AnimatorControllerParameterType.Trigger);
             controller.AddParameter(para_turnaround, AnimatorControllerParameterType.Trigger);
             controller.AddParameter(para_wallJump, AnimatorControllerParameterType.Trigger);
-            controller.AddParameter(para_hardland, AnimatorControllerParameterType.Trigger);
-            controller.AddParameter(para_noLandAnim, AnimatorControllerParameterType.Trigger);
 
             controller.AddParameter(para_spawn, AnimatorControllerParameterType.Trigger);
             controller.AddParameter(para_cancel, AnimatorControllerParameterType.Trigger);
+
+            controller.AddParameter(para_executeTechnique, AnimatorControllerParameterType.Trigger);
 
 
             controller.AddParameter(para_isGrounded, AnimatorControllerParameterType.Bool);
@@ -123,9 +124,11 @@ namespace Assault.Editors
 
 
             controller.AddParameter(para_groundMove, AnimatorControllerParameterType.Int);
+            controller.AddParameter(para_landType, AnimatorControllerParameterType.Int);
+            controller.AddParameter(para_techniqueID, AnimatorControllerParameterType.Int);
 
 
-            controller.AddParameter(para_hardLandModifier, AnimatorControllerParameterType.Float);
+            controller.AddParameter(para_landModifier, AnimatorControllerParameterType.Float);
 
 
             // Add StateMachines
@@ -134,9 +137,11 @@ namespace Assault.Editors
             rootStateMachine.entryPosition = Vector3.zero;
             rootStateMachine.exitPosition = Vector3.up * 100f;
 
-            var aerialLocomo = rootStateMachine.AddStateMachine("Aerial Locomotion", new Vector3(2f, -1f) * 100f);
-            var groundedLocomo = rootStateMachine.AddStateMachine("Grounded Locomotion", new Vector3(2f, 1f) * 100f);
-            
+            var state_enterBuffer = rootStateMachine.AddState("Enter Buffer", new Vector3(2f, 0) * 100f);
+
+            var aerialLocomo = rootStateMachine.AddStateMachine("Aerial Locomotion", new Vector3(5f, -1f) * 100f);
+            var groundedLocomo = rootStateMachine.AddStateMachine("Grounded Locomotion", new Vector3(5f, 1f) * 100f);
+
 
             // Add States
             groundedLocomo.anyStatePosition = Vector3.down * 50f;
@@ -146,7 +151,8 @@ namespace Assault.Editors
             
             var state_softland = groundedLocomo.AddState("Soft Landing", new Vector3(0.4f, -0.2f) * 500f);
             var state_hardland = groundedLocomo.AddState("Hard Landing", new Vector3(0.4f, 0.2f) * 500f);
-            state_hardland.speedParameter = para_hardLandModifier;
+            state_softland.speedParameter = state_hardland.speedParameter = para_landModifier;
+            state_softland.speedParameterActive = state_hardland.speedParameterActive = true;
 
             var state_standing = groundedLocomo.AddState("Standing", new Vector3(1.2f, 0) * 500f);
             var state_crouching = groundedLocomo.AddState("Crouching", new Vector3(1.2f, -0.5f) * 500f);
@@ -183,12 +189,22 @@ namespace Assault.Editors
             // Add Transitions
             AnimatorStateTransition transition;
 
-            #region Grounded Locomotion
-            groundedLocomo.AddEntryTransition(state_softland);
-            groundedLocomo.AddEntryTransition(state_hardland).AddCondition(AnimatorConditionMode.If, 0, para_hardland);
-            groundedLocomo.AddEntryTransition(state_standing).AddCondition(AnimatorConditionMode.If, 0, para_noLandAnim);
+            #region Root State
+            transition = state_enterBuffer.AddTransition(groundedLocomo); // Enter Buffer to Grounded Locomotion
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
+            transition.hasExitTime = false;
+            transition.exitTime = transition.duration = 0;
 
-            //rootStateMachine.AddStateMachineTransition(groundedLocomo, aerialLocomo).AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition = state_enterBuffer.AddTransition(aerialLocomo); // Enter Buffer to Aerial Locomotion
+            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition.hasExitTime = false;
+            transition.exitTime = transition.duration = 0;
+            #endregion
+
+            #region Grounded Locomotion
+            groundedLocomo.AddEntryTransition(state_standing).AddCondition(AnimatorConditionMode.Equals, 0, para_landType);
+            groundedLocomo.AddEntryTransition(state_hardland).AddCondition(AnimatorConditionMode.Equals, 2, para_landType);
+            groundedLocomo.AddEntryTransition(state_softland).AddCondition(AnimatorConditionMode.Equals, 1, para_landType);
             #endregion
 
             #region Standing
@@ -463,7 +479,7 @@ namespace Assault.Editors
             transition.exitTime = 1f; transition.duration = 0;
 
             transition = state_aerial.AddTransition(groundedLocomo); // Aerial to Grounded Locomotion
-            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
             #endregion
@@ -494,7 +510,7 @@ namespace Assault.Editors
             transition.exitTime = transition.duration = 0;
 
             transition = state_jumping.AddTransition(groundedLocomo); // Jumping to Grounded Locomotion
-            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
             #endregion
@@ -514,7 +530,7 @@ namespace Assault.Editors
             transition.exitTime = 1f; transition.duration = 0;
 
             transition = state_airBackDash.AddTransition(groundedLocomo); // Air Back Dash to Grounded Locomotion
-            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
             #endregion
@@ -534,7 +550,7 @@ namespace Assault.Editors
             transition.exitTime = 1f; transition.duration = 0;
 
             transition = state_wallJumpsquat.AddTransition(groundedLocomo); // Wall Jump Squat to Grounded Locomotion
-            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
             #endregion
@@ -564,8 +580,8 @@ namespace Assault.Editors
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
 
-            transition = state_aerial.AddTransition(groundedLocomo); // Air Jumping to Grounded Locomotion
-            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition = state_airJump.AddTransition(groundedLocomo); // Air Jumping to Grounded Locomotion
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
             #endregion
@@ -596,7 +612,7 @@ namespace Assault.Editors
             transition.exitTime = transition.duration = 0;
 
             transition = state_wallJump.AddTransition(groundedLocomo); // Wall Jumping to Grounded Locomotion
-            transition.AddCondition(AnimatorConditionMode.IfNot, 0, para_isGrounded);
+            transition.AddCondition(AnimatorConditionMode.If, 0, para_isGrounded);
             transition.hasExitTime = false;
             transition.exitTime = transition.duration = 0;
             #endregion

@@ -211,7 +211,7 @@ Animator:
   m_GameObject: {fileID: 7443972774988448258}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 21779da89d784b140bdf11a314b62db6, type: 2}
+  m_Controller: {fileID: 9100000, guid: 1ee2ca317089022448705eb562631580, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -343,9 +343,9 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   _minMoveDistance: 0.01
-  _traction: 2
+  _traction: 0.9
   _fallSpeed: 5
-  _fastFallSpeed: 7
+  _fastFallSpeedMultiplier: 1.49
   _recallFrameInterval: 30
 --- !u!114 &1684214161230221318
 MonoBehaviour:
@@ -428,9 +428,11 @@ MonoBehaviour:
   _dashForce: 5
   _airAcceleration: 6
   _maxAirSpeed: 4
-  _airDashForce: 4
+  _airDashForce: 6.61
+  _maxAirDashes: 2
+  _airDashesLeft: 1
   _jumpForce: 8
-  _airJumpForce: 6
+  _airJumpForceMultiplier: 0.75
   _maxAirJumps: 3
   _airJumpsLeft: 0
   _wallJumpForce: {x: 3, y: 2}

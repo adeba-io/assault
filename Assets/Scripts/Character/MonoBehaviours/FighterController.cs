@@ -30,8 +30,7 @@ namespace Assault
         protected readonly int anim_TURNAROUND = Animator.StringToHash("Turnaround");
         protected readonly int anim_WALLJUMP = Animator.StringToHash("WallJump");
 
-        protected readonly int anim_HARDLAND = Animator.StringToHash("HardLand");
-        protected readonly int anim_NOLANDANIM = Animator.StringToHash("NoLandAnim");
+        protected readonly int anim_EXECUTETECH = Animator.StringToHash("ExecuteTechnique");
 
         // Booleans
         protected readonly int anim_GROUNDED = Animator.StringToHash("isGrounded");
@@ -40,9 +39,11 @@ namespace Assault
 
         // Integers
         protected readonly int anim_GROUNDMOVEMENT = Animator.StringToHash("GroundMove"); // 0 = Standing, 1 = Walking, 2 = Running
+        protected readonly int anim_LANDTYPE = Animator.StringToHash("LandType"); // 0 = To Standing, 1 = Soft, 2 = Hard
+        protected readonly int anim_TECHNIQUEID = Animator.StringToHash("TechniqueID");
 
         // Float
-        protected readonly int anim_HARDLANDINGMODIFIER = Animator.StringToHash("HardLandModifier");
+        protected readonly int anim_LANDINGMODIFIER = Animator.StringToHash("LandModifier");
         #endregion
 
         public Technique nextTechnique { get; set; }
@@ -63,6 +64,8 @@ namespace Assault
 
         [SerializeField] float _airAcceleration = 6f, _maxAirSpeed = 4f;
         [SerializeField] float _airDashForce = 4f;
+        [SerializeField] int _maxAirDashes = 2;
+        [SerializeField] int _airDashesLeft;
 
         [SerializeField] float _jumpForce = 8f;
         [SerializeField] float _airJumpForceMultiplier = 0.75f;
@@ -114,10 +117,9 @@ namespace Assault
                 currentState == FighterState.Running || currentState == FighterState.Skidding ||
                 currentState == FighterState.JumpSquat) return;
 
-            print("Landing");
-            _canFastFall = false;
-            _airJumpsLeft = _maxAirJumps;
-            SetState(FighterState.Standing);
+            Debug.Log("Land");
+
+            UseGravity();
 
             if (currentTechnique)
             {
@@ -128,24 +130,30 @@ namespace Assault
                     {
                         if (currentTechnique.HardLand())
                         {
-                            m_animator.SetTrigger(anim_HARDLAND);
+                            m_animator.SetInteger(anim_LANDTYPE, 2);
 
                             float landModifier = currentTechnique.landingLag / 8f;
-                            m_animator.SetFloat(anim_HARDLANDINGMODIFIER, landModifier);
+                            m_animator.SetFloat(anim_LANDINGMODIFIER, landModifier);
                         }
                     }
                 }
                 else SetNextTechnique(currentTechnique.Land(), true);
             }
 
+            _canFastFall = false;
+            _airJumpsLeft = _maxAirJumps;
+            _airDashesLeft = _maxAirDashes;
+            SetState(FighterState.Standing);
             m_animator.SetBool(anim_GROUNDED, true);
         }
 
         void OnAerial()
         {
             if (currentState == AERIAL) return;
+
             print("Aerial");
             m_animator.SetBool(anim_GROUNDED, false);
+            m_animator.SetInteger(anim_LANDTYPE, 1);
 
             if (currentState == GROUNDED_IN_CONTROL)
                 SetState(FighterState.Aerial);
@@ -220,8 +228,8 @@ namespace Assault
             m_dashForce = _dashForce * 5f;
             m_backDashForce = m_dashForce * FighterManager.FM.backDashSpeedMultiplier;
 
-            m_airAcceleration = _airAcceleration;
-            m_maxAirSpeed = _maxAirSpeed;
+            m_airAcceleration = _airAcceleration * 5f;
+            m_maxAirSpeed = _maxAirSpeed * 4f;
 
             m_airDashForce = _airDashForce * 5f;
             m_airBackDashForce = m_airDashForce * FighterManager.FM.backDashSpeedMultiplier;
@@ -252,7 +260,7 @@ namespace Assault
 
         public void SetState(FighterState newState)
         {
-            if (newState == FighterState.Jumping) print("Should Jump");
+            if (currentState == newState) return;
 
             if (currentState == FighterState.Dashing && newState != FighterState.Dashing)
             {
@@ -264,7 +272,11 @@ namespace Assault
                 _physics.ResetRigidbody(this);
             }
 
-            if (newState == FighterState.Standing || newState == FighterState.Aerial) ResetParameters();
+            if (newState == FighterState.Standing || newState == FighterState.Aerial)
+            {
+                ResetParameters();
+                UseGravity();
+            }
 
             currentState = newState;
         }
@@ -278,10 +290,9 @@ namespace Assault
         {
             m_animator.ResetTrigger(anim_CANCEL);
             m_animator.ResetTrigger(anim_JUMP);
-            m_animator.ResetTrigger(anim_HARDLAND);
-            m_animator.ResetTrigger(anim_NOLANDANIM);
             m_animator.SetBool(anim_CROUCHING, false);
-            m_animator.SetFloat(anim_HARDLANDINGMODIFIER, 1.0f);
+            m_animator.SetInteger(anim_LANDTYPE, 1);
+            m_animator.SetFloat(anim_LANDINGMODIFIER, 1.0f);
         }
 
         void AnimFlip() { Flip(true, false, true); }
@@ -293,7 +304,7 @@ namespace Assault
 
         void EndAirDash()
         {
-            _physics.DecelerateToMax(this, maxVelocityX: m_maxAirSpeed, decelerationX: 5f);
+            _physics.DecelerateToMax(this, maxVelocityX: m_maxAirSpeed, decelerationX: 20f);
         }
 
         public void SetCanDash(bool canDash) { _cancelToDash = canDash; }
@@ -332,7 +343,11 @@ namespace Assault
 
             nextTechnique = technique;
 
-            if (!land) m_animator.SetTrigger(nextTechnique.animationTrigger);
+            if (!land)
+            {
+                m_animator.SetInteger(anim_TECHNIQUEID, nextTechnique.animationID);
+                m_animator.SetTrigger(anim_EXECUTETECH);
+            }
             
         }
 
@@ -398,6 +413,7 @@ namespace Assault
                     if (JumpSquat()) return true;
                     if (DashLaunch()) return true;
                     if (WalkInit()) return true;
+                    if (PhaseThrough()) return true;
 
                     Stand();
 
@@ -407,6 +423,7 @@ namespace Assault
                     if (CheckForInputCombo(_standingTechniques)) return true;
 
                     if (JumpSquat()) return true;
+                    if (PhaseThrough()) return true;
 
                     Stand();
 
@@ -417,6 +434,8 @@ namespace Assault
 
                     if (JumpSquat()) return true;
                     if (DashLaunch()) return true;
+                    if (PhaseThrough()) return true;
+
                     if (Walk()) return true;
                     if (Turnaround()) return true;
 
@@ -428,6 +447,8 @@ namespace Assault
                     if (CheckForInputCombo(_runningTechniques)) return true;
 
                     if (JumpSquat()) return true;
+                    if (PhaseThrough()) return true;
+                     
                     if (Run()) return true;
                   //  if (Turnaround()) return true;
 
@@ -456,6 +477,8 @@ namespace Assault
                 case FighterState.JumpSquat:
 
                     if (CheckForInputCombo(_jumpingTechniques)) return true;
+
+                    JumpSquatTurnaround();
 
                     break;
                 case FighterState.Jumping:
@@ -533,6 +556,16 @@ namespace Assault
             }
         }
 
+        bool PhaseThrough()
+        {
+            if (_currentCombo != VerticalControl.Down) return false;
+            if (_currentCombo != ControlManeuver.Snap) return false;
+
+            _physics.IgnoreBelowPlatform(this);
+
+            return true;
+        }
+
         void AirDrift()
         {
             if (_currentCombo == HorizontalControl.NEUTRAL) return;
@@ -543,7 +576,7 @@ namespace Assault
                 drift = facingRight ? Vector2.right : Vector2.left;
             else if (_currentCombo == HorizontalControl.Back)
             {
-                drift = (facingRight ? Vector2.left : Vector2.right) * 5f;
+                drift = (facingRight ? Vector2.left : Vector2.right);
             }
 
             drift.x *= m_airAcceleration;
@@ -568,11 +601,19 @@ namespace Assault
 
             Flip();
 
-            m_animator.SetBool(anim_SKIDDING, false);
             m_animator.SetTrigger(anim_TURNAROUND);
 
             return true;
         }
+        
+        void JumpSquatTurnaround()
+        {
+            if (_currentCombo != HorizontalControl.Back) return;
+            if (!_physics.isGrounded) return;
+
+            Flip();
+        }
+
 
         void Skid()
         {
@@ -590,7 +631,7 @@ namespace Assault
         {
             if (!_cancelToDash) return false;
             if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            if (_currentCombo != ControlManeuver.Snap && _currentCombo != ControlManeuver.DoubleSnap) return false;
+            if (_currentCombo != ControlManeuver.Snap) return false;
             
             if (_currentCombo == HorizontalControl.Forward)
             {
@@ -614,8 +655,14 @@ namespace Assault
         {
             if (_currentCombo == HorizontalControl.NEUTRAL) return false;
             if (_currentCombo != ControlManeuver.Snap) return false;
+            if (_airDashesLeft <= 0) return false;
+            if (_airJumpsLeft <= 0) return false;
+
+            _airDashesLeft--;
+            _airJumpsLeft--;
 
             NoGravity();
+            m_animator.SetInteger(anim_LANDTYPE, 2);
             _physics.ResetRigidbody(this);
             if (_currentCombo == HorizontalControl.Forward)
             {
@@ -692,8 +739,9 @@ namespace Assault
             if (_currentCombo != Button.Jump) return false;
             if (_currentCombo != ButtonManeuver.Down) return false;
 
+            NoGravity();
+            _physics.ResetRigidbody(this, resetY: true);
             m_animator.SetTrigger(anim_JUMPSQUAT);
-            m_animator.SetTrigger(anim_JUMP);
             _airJumpsLeft--;
 
             return true;
@@ -704,7 +752,7 @@ namespace Assault
             if (!_physics.collisionState.touchingWall) return false;
             if (_physics.collisionState.leftPlatform && _physics.collisionState.rightPlatform) return false;
             if (_currentCombo == HorizontalControl.NEUTRAL) return false;
-            //print("Wall JS " + Time.timeSinceLevelLoad);
+            
             _physics.ResetRigidbody(this);
 
             if (_physics.collisionState.rightPlatform && _currentCombo == HorizontalControlGeneral.Left)
@@ -728,8 +776,15 @@ namespace Assault
 
         void Jump()
         {
+            float jump = currentState == GROUNDED_HITTABLE ? m_jumpForce : m_airJumpForce;
+
+            if (currentState == GROUNDED_HITTABLE)
+                _physics.IgnoreBelowPlatform(this);
+
+            UseGravity();
+
+            _physics.IgnoreBelowPlatform(this);
             m_animator.SetTrigger("Jump");
-            float jump = (currentState == GROUNDED_HITTABLE ? m_jumpForce : m_airJumpForce);
 
             if (_physics.internalVelocity.x > 0 && _currentCombo == HorizontalControlGeneral.Left)
                 _physics.ResetRigidbody(this, resetY: false);

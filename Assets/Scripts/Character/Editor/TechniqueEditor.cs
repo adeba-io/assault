@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using UnityEditor.AnimatedValues;
+using UnityEditor.Animations;
 using UnityEditorInternal;
 using Assault.Techniques;
 using Assault.Utility;
@@ -13,6 +14,7 @@ namespace Assault.Editors
     {
         const int MAXLANDINGLAG = 30;
 
+        
         FighterController _owner;
         AnimatorOverrideController _ownerAnimator;
         Technique _target;
@@ -27,8 +29,7 @@ namespace Assault.Editors
 
         SerializedProperty _type;
         
-        SerializedProperty _animationTrigger;
-        string _newTrigger;
+        SerializedProperty _animationID;
         SerializedProperty _totalFrameCount;
 
         SerializedProperty _accelerateCurveX;
@@ -115,7 +116,7 @@ namespace Assault.Editors
 
             _type = serializedObject.FindProperty("_type");
 
-            _animationTrigger = serializedObject.FindProperty("animationTrigger");
+            _animationID = serializedObject.FindProperty("animationID");
             _totalFrameCount = serializedObject.FindProperty("_totalFrameCount");
 
             _accelerateCurveX = serializedObject.FindProperty("_accelerateCurveX");
@@ -401,7 +402,7 @@ namespace Assault.Editors
             }
 
             FighterData oldData = FighterLibrary.LoadFighterData(_owner.name);
-            int newNode = oldData.nextNode++;
+            int newNode = oldData.nextID++;
             SerializedProperty element = null;
 
             if (data.increment)
@@ -440,6 +441,7 @@ namespace Assault.Editors
                 location += "/" + newAsset.name + ".asset";
                 AssetDatabase.CreateAsset(newAsset, location);
                 element.FindPropertyRelative("technique").objectReferenceValue = newAsset;
+                element.FindPropertyRelative("technique").FindPropertyRelative("animationID").intValue = newNode;
 
                 FighterLibrary.SaveFighterData(oldData);
             }
@@ -635,8 +637,6 @@ namespace Assault.Editors
             _attacks.maxFrame = _totalFrameCount.intValue;
             _links.maxFrame = _totalFrameCount.intValue;
 
-            _animationTrigger.intValue = Animator.StringToHash(clip.name);
-
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -647,7 +647,7 @@ namespace Assault.Editors
             _forceFrames.maxFrame = _totalFrameCount.intValue;
             _attacks.maxFrame = _totalFrameCount.intValue;
 
-            _animationTrigger.intValue = 0;
+            _animationID.intValue = 0;
 
             serializedObject.ApplyModifiedProperties();
         }

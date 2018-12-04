@@ -322,7 +322,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7716251078602794927}
-  m_LocalRotation: {x: 0, y: 0, z: 0.0035343093, w: 0.99999374}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.4330372, y: 0.31561363, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -332,7 +332,7 @@ Transform:
   - {fileID: 1434146541088185881}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.40500003}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &7833145866328624086
 Animator:
   serializedVersion: 3
@@ -477,7 +477,7 @@ MonoBehaviour:
   _minMoveDistance: 0.01
   _traction: 2
   _fallSpeed: 5
-  _fastFallSpeed: 7
+  _fastFallSpeedMultiplier: 1.2
   _recallFrameInterval: 30
 --- !u!114 &5043036511004614758
 MonoBehaviour:
@@ -561,8 +561,10 @@ MonoBehaviour:
   _airAcceleration: 6
   _maxAirSpeed: 4
   _airDashForce: 4
+  _maxAirDashes: 2
+  _airDashesLeft: 0
   _jumpForce: 8
-  _airJumpForce: 6
+  _airJumpForceMultiplier: 0.75
   _maxAirJumps: 3
   _airJumpsLeft: 0
   _wallJumpForce: {x: 3, y: 2}

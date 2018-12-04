@@ -27,6 +27,7 @@ namespace Assault.Editors
 
         SerializedProperty _airAcceleration, _maxAirSpeed;
         SerializedProperty _airDashForce;
+        SerializedProperty _maxAirDashes, _airDashesLeft;
 
         SerializedProperty _jumpForce, _airJumpForceMultiplier;
         SerializedProperty _maxAirJumps, _airJumpsLeft;
@@ -56,7 +57,7 @@ namespace Assault.Editors
 
         readonly GUIContent gui_jumps = new GUIContent("JUMPS", "Data on the Grounded, Aerial and Wall Jump forces");
         readonly GUIContent gui_maxAirJumps = new GUIContent("Max Air Jumps");
-        readonly GUIContent gui_airJumpsLeft = new GUIContent("Air Jumps Left");
+        readonly GUIContent gui_maxAirDashes = new GUIContent("Max Air Dashes");
         readonly GUIContent gui_jumpForce = new GUIContent("Grounded");
         readonly GUIContent gui_airJumpForceMultiplier = new GUIContent("Aerial Mult");
         readonly GUIContent gui_wallJumpForce = new GUIContent("Wall Jump");
@@ -97,6 +98,8 @@ namespace Assault.Editors
             _airAcceleration = serializedObject.FindProperty("_airAcceleration");
             _maxAirSpeed = serializedObject.FindProperty("_maxAirSpeed");
             _airDashForce = serializedObject.FindProperty("_airDashForce");
+            _maxAirDashes = serializedObject.FindProperty("_maxAirDashes");
+            _airDashesLeft = serializedObject.FindProperty("_airDashesLeft");
 
             _jumpForce = serializedObject.FindProperty("_jumpForce");
             _airJumpForceMultiplier = serializedObject.FindProperty("_airJumpForceMultiplier");
@@ -231,9 +234,16 @@ namespace Assault.Editors
             EditorGUI.LabelField(rect_next, gui_jumps, guis_secHeader);
 
             //EditorGUILayout.BeginHorizontal();
+
+            EditorGUI.BeginChangeCheck();
+            MaxIntDecreasing(gui_maxAirJumps, ref _maxAirJumps, 2, 10, _airJumpsLeft.intValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (_maxAirDashes.intValue >= _maxAirJumps.intValue)
+                    _maxAirDashes.intValue = _maxAirJumps.intValue - 1;
+            }
             
-            EditorGUILayout.PropertyField(_maxAirJumps, gui_maxAirJumps);
-            EditorGUILayout.PropertyField(_airJumpsLeft, gui_airJumpsLeft);
+            MaxIntDecreasing(gui_maxAirDashes, ref _maxAirDashes, 1, _maxAirJumps.intValue - 1, _airDashesLeft.intValue);
 
            // EditorGUILayout.EndHorizontal();
 
@@ -337,6 +347,37 @@ namespace Assault.Editors
             nextRectY.x += nextRectX.width + (fullRect.width * 0.07f);
 
             vector2Prop.vector2Value = new Vector2(EditorGUI.Slider(nextRectX, vector2Prop.vector2Value.x, 1f, 10f), EditorGUI.Slider(nextRectY, vector2Prop.vector2Value.y, 1f, 10f));
+        }
+
+        void MaxIntDecreasing(GUIContent label, ref SerializedProperty alterableIntProp, int min, int max, int intLeft)
+        {
+            Rect rect_full = EditorGUILayout.GetControlRect();
+
+            Rect rect_next = new Rect(rect_full.x, rect_full.y, rect_full.width * 0.28f, rect_full.height);
+            EditorGUI.LabelField(rect_next, label);
+
+            rect_next.x += rect_full.width * 0.3f; rect_next.width = rect_full.width * 0.5f;
+            EditorGUI.IntSlider(rect_next, alterableIntProp, min, max, GUIContent.none);
+
+            rect_next.x += rect_full.width * 0.52f; rect_next.width = rect_full.width * 0.18f;
+            EditorGUI.LabelField(rect_next, intLeft.ToString());
+        }
+
+        void DualIntField(GUIContent label1, ref SerializedProperty intProp1, GUIContent label2, ref SerializedProperty intProp2)
+        {
+            Rect rect_full = EditorGUILayout.GetControlRect();
+
+            Rect rect_next = new Rect(rect_full.x, rect_full.y, rect_full.width * 0.29f, rect_full.height);
+            EditorGUI.LabelField(rect_next, label1);
+
+            rect_next.x += rect_full.width * 0.51f;
+            EditorGUI.LabelField(rect_next, label2);
+
+            rect_next.x = rect_full.x + (rect_full.width * 0.31f); rect_next.width = rect_full.width * 0.19f;
+            intProp1.intValue = EditorGUI.IntField(rect_next, intProp1.intValue);
+
+            rect_next.x = rect_full.x + (rect_full.width * 0.81f);
+            intProp2.intValue = EditorGUI.IntField(rect_next, intProp2.intValue);
         }
 
         #endregion
@@ -538,7 +579,7 @@ namespace Assault.Editors
             }
 
             FighterData oldData = FighterLibrary.LoadFighterData(_target.name);
-            int newNode = oldData.nextNode++;
+            int newNode = oldData.nextID++;
             SerializedProperty element = null;
 
             switch (data.list)
@@ -627,6 +668,7 @@ namespace Assault.Editors
                 location += "/" + newAsset.name + ASSETEXTENSION;
                 AssetDatabase.CreateAsset(newAsset, location);
                 element.FindPropertyRelative("technique").objectReferenceValue = newAsset;
+                element.FindPropertyRelative("technique").FindPropertyRelative("animationID").intValue = newNode;
 
                 switch (data.list)
                 {

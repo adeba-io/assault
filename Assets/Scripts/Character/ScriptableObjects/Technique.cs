@@ -34,7 +34,7 @@ namespace Assault.Techniques
     public class Technique : ScriptableObject
     {
         public AnimationClip animationClip;
-        public int animationTrigger;
+        public int animationID;
 
         [SerializeField] TechniqueType _type;
         [SerializeField] int _totalFrameCount;
@@ -90,7 +90,7 @@ namespace Assault.Techniques
 
             for (int i = 0; i < _forceFrames.Length; i++)
             {
-                if (_forceFrames[i].frame == currentFrame) fighterController.nextForce = _forceFrames[i].vector;
+                if (_forceFrames[i].frame == currentFrame) fighterController.nextForce += _forceFrames[i].vector;
             }
 
             fighterController.currentAccelerate = new Vector2(_accelerateCurveX.Evaluate(currentFrame), _accelerateCurveY.Evaluate(currentFrame)) * 1000;
